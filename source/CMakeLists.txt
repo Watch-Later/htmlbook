@@ -1,0 +1,23 @@
+target_sources(htmlbook
+PRIVATE
+    "${CMAKE_CURRENT_LIST_DIR}/htmlbook.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/htmlelement.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/htmlentityparser.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/htmltokenizer.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/htmlparser.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/csstokenizer.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/cssparser.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/cssstylesheet.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/cssstylebuilder.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/pdfdocument.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/document.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/boxstyle.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/globalstring.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/url.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/resource.cpp"
+)
+
+target_include_directories(htmlbook
+PRIVATE
+    "${CMAKE_CURRENT_LIST_DIR}"
+)
