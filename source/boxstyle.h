@@ -275,15 +275,6 @@ enum class QuoteType : uint8_t {
     NoClose
 };
 
-enum class PseudoType : uint8_t {
-    None,
-    Before,
-    After,
-    Marker,
-    FirstLetter,
-    FirstLine
-};
-
 class Color {
 public:
     Color() = default;

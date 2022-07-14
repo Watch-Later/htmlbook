@@ -882,56 +882,6 @@ private:
     CSSCompoundSelector m_compoundSelector;
 };
 
-class Element;
-
-class CSSSelectorMatch {
-public:
-    static bool match(const Element* element, const CSSSelector& selector);
-
-private:
-    static bool matchCompoundSelectorList(const Element* element, const CSSCompoundSelectorList& selectors);
-    static bool matchCompoundSelector(const Element* element, const CSSCompoundSelector& selector);
-    static bool matchSimpleSelector(const Element* element, const CSSSimpleSelector& selector);
-
-    static bool matchTagSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchIdSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchClassSelector(const Element* element, const CSSSimpleSelector& selector);
-
-    static bool matchAttributeHasSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchAttributeEqualsSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchAttributeIncludesSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchAttributeContainsSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchAttributeDashEqualsSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchAttributeStartsWithSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchAttributeEndsWithSelector(const Element* element, const CSSSimpleSelector& selector);
-
-    static bool matchPseudoClassIsSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchPseudoClassNotSelector(const Element* element, const CSSSimpleSelector& selector);
-
-    static bool matchPseudoClassLinkSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchPseudoClassEnabledSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchPseudoClassDisabledSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchPseudoClassCheckedSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchPseudoClassLangSelector(const Element* element, const CSSSimpleSelector& selector);
-
-    static bool matchPseudoClassRootSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchPseudoClassEmptySelector(const Element* element, const CSSSimpleSelector& selector);
-
-    static bool matchPseudoClassFirstChildSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchPseudoClassLastChildSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchPseudoClassOnlyChildSelector(const Element* element, const CSSSimpleSelector& selector);
-
-    static bool matchPseudoClassFirstOfTypeSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchPseudoClassLastOfTypeSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchPseudoClassOnlyOfTypeSelector(const Element* element, const CSSSimpleSelector& selector);
-
-    static bool matchPseudoClassNthChildSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchPseudoClassNthLastChildSelector(const Element* element, const CSSSimpleSelector& selector);
-
-    static bool matchPseudoClassNthOfTypeSelector(const Element* element, const CSSSimpleSelector& selector);
-    static bool matchPseudoClassNthLastOfTypeSelector(const Element* element, const CSSSimpleSelector& selector);
-};
-
 class CSSStyleRule;
 class CSSImportRule;
 class CSSFontFaceRule;
@@ -1060,6 +1010,17 @@ private:
     CSSPropertyList m_properties;
 };
 
+enum class PseudoType : uint8_t {
+    None,
+    Before,
+    After,
+    Marker,
+    FirstLetter,
+    FirstLine
+};
+
+class Element;
+
 class CSSRuleData {
 public:
     CSSRuleData(const CSSSelector& selector, const CSSPropertyList& properties, uint32_t specificity, uint32_t position)
@@ -1070,7 +1031,50 @@ public:
     const CSSPropertyList& properties() const { return *m_properties; }
     uint32_t specificity() const { return m_specificity; }
     uint32_t position() const { return m_position; }
-    bool match(const Element* element) const { return CSSSelectorMatch::match(element, *m_selector); }
+    bool match(const Element* element, PseudoType pseudoType) const;
+
+private:
+    static bool matchCompoundSelectorList(const Element* element, PseudoType pseudoType, const CSSCompoundSelectorList& selectors);
+    static bool matchCompoundSelector(const Element* element, PseudoType pseudoType, const CSSCompoundSelector& selector);
+    static bool matchSimpleSelector(const Element* element, PseudoType pseudoType, const CSSSimpleSelector& selector);
+
+    static bool matchTagSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchIdSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchClassSelector(const Element* element, const CSSSimpleSelector& selector);
+
+    static bool matchAttributeHasSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchAttributeEqualsSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchAttributeIncludesSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchAttributeContainsSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchAttributeDashEqualsSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchAttributeStartsWithSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchAttributeEndsWithSelector(const Element* element, const CSSSimpleSelector& selector);
+
+    static bool matchPseudoClassIsSelector(const Element* element, PseudoType seudoType, const CSSSimpleSelector& selector);
+    static bool matchPseudoClassNotSelector(const Element* element, PseudoType pseudoType, const CSSSimpleSelector& selector);
+
+    static bool matchPseudoClassLinkSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchPseudoClassEnabledSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchPseudoClassDisabledSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchPseudoClassCheckedSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchPseudoClassLangSelector(const Element* element, const CSSSimpleSelector& selector);
+
+    static bool matchPseudoClassRootSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchPseudoClassEmptySelector(const Element* element, const CSSSimpleSelector& selector);
+
+    static bool matchPseudoClassFirstChildSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchPseudoClassLastChildSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchPseudoClassOnlyChildSelector(const Element* element, const CSSSimpleSelector& selector);
+
+    static bool matchPseudoClassFirstOfTypeSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchPseudoClassLastOfTypeSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchPseudoClassOnlyOfTypeSelector(const Element* element, const CSSSimpleSelector& selector);
+
+    static bool matchPseudoClassNthChildSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchPseudoClassNthLastChildSelector(const Element* element, const CSSSimpleSelector& selector);
+
+    static bool matchPseudoClassNthOfTypeSelector(const Element* element, const CSSSimpleSelector& selector);
+    static bool matchPseudoClassNthLastOfTypeSelector(const Element* element, const CSSSimpleSelector& selector);
 
 private:
     const CSSSelector* m_selector;

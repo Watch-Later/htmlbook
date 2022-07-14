@@ -21,6 +21,7 @@ private:
     void addStyleSheet(const Element* element, const CSSStyleSheet* styleSheet);
     void addRuleDataList(const Element* element, const CSSRuleDataList* rules);
     void addPropertyList(const CSSPropertyList& properties);
+    std::shared_ptr<BoxStyle> convertPropertyList(const CSSPropertyList& properties, const Element* element, const BoxStyle& parentStyle);
 
     Document* m_document;
     CSSRuleDataList m_rules;

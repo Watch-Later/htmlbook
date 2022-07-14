@@ -452,345 +452,6 @@ CSSPropertyID csspropertyid(const std::string_view& name)
     return CSSPropertyID::Unknown;
 }
 
-bool CSSSelectorMatch::match(const Element* element, const CSSSelector& selector)
-{
-    auto it = selector.rbegin();
-    auto end = selector.rend();
-    if(it == end)
-        return false;
-
-    if(!matchCompoundSelector(element, it->compoundSelector()))
-        return false;
-
-    auto combinator = it->combinator();
-    ++it;
-
-    while(it != end) {
-        switch(combinator) {
-        case CSSComplexSelector::Combinator::Descendant:
-        case CSSComplexSelector::Combinator::Child:
-            element = element->parentElement();
-            break;
-        case CSSComplexSelector::Combinator::DirectAdjacent:
-        case CSSComplexSelector::Combinator::InDirectAdjacent:
-            element = element->previousElement();
-            break;
-        case CSSComplexSelector::Combinator::None:
-            assert(false);
-        }
-
-        if(element == nullptr)
-            return false;
-
-        if(matchCompoundSelector(element, it->compoundSelector())) {
-            combinator = it->combinator();
-            ++it;
-        } else if(combinator != CSSComplexSelector::Combinator::Descendant
-            && combinator != CSSComplexSelector::Combinator::InDirectAdjacent) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-
-bool CSSSelectorMatch::matchCompoundSelector(const Element* element, const CSSCompoundSelector& selector)
-{
-    for(auto& sel : selector) {
-        if(!matchSimpleSelector(element, sel))
-            return false;
-    }
-
-    return true;
-}
-
-bool CSSSelectorMatch::matchCompoundSelectorList(const Element* element, const CSSCompoundSelectorList& selectors)
-{
-    for(auto& selector : selectors) {
-        if(!matchCompoundSelector(element, selector))
-            return false;
-    }
-
-    return true;
-}
-
-bool CSSSelectorMatch::matchSimpleSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    switch(selector.matchType()) {
-    case CSSSimpleSelector::MatchType::Tag:
-        return matchTagSelector(element, selector);
-    case CSSSimpleSelector::MatchType::Id:
-        return matchIdSelector(element, selector);
-    case CSSSimpleSelector::MatchType::Class:
-        return matchClassSelector(element, selector);
-    case CSSSimpleSelector::MatchType::AttributeHas:
-        return matchAttributeHasSelector(element, selector);
-    case CSSSimpleSelector::MatchType::AttributeEquals:
-        return matchAttributeEqualsSelector(element, selector);
-    case CSSSimpleSelector::MatchType::AttributeIncludes:
-        return matchAttributeIncludesSelector(element, selector);
-    case CSSSimpleSelector::MatchType::AttributeContains:
-        return matchAttributeContainsSelector(element, selector);
-    case CSSSimpleSelector::MatchType::AttributeDashEquals:
-        return matchAttributeDashEqualsSelector(element, selector);
-    case CSSSimpleSelector::MatchType::AttributeStartsWith:
-        return matchAttributeStartsWithSelector(element, selector);
-    case CSSSimpleSelector::MatchType::AttributeEndsWith:
-        return matchAttributeEndsWithSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassIs:
-        return matchPseudoClassIsSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassNot:
-        return matchPseudoClassNotSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassLink:
-        return matchPseudoClassLinkSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassEnabled:
-        return matchPseudoClassEnabledSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassDisabled:
-        return matchPseudoClassDisabledSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassChecked:
-        return matchPseudoClassCheckedSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassLang:
-        return matchPseudoClassLangSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassRoot:
-        return matchPseudoClassRootSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassEmpty:
-        return matchPseudoClassEmptySelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassFirstChild:
-        return matchPseudoClassFirstChildSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassLastChild:
-        return matchPseudoClassLastChildSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassOnlyChild:
-        return matchPseudoClassOnlyChildSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassFirstOfType:
-        return matchPseudoClassFirstOfTypeSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassLastOfType:
-        return matchPseudoClassLastOfTypeSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassOnlyOfType:
-        return matchPseudoClassOnlyOfTypeSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassNthChild:
-        return matchPseudoClassNthChildSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassNthLastChild:
-        return matchPseudoClassNthLastChildSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassNthOfType:
-        return matchPseudoClassNthOfTypeSelector(element, selector);
-    case CSSSimpleSelector::MatchType::PseudoClassNthLastOfType:
-        return matchPseudoClassNthLastOfTypeSelector(element, selector);
-    default:
-        return true;
-    }
-}
-
-bool CSSSelectorMatch::matchTagSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return element->tagName() == selector.name();
-}
-
-bool CSSSelectorMatch::matchIdSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return element->id() == selector.name();
-}
-
-bool CSSSelectorMatch::matchClassSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    for(auto& name : element->classNames()) {
-        if(name == selector.name())
-            return true;
-    }
-
-    return false;
-}
-
-bool CSSSelectorMatch::matchAttributeHasSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return element->hasAttribute(selector.name());
-}
-
-bool CSSSelectorMatch::matchAttributeEqualsSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    auto attribute = element->findAttribute(selector.name());
-    if(attribute == nullptr)
-        return false;
-    return equals(attribute->value(), selector.value(), selector.isCaseSensitive());
-}
-
-bool CSSSelectorMatch::matchAttributeIncludesSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    auto attribute = element->findAttribute(selector.name());
-    if(attribute == nullptr)
-        return false;
-    return includes(attribute->value(), selector.value(), selector.isCaseSensitive());
-}
-
-bool CSSSelectorMatch::matchAttributeContainsSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    auto attribute = element->findAttribute(selector.name());
-    if(attribute == nullptr)
-        return false;
-    return contains(attribute->value(), selector.value(), selector.isCaseSensitive());
-}
-
-bool CSSSelectorMatch::matchAttributeDashEqualsSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    auto attribute = element->findAttribute(selector.name());
-    if(attribute == nullptr)
-        return false;
-    return dashequals(attribute->value(), selector.value(), selector.isCaseSensitive());
-}
-
-bool CSSSelectorMatch::matchAttributeStartsWithSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    auto attribute = element->findAttribute(selector.name());
-    if(attribute == nullptr)
-        return false;
-    return startswith(attribute->value(), selector.value(), selector.isCaseSensitive());
-}
-
-bool CSSSelectorMatch::matchAttributeEndsWithSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    auto attribute = element->findAttribute(selector.name());
-    if(attribute == nullptr)
-        return false;
-    return endswith(attribute->value(), selector.value(), selector.isCaseSensitive());
-}
-
-bool CSSSelectorMatch::matchPseudoClassIsSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return matchCompoundSelectorList(element, selector.subSelectors());
-}
-
-bool CSSSelectorMatch::matchPseudoClassNotSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return !matchCompoundSelectorList(element, selector.subSelectors());
-}
-
-bool CSSSelectorMatch::matchPseudoClassLinkSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return element->tagName() == htmlnames::aTag && element->hasAttribute(htmlnames::langAttr);
-}
-
-bool CSSSelectorMatch::matchPseudoClassEnabledSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return element->tagName() == htmlnames::inputTag && element->hasAttribute(htmlnames::enabledAttr);
-}
-
-bool CSSSelectorMatch::matchPseudoClassDisabledSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return element->tagName() == htmlnames::inputTag && element->hasAttribute(htmlnames::disabledAttr);
-}
-
-bool CSSSelectorMatch::matchPseudoClassCheckedSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return element->tagName() == htmlnames::inputTag && element->hasAttribute(htmlnames::checkedAttr);
-}
-
-bool CSSSelectorMatch::matchPseudoClassLangSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return dashequals(element->lang(), selector.name(), false);
-}
-
-bool CSSSelectorMatch::matchPseudoClassRootSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return element->tagName() == htmlnames::htmlTag;
-}
-
-bool CSSSelectorMatch::matchPseudoClassEmptySelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return element->firstChild() == nullptr;
-}
-
-bool CSSSelectorMatch::matchPseudoClassFirstChildSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return element->previousSibling() == nullptr;
-}
-
-bool CSSSelectorMatch::matchPseudoClassLastChildSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return element->nextSibling() == nullptr;
-}
-
-bool CSSSelectorMatch::matchPseudoClassOnlyChildSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return !matchPseudoClassFirstChildSelector(element, selector) && !matchPseudoClassLastChildSelector(element, selector);
-}
-
-bool CSSSelectorMatch::matchPseudoClassFirstOfTypeSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    auto child = element->previousElement();
-    while(child) {
-        if(child->tagName() == element->tagName())
-            return false;
-        child = element->previousElement();
-    }
-
-    return true;
-}
-
-bool CSSSelectorMatch::matchPseudoClassLastOfTypeSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    auto child = element->nextElement();
-    while(child) {
-        if(child->tagName() == element->tagName())
-            return false;
-        child = element->nextElement();
-    }
-
-    return true;
-}
-
-bool CSSSelectorMatch::matchPseudoClassOnlyOfTypeSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    return !matchPseudoClassFirstOfTypeSelector(element, selector) && !matchPseudoClassLastOfTypeSelector(element, selector);
-}
-
-bool CSSSelectorMatch::matchPseudoClassNthChildSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    int count = 1;
-    auto child = element->previousElement();
-    while(child) {
-        count += 1;
-        child = element->previousElement();
-    }
-
-    return selector.matchnth(count);
-}
-
-bool CSSSelectorMatch::matchPseudoClassNthLastChildSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    int count = 1;
-    auto child = element->nextElement();
-    while(child) {
-        count += 1;
-        child = element->nextElement();
-    }
-
-    return selector.matchnth(count);
-}
-
-bool CSSSelectorMatch::matchPseudoClassNthOfTypeSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    int count = 1;
-    auto child = element->previousElement();
-    while(child && child->tagName() == element->tagName()) {
-        count += 1;
-        child = element->previousElement();
-    }
-
-    return selector.matchnth(count);
-}
-
-bool CSSSelectorMatch::matchPseudoClassNthLastOfTypeSelector(const Element* element, const CSSSimpleSelector& selector)
-{
-    int count = 1;
-    auto child = element->nextElement();
-    while(child && child->tagName() == element->tagName()) {
-        count += 1;
-        child = element->nextElement();
-    }
-
-    return selector.matchnth(count);
-}
-
 bool CSSSimpleSelector::matchnth(int count) const
 {
     auto a = std::get<0>(m_matchPattern);
@@ -831,6 +492,354 @@ std::unique_ptr<CSSPageMarginRule> CSSPageMarginRule::create(MarginType marginTy
 std::unique_ptr<CSSPageRule> CSSPageRule::create(CSSPageSelectorList&& selectors, CSSPageMarginRuleList&& margins, CSSPropertyList&& properties)
 {
     return std::unique_ptr<CSSPageRule>(new CSSPageRule(std::move(selectors), std::move(margins), std::move(properties)));
+}
+
+bool CSSRuleData::match(const Element* element, PseudoType pseudoType) const
+{
+    auto it = m_selector->rbegin();
+    auto end = m_selector->rend();
+    if(it == end)
+        return false;
+
+    if(!matchCompoundSelector(element, pseudoType, it->compoundSelector()))
+        return false;
+
+    auto combinator = it->combinator();
+    ++it;
+
+    while(it != end) {
+        switch(combinator) {
+        case CSSComplexSelector::Combinator::Descendant:
+        case CSSComplexSelector::Combinator::Child:
+            element = element->parentElement();
+            break;
+        case CSSComplexSelector::Combinator::DirectAdjacent:
+        case CSSComplexSelector::Combinator::InDirectAdjacent:
+            element = element->previousElement();
+            break;
+        case CSSComplexSelector::Combinator::None:
+            assert(false);
+        }
+
+        if(element == nullptr)
+            return false;
+
+        if(matchCompoundSelector(element, pseudoType, it->compoundSelector())) {
+            combinator = it->combinator();
+            ++it;
+        } else if(combinator != CSSComplexSelector::Combinator::Descendant
+            && combinator != CSSComplexSelector::Combinator::InDirectAdjacent) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool CSSRuleData::matchCompoundSelector(const Element* element, PseudoType pseudoType, const CSSCompoundSelector& selector)
+{
+    for(auto& sel : selector) {
+        if(!matchSimpleSelector(element, pseudoType, sel))
+            return false;
+    }
+
+    return true;
+}
+
+bool CSSRuleData::matchCompoundSelectorList(const Element* element, PseudoType pseudoType, const CSSCompoundSelectorList& selectors)
+{
+    for(auto& selector : selectors) {
+        if(!matchCompoundSelector(element, pseudoType, selector))
+            return false;
+    }
+
+    return true;
+}
+
+bool CSSRuleData::matchSimpleSelector(const Element* element, PseudoType pseudoType, const CSSSimpleSelector& selector)
+{
+    switch(selector.matchType()) {
+    case CSSSimpleSelector::MatchType::Tag:
+        return matchTagSelector(element, selector);
+    case CSSSimpleSelector::MatchType::Id:
+        return matchIdSelector(element, selector);
+    case CSSSimpleSelector::MatchType::Class:
+        return matchClassSelector(element, selector);
+    case CSSSimpleSelector::MatchType::AttributeHas:
+        return matchAttributeHasSelector(element, selector);
+    case CSSSimpleSelector::MatchType::AttributeEquals:
+        return matchAttributeEqualsSelector(element, selector);
+    case CSSSimpleSelector::MatchType::AttributeIncludes:
+        return matchAttributeIncludesSelector(element, selector);
+    case CSSSimpleSelector::MatchType::AttributeContains:
+        return matchAttributeContainsSelector(element, selector);
+    case CSSSimpleSelector::MatchType::AttributeDashEquals:
+        return matchAttributeDashEqualsSelector(element, selector);
+    case CSSSimpleSelector::MatchType::AttributeStartsWith:
+        return matchAttributeStartsWithSelector(element, selector);
+    case CSSSimpleSelector::MatchType::AttributeEndsWith:
+        return matchAttributeEndsWithSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassIs:
+        return matchPseudoClassIsSelector(element, pseudoType, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassNot:
+        return matchPseudoClassNotSelector(element, pseudoType, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassLink:
+        return matchPseudoClassLinkSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassEnabled:
+        return matchPseudoClassEnabledSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassDisabled:
+        return matchPseudoClassDisabledSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassChecked:
+        return matchPseudoClassCheckedSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassLang:
+        return matchPseudoClassLangSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassRoot:
+        return matchPseudoClassRootSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassEmpty:
+        return matchPseudoClassEmptySelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassFirstChild:
+        return matchPseudoClassFirstChildSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassLastChild:
+        return matchPseudoClassLastChildSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassOnlyChild:
+        return matchPseudoClassOnlyChildSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassFirstOfType:
+        return matchPseudoClassFirstOfTypeSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassLastOfType:
+        return matchPseudoClassLastOfTypeSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassOnlyOfType:
+        return matchPseudoClassOnlyOfTypeSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassNthChild:
+        return matchPseudoClassNthChildSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassNthLastChild:
+        return matchPseudoClassNthLastChildSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassNthOfType:
+        return matchPseudoClassNthOfTypeSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoClassNthLastOfType:
+        return matchPseudoClassNthLastOfTypeSelector(element, selector);
+    case CSSSimpleSelector::MatchType::PseudoElementBefore:
+        return pseudoType == PseudoType::Before;
+    case CSSSimpleSelector::MatchType::PseudoElementAfter:
+        return pseudoType == PseudoType::After;
+    case CSSSimpleSelector::MatchType::PseudoElementMarker:
+        return pseudoType == PseudoType::Marker;
+    case CSSSimpleSelector::MatchType::PseudoElementFirstLetter:
+        return pseudoType == PseudoType::FirstLetter;
+    case CSSSimpleSelector::MatchType::PseudoElementFirstLine:
+        return pseudoType == PseudoType::FirstLine;
+    default:
+        return false;
+    }
+}
+
+bool CSSRuleData::matchTagSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return element->tagName() == selector.name();
+}
+
+bool CSSRuleData::matchIdSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return element->id() == selector.name();
+}
+
+bool CSSRuleData::matchClassSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    for(auto& name : element->classNames()) {
+        if(name == selector.name())
+            return true;
+    }
+
+    return false;
+}
+
+bool CSSRuleData::matchAttributeHasSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return element->hasAttribute(selector.name());
+}
+
+bool CSSRuleData::matchAttributeEqualsSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    auto attribute = element->findAttribute(selector.name());
+    if(attribute == nullptr)
+        return false;
+    return equals(attribute->value(), selector.value(), selector.isCaseSensitive());
+}
+
+bool CSSRuleData::matchAttributeIncludesSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    auto attribute = element->findAttribute(selector.name());
+    if(attribute == nullptr)
+        return false;
+    return includes(attribute->value(), selector.value(), selector.isCaseSensitive());
+}
+
+bool CSSRuleData::matchAttributeContainsSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    auto attribute = element->findAttribute(selector.name());
+    if(attribute == nullptr)
+        return false;
+    return contains(attribute->value(), selector.value(), selector.isCaseSensitive());
+}
+
+bool CSSRuleData::matchAttributeDashEqualsSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    auto attribute = element->findAttribute(selector.name());
+    if(attribute == nullptr)
+        return false;
+    return dashequals(attribute->value(), selector.value(), selector.isCaseSensitive());
+}
+
+bool CSSRuleData::matchAttributeStartsWithSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    auto attribute = element->findAttribute(selector.name());
+    if(attribute == nullptr)
+        return false;
+    return startswith(attribute->value(), selector.value(), selector.isCaseSensitive());
+}
+
+bool CSSRuleData::matchAttributeEndsWithSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    auto attribute = element->findAttribute(selector.name());
+    if(attribute == nullptr)
+        return false;
+    return endswith(attribute->value(), selector.value(), selector.isCaseSensitive());
+}
+
+bool CSSRuleData::matchPseudoClassIsSelector(const Element* element, PseudoType pseudoType, const CSSSimpleSelector& selector)
+{
+    return matchCompoundSelectorList(element, pseudoType, selector.subSelectors());
+}
+
+bool CSSRuleData::matchPseudoClassNotSelector(const Element* element, PseudoType pseudoType, const CSSSimpleSelector& selector)
+{
+    return !matchCompoundSelectorList(element, pseudoType, selector.subSelectors());
+}
+
+bool CSSRuleData::matchPseudoClassLinkSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return element->tagName() == htmlnames::aTag && element->hasAttribute(htmlnames::langAttr);
+}
+
+bool CSSRuleData::matchPseudoClassEnabledSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return element->tagName() == htmlnames::inputTag && element->hasAttribute(htmlnames::enabledAttr);
+}
+
+bool CSSRuleData::matchPseudoClassDisabledSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return element->tagName() == htmlnames::inputTag && element->hasAttribute(htmlnames::disabledAttr);
+}
+
+bool CSSRuleData::matchPseudoClassCheckedSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return element->tagName() == htmlnames::inputTag && element->hasAttribute(htmlnames::checkedAttr);
+}
+
+bool CSSRuleData::matchPseudoClassLangSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return dashequals(element->lang(), selector.name(), false);
+}
+
+bool CSSRuleData::matchPseudoClassRootSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return element->tagName() == htmlnames::htmlTag;
+}
+
+bool CSSRuleData::matchPseudoClassEmptySelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return element->firstChild() == nullptr;
+}
+
+bool CSSRuleData::matchPseudoClassFirstChildSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return element->previousSibling() == nullptr;
+}
+
+bool CSSRuleData::matchPseudoClassLastChildSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return element->nextSibling() == nullptr;
+}
+
+bool CSSRuleData::matchPseudoClassOnlyChildSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return !matchPseudoClassFirstChildSelector(element, selector) && !matchPseudoClassLastChildSelector(element, selector);
+}
+
+bool CSSRuleData::matchPseudoClassFirstOfTypeSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    auto child = element->previousElement();
+    while(child) {
+        if(child->tagName() == element->tagName())
+            return false;
+        child = element->previousElement();
+    }
+
+    return true;
+}
+
+bool CSSRuleData::matchPseudoClassLastOfTypeSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    auto child = element->nextElement();
+    while(child) {
+        if(child->tagName() == element->tagName())
+            return false;
+        child = element->nextElement();
+    }
+
+    return true;
+}
+
+bool CSSRuleData::matchPseudoClassOnlyOfTypeSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    return !matchPseudoClassFirstOfTypeSelector(element, selector) && !matchPseudoClassLastOfTypeSelector(element, selector);
+}
+
+bool CSSRuleData::matchPseudoClassNthChildSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    int count = 1;
+    auto child = element->previousElement();
+    while(child) {
+        count += 1;
+        child = element->previousElement();
+    }
+
+    return selector.matchnth(count);
+}
+
+bool CSSRuleData::matchPseudoClassNthLastChildSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    int count = 1;
+    auto child = element->nextElement();
+    while(child) {
+        count += 1;
+        child = element->nextElement();
+    }
+
+    return selector.matchnth(count);
+}
+
+bool CSSRuleData::matchPseudoClassNthOfTypeSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    int count = 1;
+    auto child = element->previousElement();
+    while(child && child->tagName() == element->tagName()) {
+        count += 1;
+        child = element->previousElement();
+    }
+
+    return selector.matchnth(count);
+}
+
+bool CSSRuleData::matchPseudoClassNthLastOfTypeSelector(const Element* element, const CSSSimpleSelector& selector)
+{
+    int count = 1;
+    auto child = element->nextElement();
+    while(child && child->tagName() == element->tagName()) {
+        count += 1;
+        child = element->nextElement();
+    }
+
+    return selector.matchnth(count);
 }
 
 void CSSRuleDataListMap::add(const CSSRuleData& data, const GlobalString& name)

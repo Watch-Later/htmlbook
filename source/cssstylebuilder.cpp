@@ -20,8 +20,7 @@ std::shared_ptr<BoxStyle> CSSStyleBuilder::styleForElement(const Element* elemen
     addStyleSheet(element, m_document->userStyleSheet());
     addPropertyList(element->inlineStyle());
     addPropertyList(element->presentationAttributeStyle());
-
-    return nullptr;
+    return convertPropertyList(m_properties, element, parentStyle);
 }
 
 void CSSStyleBuilder::addStyleSheet(const Element* element, const CSSStyleSheet* styleSheet)
@@ -48,7 +47,7 @@ void CSSStyleBuilder::addRuleDataList(const Element* element, const CSSRuleDataL
     if(rules == nullptr)
         return;
     for(auto& rule : *rules) {
-        if(!rule.match(element))
+        if(!rule.match(element, PseudoType::None))
             continue;
         m_rules.push_back(rule);
     }
@@ -67,6 +66,23 @@ void CSSStyleBuilder::addPropertyList(const CSSPropertyList& properties)
             continue;
         *it = property;
     }
+}
+
+std::shared_ptr<BoxStyle> CSSStyleBuilder::convertPropertyList(const CSSPropertyList& properties, const Element* element, const BoxStyle& parentStyle)
+{
+    auto newStyle = BoxStyle::create(element);
+    newStyle->inheritFrom(parentStyle);
+    for(auto& property : properties) {
+        auto id = property.id();
+        auto value = property.value();
+        if(value->isInitialValue())
+            continue;
+        if(value->isInheritValue() && !(value = parentStyle.get(id)))
+            continue;
+        newStyle->set(id, std::move(value));
+    }
+
+    return newStyle;
 }
 
 } // namespace htmlbook
