@@ -1280,7 +1280,7 @@ std::shared_ptr<CSSValue> BoxStyle::get(CSSPropertyID id) const
 void BoxStyle::set(CSSPropertyID id, std::shared_ptr<CSSValue> value)
 {
     assert(!value->isInitialValue() && !value->isInheritValue());
-    m_properties[id] = std::move(value);
+    m_properties.insert_or_assign(id, std::move(value));
 }
 
 float BoxStyle::emFontSize() const
