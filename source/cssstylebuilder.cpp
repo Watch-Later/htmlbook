@@ -75,9 +75,7 @@ std::shared_ptr<BoxStyle> CSSStyleBuilder::convertPropertyList(const CSSProperty
     for(auto& property : properties) {
         auto id = property.id();
         auto value = property.value();
-        if(value->isInitialValue())
-            continue;
-        if(value->isInheritValue() && !(value = parentStyle.get(id)))
+        if(value->isInitialValue() || (value->isInheritValue() && !(value = parentStyle.get(id))))
             continue;
         newStyle->set(id, std::move(value));
     }

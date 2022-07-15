@@ -986,6 +986,37 @@ void CSSStyleSheet::addImportRule(const CSSImportRule* rule)
 
 void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
 {
+    std::shared_ptr<CSSValue> family;
+    std::shared_ptr<CSSValue> style;
+    std::shared_ptr<CSSValue> variant;
+    std::shared_ptr<CSSValue> weight;
+    std::shared_ptr<CSSValue> src;
+    for(auto& property : rule->properties()) {
+        switch(property.id()) {
+        case CSSPropertyID::FontFamily:
+            family = property.value();
+            break;
+        case CSSPropertyID::FontStyle:
+            style = property.value();
+            break;
+        case CSSPropertyID::FontVariant:
+            variant = property.value();
+            break;
+        case CSSPropertyID::FontWeight:
+            weight = property.value();
+            break;
+        case CSSPropertyID::Src:
+            src = property.value();
+            break;
+        default:
+            break;
+        }
+    }
+
+    if(family == nullptr || !family->isListValue())
+        return;
+    if(src == nullptr || !src->isListValue())
+        return;
 }
 
 } // namespace htmlbook

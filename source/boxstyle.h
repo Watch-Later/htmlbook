@@ -114,6 +114,17 @@ enum class BackgroundAttachment : uint8_t {
     Fixed
 };
 
+enum class FontStyle : uint8_t {
+    Normal,
+    Italic,
+    Oblique
+};
+
+enum class FontVariant : uint8_t {
+    Normal,
+    SmallCaps
+};
+
 enum class TextAlign : uint8_t {
     Left,
     Center,
