@@ -1,6 +1,7 @@
 #include "cssstylesheet.h"
 #include "cssparser.h"
 #include "document.h"
+#include "resource.h"
 
 #include <algorithm>
 
@@ -977,6 +978,10 @@ void CSSStyleSheet::addPageRule(const CSSPageRule* rule)
 
 void CSSStyleSheet::addImportRule(const CSSImportRule* rule)
 {
+    auto textResource = m_document->fetchTextResource(rule->href());
+    if(textResource == nullptr)
+        return;
+    CSSParser::parseSheet(this, textResource->text());
 }
 
 void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
