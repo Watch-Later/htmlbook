@@ -184,6 +184,7 @@ class Resource;
 class TextResource;
 class ImageResource;
 class FontResource;
+class FontData;
 
 class Document : public ContainerNode {
 public:
@@ -201,6 +202,8 @@ public:
     void load(const std::string_view& content);
 
     void updateIdCache(const GlobalString& oldValue, const GlobalString& newValue, Element* element);
+    void addFontData(const std::string_view& family, bool italic, bool smallCaps, int weight, std::shared_ptr<FontData> data);
+    std::shared_ptr<FontData> getFontData(const std::string_view& family, bool italic, bool smallCaps, int weight);
 
     void addAuthorStyleSheet(const std::string_view& content);
     void setUserStyleSheet(const std::string_view& content);

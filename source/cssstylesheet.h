@@ -30,41 +30,41 @@ class CSSFunctionValue;
 class CSSValue {
 public:
     virtual ~CSSValue() = default;
-    virtual const CSSInitialValue* toInitialValue() const { return nullptr; }
-    virtual const CSSInheritValue* toInheritValue() const { return nullptr; }
-    virtual const CSSIdentValue* toIdentValue() const { return nullptr; }
-    virtual const CSSCustomIdentValue* toCustomIdentValue() const { return nullptr; }
-    virtual const CSSIntegerValue* toIntegerValue() const { return nullptr; }
-    virtual const CSSNumberValue* toNumberValue() const { return nullptr; }
-    virtual const CSSPercentValue* toPercentValue() const { return nullptr; }
-    virtual const CSSAngleValue* toAngleValue() const { return nullptr; }
-    virtual const CSSLengthValue* toLengthValue() const { return nullptr; }
-    virtual const CSSStringValue* toStringValue() const { return nullptr; }
-    virtual const CSSUrlValue* toUrlValue() const { return nullptr; }
-    virtual const CSSColorValue* toColorValue() const { return nullptr; }
-    virtual const CSSCounterValue* toCounterValue() const { return nullptr; }
-    virtual const CSSPairValue* toPairValue() const { return nullptr; }
-    virtual const CSSRectValue* toRectValue() const { return nullptr; }
-    virtual const CSSListValue* toListValue() const { return nullptr; }
-    virtual const CSSFunctionValue* toFunctionValue() const { return nullptr; }
+    virtual bool isInitialValue() const { return false; }
+    virtual bool isInheritValue() const { return false; }
+    virtual bool isIdentValue() const { return false; }
+    virtual bool isCustomIdentValue() const { return false; }
+    virtual bool isIntegerValue() const { return false; }
+    virtual bool isNumberValue() const { return false; }
+    virtual bool isPercentValue() const { return false; }
+    virtual bool isAngleValue() const { return false; }
+    virtual bool isLengthValue() const { return false; }
+    virtual bool isStringValue() const { return false; }
+    virtual bool isUrlValue() const { return false; }
+    virtual bool isColorValue() const { return false; }
+    virtual bool isCounterValue() const { return false; }
+    virtual bool isPairValue() const { return false; }
+    virtual bool isRectValue() const { return false; }
+    virtual bool isListValue() const { return false; }
+    virtual bool isFunctionValue() const { return false; }
 
-    bool isInitialValue() const { return toInitialValue(); }
-    bool isInheritValue() const { return toInheritValue(); }
-    bool isIdentValue() const { return toIdentValue(); }
-    bool isCustomIdentValue() const { return toCustomIdentValue(); }
-    bool isIntegerValue() const { return toIntegerValue(); }
-    bool isNumberValue() const { return toNumberValue(); }
-    bool isPercentValue() const { return toPercentValue(); }
-    bool isAngleValue() const { return toAngleValue(); }
-    bool isLengthValue() const { return toLengthValue(); }
-    bool isStringValue() const { return toStringValue(); }
-    bool isUrlValue() const { return toUrlValue(); }
-    bool isColorValue() const { return toColorValue(); }
-    bool isCounterValue() const { return toCounterValue(); }
-    bool isPairValue() const { return toPairValue(); }
-    bool isRectValue() const { return toRectValue(); }
-    bool isListValue() const { return toListValue(); }
-    bool isFunctionValue() const { return toFunctionValue(); }
+    const CSSInitialValue* toInitialValue() const;
+    const CSSInheritValue* toInheritValue() const;
+    const CSSIdentValue* toIdentValue() const;
+    const CSSCustomIdentValue* toCustomIdentValue() const;
+    const CSSIntegerValue* toIntegerValue() const;
+    const CSSNumberValue* toNumberValue() const;
+    const CSSPercentValue* toPercentValue() const;
+    const CSSAngleValue* toAngleValue() const;
+    const CSSLengthValue* toLengthValue() const;
+    const CSSStringValue* toStringValue() const;
+    const CSSUrlValue* toUrlValue() const;
+    const CSSColorValue* toColorValue() const;
+    const CSSCounterValue* toCounterValue() const;
+    const CSSPairValue* toPairValue() const;
+    const CSSRectValue* toRectValue() const;
+    const CSSListValue* toListValue() const;
+    const CSSFunctionValue* toFunctionValue() const;
 
 protected:
     CSSValue() = default;
@@ -76,21 +76,33 @@ class CSSInitialValue final : public CSSValue {
 public:
     static std::shared_ptr<CSSInitialValue> create();
 
-    const CSSInitialValue* toInitialValue() const final { return this; }
+    bool isInitialValue() const final { return true; }
 
 private:
     CSSInitialValue() = default;
 };
 
+inline const CSSInitialValue* CSSValue::toInitialValue() const {
+    if(isInitialValue())
+        return nullptr;
+    return (CSSInitialValue*)(this);
+}
+
 class CSSInheritValue final : public CSSValue {
 public:
     static std::shared_ptr<CSSInheritValue> create();
 
-    const CSSInheritValue* toInheritValue() const final { return this; }
+    bool isInheritValue() const final { return true; }
 
 private:
     CSSInheritValue() = default;
 };
+
+inline const CSSInheritValue* CSSValue::toInheritValue() const {
+    if(isInheritValue())
+        return nullptr;
+    return (CSSInheritValue*)(this);
+}
 
 enum class CSSValueID {
     Format,
@@ -303,60 +315,90 @@ public:
     static std::shared_ptr<CSSIdentValue> create(CSSValueID value);
 
     CSSValueID value() const { return m_value; }
-    const CSSIdentValue* toIdentValue() const final { return this; }
+    bool isIdentValue() const final { return true; }
 
 private:
     CSSIdentValue(CSSValueID value) : m_value(value) {}
     CSSValueID m_value;
 };
 
+inline const CSSIdentValue* CSSValue::toIdentValue() const {
+    if(isIdentValue())
+        return nullptr;
+    return (CSSIdentValue*)(this);
+}
+
 class CSSCustomIdentValue final : public CSSValue {
 public:
     static std::shared_ptr<CSSCustomIdentValue> create(const GlobalString& value);
 
     const GlobalString& value() const { return m_value; }
-    const CSSCustomIdentValue* toCustomIdentValue() const final { return this; }
+    bool isCustomIdentValue() const final { return true; }
 
 private:
     CSSCustomIdentValue(const GlobalString& value) : m_value(value) {}
     GlobalString m_value;
 };
 
+inline const CSSCustomIdentValue* CSSValue::toCustomIdentValue() const {
+    if(isCustomIdentValue())
+        return nullptr;
+    return (CSSCustomIdentValue*)(this);
+}
+
 class CSSIntegerValue final : public CSSValue {
 public:
     static std::shared_ptr<CSSIntegerValue> create(int value);
 
     int value() const { return m_value; }
-    const CSSIntegerValue* toIntegerValue() const final { return this; }
+    bool isIntegerValue() const final { return true; }
 
 private:
     CSSIntegerValue(int value) : m_value(value) {}
     int m_value;
 };
 
+inline const CSSIntegerValue* CSSValue::toIntegerValue() const {
+    if(!isIntegerValue())
+        return nullptr;
+    return (CSSIntegerValue*)(this);
+}
+
 class CSSNumberValue final : public CSSValue {
 public:
     static std::shared_ptr<CSSNumberValue> create(double value);
 
     double value() const { return m_value; }
-    const CSSNumberValue* toNumberValue() const final { return this; }
+    bool isNumberValue() const final { return true; }
 
 private:
     CSSNumberValue(double value) : m_value(value) {}
     double m_value;
 };
 
+inline const CSSNumberValue* CSSValue::toNumberValue() const {
+    if(!isNumberValue())
+        return nullptr;
+    return (CSSNumberValue*)(this);
+}
+
 class CSSPercentValue final : public CSSValue {
 public:
     static std::shared_ptr<CSSPercentValue> create(double value);
 
     double value() const { return m_value; }
-    const CSSPercentValue* toPercentValue() const final { return nullptr; }
+    bool isPercentValue() const final { return true; }
 
 private:
     CSSPercentValue(double value) : m_value(value) {}
     double m_value;
 };
+
+inline const CSSPercentValue* CSSValue::toPercentValue() const {
+    if(!isPercentValue())
+        return nullptr;
+    return (CSSPercentValue*)(this);
+}
 
 class CSSAngleValue final : public CSSValue {
 public:
@@ -371,7 +413,7 @@ public:
 
     double value() const { return m_value; }
     Unit unit() const { return m_unit; }
-    const CSSAngleValue* toAngleValue() const final { return this; }
+    bool isAngleValue() const final { return true; }
 
 private:
     CSSAngleValue(double value, Unit unit)
@@ -381,6 +423,12 @@ private:
     double m_value;
     Unit m_unit;
 };
+
+inline const CSSAngleValue* CSSValue::toAngleValue() const {
+    if(!isAngleValue())
+        return nullptr;
+    return (CSSAngleValue*)(this);
+}
 
 class CSSLengthValue final : public CSSValue {
 public:
@@ -406,7 +454,7 @@ public:
 
     double value() const { return m_value; }
     Unit unit() const { return m_unit; }
-    const CSSLengthValue* toLengthValue() const final { return this; }
+    bool isLengthValue() const final { return true; }
 
 private:
     CSSLengthValue(double value, Unit unit)
@@ -417,29 +465,47 @@ private:
     Unit m_unit;
 };
 
+inline const CSSLengthValue* CSSValue::toLengthValue() const {
+    if(!isLengthValue())
+        return nullptr;
+    return (CSSLengthValue*)(this);
+}
+
 class CSSStringValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSStringValue> create(std::string&& value);
+    static std::shared_ptr<CSSStringValue> create(std::string value);
 
     const std::string& value() const { return m_value; }
-    const CSSStringValue* toStringValue() const final { return this; }
+    bool isStringValue() const final { return true; }
 
 private:
-    CSSStringValue(std::string&& value) : m_value(std::move(value)) {}
+    CSSStringValue(std::string value) : m_value(std::move(value)) {}
     std::string m_value;
 };
+
+inline const CSSStringValue* CSSValue::toStringValue() const {
+    if(!isStringValue())
+        return nullptr;
+    return (CSSStringValue*)(this);
+}
 
 class CSSUrlValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSUrlValue> create(std::string&& value);
+    static std::shared_ptr<CSSUrlValue> create(std::string value);
 
     const std::string& value() const { return m_value; }
-    const CSSUrlValue* toUrlValue() const final { return this; }
+    bool isUrlValue() const final { return true; }
 
 private:
-    CSSUrlValue(std::string&& value) : m_value(std::move(value)) {}
+    CSSUrlValue(std::string value) : m_value(std::move(value)) {}
     std::string m_value;
 };
+
+inline const CSSUrlValue* CSSValue::toUrlValue() const {
+    if(!isUrlValue())
+        return nullptr;
+    return (CSSUrlValue*)(this);
+}
 
 class CSSColorValue final : public CSSValue {
 public:
@@ -447,24 +513,30 @@ public:
     static std::shared_ptr<CSSColorValue> create(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
     uint32_t value() const { return m_value; }
-    const CSSColorValue* toColorValue() const final { return this; }
+    bool isColorValue() const final { return true; }
 
 private:
     CSSColorValue(uint32_t value) : m_value(value) {}
     uint32_t m_value;
 };
 
+inline const CSSColorValue* CSSValue::toColorValue() const {
+    if(!isColorValue())
+        return nullptr;
+    return (CSSColorValue*)(this);
+}
+
 class CSSCounterValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSCounterValue> create(CSSValueID listStyle, const GlobalString& identifier, std::string&& seperator);
+    static std::shared_ptr<CSSCounterValue> create(CSSValueID listStyle, const GlobalString& identifier, std::string seperator);
 
     CSSValueID listStyle() const { return m_listStyle; }
     const GlobalString& identifier() const { return m_identifier; }
     const std::string& seperator() const { return m_seperator; }
-    const CSSCounterValue* toCounterValue() const final { return this; }
+    bool isCounterValue() const final { return true; }
 
 private:
-    CSSCounterValue( CSSValueID listStyle, const GlobalString& identifier, std::string&& seperator)
+    CSSCounterValue( CSSValueID listStyle, const GlobalString& identifier, std::string seperator)
         : m_listStyle(listStyle), m_identifier(identifier), m_seperator(std::move(seperator))
     {}
 
@@ -473,13 +545,19 @@ private:
     std::string m_seperator;
 };
 
+inline const CSSCounterValue* CSSValue::toCounterValue() const {
+    if(!isCounterValue())
+        return nullptr;
+    return (CSSCounterValue*)(this);
+}
+
 class CSSPairValue final : public CSSValue {
 public:
     static std::shared_ptr<CSSPairValue> create(std::shared_ptr<CSSValue> first, std::shared_ptr<CSSValue> second);
 
     std::shared_ptr<CSSValue> first() const { return m_first; }
     std::shared_ptr<CSSValue> second() const { return m_second; }
-    const CSSPairValue* toPairValue() const final { return this; }
+    bool isPairValue() const final { return true; }
 
 private:
     CSSPairValue(std::shared_ptr<CSSValue> first, std::shared_ptr<CSSValue> second)
@@ -490,6 +568,12 @@ private:
     std::shared_ptr<CSSValue> m_second;
 };
 
+inline const CSSPairValue* CSSValue::toPairValue() const {
+    if(!isPairValue())
+        return nullptr;
+    return (CSSPairValue*)(this);
+}
+
 class CSSRectValue final : public CSSValue {
 public:
     static std::shared_ptr<CSSRectValue> create(std::shared_ptr<CSSValue> top, std::shared_ptr<CSSValue> right, std::shared_ptr<CSSValue> bottom, std::shared_ptr<CSSValue> left);
@@ -498,7 +582,7 @@ public:
     std::shared_ptr<CSSValue> right() const { return m_right; }
     std::shared_ptr<CSSValue> bottom() const { return m_bottom; }
     std::shared_ptr<CSSValue> left() const { return m_left; }
-    const CSSRectValue* toRectValue() const final { return this; }
+    bool isRectValue() const final { return true; }
 
 private:
     CSSRectValue(std::shared_ptr<CSSValue> top, std::shared_ptr<CSSValue> right, std::shared_ptr<CSSValue> bottom, std::shared_ptr<CSSValue> left)
@@ -511,36 +595,55 @@ private:
     std::shared_ptr<CSSValue> m_left;
 };
 
+inline const CSSRectValue* CSSValue::toRectValue() const {
+    if(!isRectValue())
+        return nullptr;
+    return (CSSRectValue*)(this);
+}
+
 class CSSListValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSListValue> create(CSSValueList&& values);
+    static std::shared_ptr<CSSListValue> create(CSSValueList values);
 
     size_t length() const { return m_values.size(); }
     const std::shared_ptr<CSSValue>& at(size_t index) const { return m_values.at(index); }
     const CSSValueList& values() const { return m_values; }
-    const CSSListValue* toListValue() const final { return this; }
+    bool isListValue() const final { return true; }
 
 private:
-    CSSListValue(CSSValueList&& values) : m_values(std::move(values)) {}
+    CSSListValue(CSSValueList values) : m_values(std::move(values)) {}
     CSSValueList m_values;
 };
 
+inline const CSSListValue* CSSValue::toListValue() const {
+    if(!isListValue())
+        return nullptr;
+    return (CSSListValue*)(this);
+}
+
 class CSSFunctionValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSFunctionValue> create(CSSValueID id, CSSValueList&& values);
+    static std::shared_ptr<CSSFunctionValue> create(CSSValueID id, CSSValueList values);
+    static std::shared_ptr<CSSFunctionValue> create(CSSValueID id, std::shared_ptr<CSSValue> value);
 
     CSSValueID id() const { return m_id; }
     const CSSValueList& values() const { return m_values; }
-    const CSSFunctionValue* toFunctionValue() const final { return this; }
+    bool isFunctionValue() const final { return true; }
 
 private:
-    CSSFunctionValue(CSSValueID id, CSSValueList&& values)
+    CSSFunctionValue(CSSValueID id, CSSValueList values)
         : m_id(id), m_values(std::move(values))
     {}
 
     CSSValueID m_id;
     CSSValueList m_values;
 };
+
+inline const CSSFunctionValue* CSSValue::toFunctionValue() const {
+    if(!isFunctionValue())
+        return nullptr;
+    return (CSSFunctionValue*)(this);
+}
 
 enum class CSSPropertyID {
     BorderSpacing,
@@ -833,11 +936,11 @@ public:
     CSSSimpleSelector(MatchType matchType, const GlobalString& name) : m_matchType(matchType), m_name(name) {}
     CSSSimpleSelector(MatchType matchType, const MatchPattern& matchPattern) : m_matchType(matchType), m_matchPattern(matchPattern) {}
 
-    CSSSimpleSelector(MatchType matchType, std::unique_ptr<CSSCompoundSelectorList>&& subSelectors)
+    CSSSimpleSelector(MatchType matchType, std::unique_ptr<CSSCompoundSelectorList> subSelectors)
         : m_matchType(matchType), m_subSelectors(std::move(subSelectors))
     {}
 
-    CSSSimpleSelector(MatchType matchType, AttributeCaseType attributeCaseType, const GlobalString& name, std::unique_ptr<std::string>&& value)
+    CSSSimpleSelector(MatchType matchType, AttributeCaseType attributeCaseType, const GlobalString& name, std::unique_ptr<std::string> value)
         : m_matchType(matchType), m_attributeCaseType(attributeCaseType), m_name(name), m_value(std::move(value))
     {}
 
@@ -870,7 +973,7 @@ public:
         InDirectAdjacent
     };
 
-    CSSComplexSelector(Combinator combinator, CSSCompoundSelector&& compoundSelector)
+    CSSComplexSelector(Combinator combinator, CSSCompoundSelector compoundSelector)
         : m_combinator(combinator), m_compoundSelector(std::move(compoundSelector))
     {}
 
@@ -891,17 +994,17 @@ class CSSPageRule;
 class CSSRule {
 public:
     virtual ~CSSRule() = default;
-    virtual const CSSStyleRule* toStyleRule() const { return nullptr; }
-    virtual const CSSImportRule* toImportRule() const { return nullptr; }
-    virtual const CSSFontFaceRule* toFontFaceRule() const { return nullptr; }
-    virtual const CSSPageMarginRule* toPageMarginRule() const { return nullptr; }
-    virtual const CSSPageRule* toPageRule() const { return nullptr; }
+    virtual bool isStyleRule() const { return false; }
+    virtual bool isImportRule() const { return false; }
+    virtual bool isFontFaceRule() const { return false; }
+    virtual bool isPageMarginRule() const { return false; }
+    virtual bool isPageRule() const { return false; }
 
-    bool isStyleRule() const { return toStyleRule(); }
-    bool isImportRule() const { return toImportRule(); }
-    bool isFontFaceRule() const { return toFontFaceRule(); }
-    bool isPageMarginRule() const { return toPageMarginRule(); }
-    bool isPageRule() const { return toPageRule(); }
+    const CSSStyleRule* toStyleRule() const;
+    const CSSImportRule* toImportRule() const;
+    const CSSFontFaceRule* toFontFaceRule() const;
+    const CSSPageMarginRule* toPageMarginRule() const;
+    const CSSPageRule* toPageRule() const;
 
 protected:
     CSSRule() = default;
@@ -911,14 +1014,14 @@ using CSSRuleList = std::vector<std::unique_ptr<CSSRule>>;
 
 class CSSStyleRule final : public CSSRule {
 public:
-    static std::unique_ptr<CSSStyleRule> create(CSSSelectorList&& selectors, CSSPropertyList&& properties);
+    static std::unique_ptr<CSSStyleRule> create(CSSSelectorList selectors, CSSPropertyList properties);
 
     const CSSSelectorList& selectors() const { return m_selectors; }
     const CSSPropertyList& properties() const { return m_properties; }
-    const CSSStyleRule* toStyleRule() const final { return this; }
+    bool isStyleRule() const final { return true; }
 
 private:
-    CSSStyleRule(CSSSelectorList&& selectors, CSSPropertyList&& properties)
+    CSSStyleRule(CSSSelectorList selectors, CSSPropertyList properties)
         : m_selectors(std::move(selectors)), m_properties(std::move(properties))
     {}
 
@@ -926,32 +1029,50 @@ private:
     CSSPropertyList m_properties;
 };
 
+inline const CSSStyleRule* CSSRule::toStyleRule() const {
+    if(!isStyleRule())
+        return nullptr;
+    return (CSSStyleRule*)(this);
+}
+
 class CSSImportRule final : public CSSRule {
 public:
-    static std::unique_ptr<CSSImportRule> create(std::string&& href);
+    static std::unique_ptr<CSSImportRule> create(std::string href);
 
     const std::string& href() const { return m_href; }
-    const CSSImportRule* toImportRule() const final { return this; }
+    bool isImportRule() const final { return true; }
 
 private:
-    CSSImportRule(std::string&& href) : m_href(std::move(href)) {}
+    CSSImportRule(std::string href) : m_href(std::move(href)) {}
     std::string m_href;
 };
 
+inline const CSSImportRule* CSSRule::toImportRule() const {
+    if(!isImportRule())
+        return nullptr;
+    return (CSSImportRule*)(this);
+}
+
 class CSSFontFaceRule : public CSSRule {
 public:
-    static std::unique_ptr<CSSFontFaceRule> create(CSSPropertyList&& properties);
+    static std::unique_ptr<CSSFontFaceRule> create(CSSPropertyList properties);
 
     const CSSPropertyList& properties() const { return m_properties; }
-    const CSSFontFaceRule* toFontFaceRule() const final { return this; }
+    bool isFontFaceRule() const final { return true; }
 
 private:
-    CSSFontFaceRule(CSSPropertyList&& properties)
+    CSSFontFaceRule(CSSPropertyList properties)
         : m_properties(std::move(properties))
     {}
 
     CSSPropertyList m_properties;
 };
+
+inline const CSSFontFaceRule* CSSRule::toFontFaceRule() const {
+    if(!isFontFaceRule())
+        return nullptr;
+    return (CSSFontFaceRule*)(this);
+}
 
 class CSSPageMarginRule final : public CSSRule {
 public:
@@ -974,14 +1095,14 @@ public:
         RightBottom
     };
 
-    static std::unique_ptr<CSSPageMarginRule> create(MarginType marginType, CSSPropertyList&& properties);
+    static std::unique_ptr<CSSPageMarginRule> create(MarginType marginType, CSSPropertyList properties);
 
     MarginType marginType() const { return m_marginType; }
     const CSSPropertyList& properties() const { return m_properties; }
-    const CSSPageMarginRule* toPageMarginRule() const final { return this; }
+    bool isPageMarginRule() const final { return true; }
 
 private:
-    CSSPageMarginRule(MarginType marginType, CSSPropertyList&& properties)
+    CSSPageMarginRule(MarginType marginType, CSSPropertyList properties)
         : m_marginType(marginType), m_properties(std::move(properties))
     {}
 
@@ -989,19 +1110,25 @@ private:
     CSSPropertyList m_properties;
 };
 
+inline const CSSPageMarginRule* CSSRule::toPageMarginRule() const {
+    if(!isPageMarginRule())
+        return nullptr;
+    return (CSSPageMarginRule*)(this);
+}
+
 using CSSPageMarginRuleList = std::vector<std::unique_ptr<CSSPageMarginRule>>;
 
 class CSSPageRule : public CSSRule {
 public:
-    static std::unique_ptr<CSSPageRule> create(CSSPageSelectorList&& selectors, CSSPageMarginRuleList&& margins, CSSPropertyList&& properties);
+    static std::unique_ptr<CSSPageRule> create(CSSPageSelectorList selectors, CSSPageMarginRuleList margins, CSSPropertyList properties);
 
     const CSSPageSelectorList& selectors() const { return m_selectors; }
     const CSSPageMarginRuleList& margins() const { return m_margins; }
     const CSSPropertyList& properties() const { return m_properties; }
-    const CSSPageRule* toPageRule() const final { return this; }
+    bool isPageRule() const final { return true; }
 
 private:
-    CSSPageRule(CSSPageSelectorList&& selectors, CSSPageMarginRuleList&& margins, CSSPropertyList&& properties)
+    CSSPageRule(CSSPageSelectorList selectors, CSSPageMarginRuleList margins, CSSPropertyList properties)
         : m_selectors(std::move(selectors)), m_margins(std::move(margins)), m_properties(std::move(properties))
     {}
 
@@ -1009,6 +1136,12 @@ private:
     CSSPageMarginRuleList m_margins;
     CSSPropertyList m_properties;
 };
+
+inline const CSSPageRule* CSSRule::toPageRule() const {
+    if(!isPageRule())
+        return nullptr;
+    return (CSSPageRule*)(this);
+}
 
 enum class PseudoType : uint8_t {
     None,
@@ -1109,6 +1242,7 @@ public:
     const CSSPageSelector* selector() const { return m_selector; }
     uint32_t specificity() const { return m_specificity; }
     uint32_t position() const { return m_position; }
+    bool match(const GlobalString& pageName, size_t pageIndex) const;
 
 private:
     const CSSPageRule* m_rule;
@@ -1139,7 +1273,7 @@ public:
     const CSSRuleDataList* firstLineElementRules() const { return &m_firstLineRules; }
     const CSSPageRuleDataList* pageRules() const { return &m_pageRules; }
 
-    void addRule(std::unique_ptr<CSSRule>&& rule);
+    void addRule(std::unique_ptr<CSSRule> rule);
 
 private:
     void addStyleRule(const CSSStyleRule* rule);

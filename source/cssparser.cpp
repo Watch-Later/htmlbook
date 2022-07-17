@@ -1499,9 +1499,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeContentAttr(CSSTokenStream& input)
     auto value = consumeCustomIdent(input);
     if(value == nullptr || !input.empty())
         return nullptr;
-    CSSValueList values;
-    values.push_back(value);
-    return CSSFunctionValue::create(CSSValueID::Attr, std::move(values));
+    return CSSFunctionValue::create(CSSValueID::Attr, std::move(value));
 }
 
 std::shared_ptr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool counters)
@@ -1723,6 +1721,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeFontFamily(CSSTokenStream& input)
 
 std::shared_ptr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& input)
 {
+    CSSValueList values;
     if(input->type() == CSSToken::Type::Function && equals(input->data(), "local", false)) {
         auto block = input.consumeBlock();
         block.consumeWhitespace();
@@ -1730,26 +1729,24 @@ std::shared_ptr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& 
         if(value == nullptr || !block.empty())
             return nullptr;
         input.consumeWhitespace();
-        CSSValueList values;
-        values.push_back(value);
-        return CSSFunctionValue::create(CSSValueID::Local, std::move(values));
+        values.push_back(CSSFunctionValue::create(CSSValueID::Local, std::move(value)));
+    } else {
+        auto url = consumeUrl(input);
+        if(url == nullptr)
+            return nullptr;
+        values.push_back(std::move(url));
+        if(input->type() == CSSToken::Type::Function && equals(input->data(), "format", false)) {
+            auto block = input.consumeBlock();
+            block.consumeWhitespace();
+            auto value = consumeString(block);
+            if(value == nullptr || !block.empty())
+                return nullptr;
+            input.consumeWhitespace();
+            values.push_back(CSSFunctionValue::create(CSSValueID::Format, std::move(value)));
+        }
     }
 
-    auto url = consumeUrl(input);
-    if(url && input->type() == CSSToken::Type::Function && equals(input->data(), "format", false)) {
-        auto block = input.consumeBlock();
-        block.consumeWhitespace();
-        if(block->type() != CSSToken::Type::Ident && block->type() != CSSToken::Type::String)
-            return nullptr;
-        std::string value(block->data());
-        block.consumeIncludingWhitespace();
-        if(value.empty() || !block.empty())
-            return nullptr;
-        input.consumeWhitespace();
-        return CSSPairValue::create(url, CSSStringValue::create(std::move(value)));
-    }
-
-    return url;
+    return CSSListValue::create(std::move(values));
 }
 
 std::shared_ptr<CSSValue> CSSParser::consumeFontFaceSource(CSSTokenStream& input)

@@ -61,12 +61,12 @@ std::shared_ptr<CSSLengthValue> CSSLengthValue::create(double value, Unit unit)
     return std::shared_ptr<CSSLengthValue>(new CSSLengthValue(value, unit));
 }
 
-std::shared_ptr<CSSStringValue> CSSStringValue::create(std::string&& value)
+std::shared_ptr<CSSStringValue> CSSStringValue::create(std::string value)
 {
     return std::shared_ptr<CSSStringValue>(new CSSStringValue(std::move(value)));
 }
 
-std::shared_ptr<CSSUrlValue> CSSUrlValue::create(std::string &&value)
+std::shared_ptr<CSSUrlValue> CSSUrlValue::create(std::string value)
 {
     return std::shared_ptr<CSSUrlValue>(new CSSUrlValue(std::move(value)));
 }
@@ -81,7 +81,7 @@ std::shared_ptr<CSSColorValue> CSSColorValue::create(uint8_t r, uint8_t g, uint8
     return create(a << 24 | r << 16 | g << 8 | b);
 }
 
-std::shared_ptr<CSSCounterValue> CSSCounterValue::create(CSSValueID listStyle, const GlobalString& identifier, std::string&& seperator)
+std::shared_ptr<CSSCounterValue> CSSCounterValue::create(CSSValueID listStyle, const GlobalString& identifier, std::string seperator)
 {
     return std::shared_ptr<CSSCounterValue>(new CSSCounterValue(listStyle, identifier, std::move(seperator)));
 }
@@ -96,14 +96,21 @@ std::shared_ptr<CSSRectValue> CSSRectValue::create(std::shared_ptr<CSSValue> top
     return std::shared_ptr<CSSRectValue>(new CSSRectValue(std::move(top), std::move(right), std::move(bottom), std::move(left)));
 }
 
-std::shared_ptr<CSSListValue> CSSListValue::create(CSSValueList&& values)
+std::shared_ptr<CSSListValue> CSSListValue::create(CSSValueList values)
 {
     return std::shared_ptr<CSSListValue>(new CSSListValue(std::move(values)));
 }
 
-std::shared_ptr<CSSFunctionValue> CSSFunctionValue::create(CSSValueID id, CSSValueList&& values)
+std::shared_ptr<CSSFunctionValue> CSSFunctionValue::create(CSSValueID id, CSSValueList values)
 {
     return std::shared_ptr<CSSFunctionValue>(new CSSFunctionValue(id, std::move(values)));
+}
+
+std::shared_ptr<CSSFunctionValue> CSSFunctionValue::create(CSSValueID id, std::shared_ptr<CSSValue> value)
+{
+    CSSValueList values;
+    values.push_back(std::move(value));
+    return create(id, std::move(values));
 }
 
 CSSShorthand CSSShorthand::longhand(CSSPropertyID id)
@@ -470,27 +477,27 @@ bool CSSSimpleSelector::matchnth(int count) const
     return (b - count) % -a == 0;
 }
 
-std::unique_ptr<CSSStyleRule> CSSStyleRule::create(CSSSelectorList&& selectors, CSSPropertyList&& properties)
+std::unique_ptr<CSSStyleRule> CSSStyleRule::create(CSSSelectorList selectors, CSSPropertyList properties)
 {
     return std::unique_ptr<CSSStyleRule>(new CSSStyleRule(std::move(selectors), std::move(properties)));
 }
 
-std::unique_ptr<CSSImportRule> CSSImportRule::create(std::string&& href)
+std::unique_ptr<CSSImportRule> CSSImportRule::create(std::string href)
 {
     return std::unique_ptr<CSSImportRule>(new CSSImportRule(std::move(href)));
 }
 
-std::unique_ptr<CSSFontFaceRule> CSSFontFaceRule::create(CSSPropertyList&& properties)
+std::unique_ptr<CSSFontFaceRule> CSSFontFaceRule::create(CSSPropertyList properties)
 {
     return std::unique_ptr<CSSFontFaceRule>(new CSSFontFaceRule(std::move(properties)));
 }
 
-std::unique_ptr<CSSPageMarginRule> CSSPageMarginRule::create(MarginType marginType, CSSPropertyList&& properties)
+std::unique_ptr<CSSPageMarginRule> CSSPageMarginRule::create(MarginType marginType, CSSPropertyList properties)
 {
     return std::unique_ptr<CSSPageMarginRule>(new CSSPageMarginRule(marginType, std::move(properties)));
 }
 
-std::unique_ptr<CSSPageRule> CSSPageRule::create(CSSPageSelectorList&& selectors, CSSPageMarginRuleList&& margins, CSSPropertyList&& properties)
+std::unique_ptr<CSSPageRule> CSSPageRule::create(CSSPageSelectorList selectors, CSSPageMarginRuleList margins, CSSPropertyList properties)
 {
     return std::unique_ptr<CSSPageRule>(new CSSPageRule(std::move(selectors), std::move(margins), std::move(properties)));
 }
@@ -875,7 +882,7 @@ void CSSStyleSheet::parse(const std::string_view& content)
     CSSParser::parseSheet(this, content);
 }
 
-void CSSStyleSheet::addRule(std::unique_ptr<CSSRule>&& rule)
+void CSSStyleSheet::addRule(std::unique_ptr<CSSRule> rule)
 {
     if(rule->isStyleRule()) {
         addStyleRule(rule->toStyleRule());
