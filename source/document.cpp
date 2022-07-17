@@ -374,6 +374,15 @@ void Document::updateIdCache(const GlobalString& oldValue, const GlobalString& n
     m_idCache.emplace(newValue, element);
 }
 
+void Document::addFontData(const std::string_view& family, bool italic, bool smallCaps, int weight, std::shared_ptr<FontData> data)
+{
+}
+
+std::shared_ptr<FontData> Document::getFontData(const std::string_view& family, bool italic, bool smallCaps, int weight)
+{
+    return nullptr;
+}
+
 void Document::addAuthorStyleSheet(const std::string_view& content)
 {
     if(m_authorStyleSheet == nullptr)

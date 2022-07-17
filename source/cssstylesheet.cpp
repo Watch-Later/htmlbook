@@ -993,24 +993,24 @@ void CSSStyleSheet::addImportRule(const CSSImportRule* rule)
 
 void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
 {
-    std::shared_ptr<CSSValue> family;
-    std::shared_ptr<CSSValue> style;
-    std::shared_ptr<CSSValue> variant;
-    std::shared_ptr<CSSValue> weight;
+    std::shared_ptr<CSSValue> fontFamily;
+    std::shared_ptr<CSSValue> fontStyle;
+    std::shared_ptr<CSSValue> fontVariant;
+    std::shared_ptr<CSSValue> fontWeight;
     std::shared_ptr<CSSValue> src;
     for(auto& property : rule->properties()) {
         switch(property.id()) {
         case CSSPropertyID::FontFamily:
-            family = property.value();
+            fontFamily = property.value();
             break;
         case CSSPropertyID::FontStyle:
-            style = property.value();
+            fontStyle = property.value();
             break;
         case CSSPropertyID::FontVariant:
-            variant = property.value();
+            fontVariant = property.value();
             break;
         case CSSPropertyID::FontWeight:
-            weight = property.value();
+            fontWeight = property.value();
             break;
         case CSSPropertyID::Src:
             src = property.value();
@@ -1020,10 +1020,101 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
         }
     }
 
-    if(family == nullptr || !family->isListValue())
+    if(fontWeight == nullptr || !fontWeight->isListValue())
         return;
     if(src == nullptr || !src->isListValue())
         return;
+
+    bool italic = false;
+    if(fontStyle) {
+        assert(fontStyle->isIdentValue());
+        auto ident = fontStyle->toIdentValue();
+        switch(ident->value()) {
+        case CSSValueID::Normal:
+            italic = false;
+            break;
+        case CSSValueID::Italic:
+        case CSSValueID::Oblique:
+            italic = true;
+            break;
+        default:
+            assert(false);
+        }
+    }
+
+    bool smallCaps = false;
+    if(fontVariant) {
+        assert(fontVariant->isIdentValue());
+        auto ident = fontVariant->toIdentValue();
+        switch(ident->value()) {
+        case CSSValueID::Normal:
+            smallCaps = false;
+            break;
+        case CSSValueID::SmallCaps:
+            smallCaps = true;
+            break;
+        default:
+            assert(false);
+        }
+    }
+
+    int weight = 400;
+    if(fontWeight) {
+        if(auto ident = fontWeight->toIdentValue()) {
+            switch(ident->value()) {
+            case CSSValueID::Normal:
+            case CSSValueID::Lighter:
+                weight = 400;
+                break;
+            case CSSValueID::Bold:
+            case CSSValueID::Bolder:
+                weight = 700;
+                break;
+            default:
+                assert(false);
+            }
+        } else {
+            assert(fontWeight->isIntegerValue());
+            auto integer = fontWeight->toIntegerValue();
+            weight = integer->value();
+        }
+    }
+
+    std::shared_ptr<FontData> data;
+    for(auto& item : src->toListValue()->values()) {
+        assert(item->isListValue());
+        auto source = item->toListValue();
+        if(auto function = source->at(0)->toFunctionValue()) {
+            assert(function->id() == CSSValueID::Local);
+            auto& family = function->at(0)->toStringValue()->value();
+            if(data = m_document->getFontData(family, italic, smallCaps, weight)) {
+                break;
+            }
+        } else {
+            auto url = source->at(0)->toUrlValue()->value();
+            if(source->length() > 1) {
+                auto function = source->at(1)->toFunctionValue();
+                assert(function->id() == CSSValueID::Format);
+                auto& format = function->at(0)->toStringValue()->value();
+                if(!equals(format, "truetype", false) && !equals(format, "opentype", false)) {
+                    continue;
+                }
+            }
+
+            if(auto fontResource = m_document->fetchFontResource(url)) {
+                data = fontResource->font();
+                break;
+            }
+        }
+    }
+
+    if(data == nullptr)
+        return;
+    for(auto& item : fontFamily->toListValue()->values()) {
+        assert(item->isStringValue());
+        auto& family = item->toStringValue()->value();
+        m_document->addFontData(family, italic, smallCaps, weight, data);
+    }
 }
 
 } // namespace htmlbook

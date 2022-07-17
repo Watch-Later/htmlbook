@@ -627,6 +627,8 @@ public:
     static std::shared_ptr<CSSFunctionValue> create(CSSValueID id, std::shared_ptr<CSSValue> value);
 
     CSSValueID id() const { return m_id; }
+    size_t length() const { return m_values.size(); }
+    const std::shared_ptr<CSSValue>& at(size_t index) const { return m_values.at(index); }
     const CSSValueList& values() const { return m_values; }
     bool isFunctionValue() const final { return true; }
 
