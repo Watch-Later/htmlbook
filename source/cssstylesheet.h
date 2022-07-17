@@ -83,7 +83,7 @@ private:
 };
 
 inline const CSSInitialValue* CSSValue::toInitialValue() const {
-    if(isInitialValue())
+    if(!isInitialValue())
         return nullptr;
     return (CSSInitialValue*)(this);
 }
@@ -99,7 +99,7 @@ private:
 };
 
 inline const CSSInheritValue* CSSValue::toInheritValue() const {
-    if(isInheritValue())
+    if(!isInheritValue())
         return nullptr;
     return (CSSInheritValue*)(this);
 }
@@ -323,7 +323,7 @@ private:
 };
 
 inline const CSSIdentValue* CSSValue::toIdentValue() const {
-    if(isIdentValue())
+    if(!isIdentValue())
         return nullptr;
     return (CSSIdentValue*)(this);
 }
@@ -341,7 +341,7 @@ private:
 };
 
 inline const CSSCustomIdentValue* CSSValue::toCustomIdentValue() const {
-    if(isCustomIdentValue())
+    if(!isCustomIdentValue())
         return nullptr;
     return (CSSCustomIdentValue*)(this);
 }
