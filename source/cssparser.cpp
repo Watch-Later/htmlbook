@@ -1643,11 +1643,13 @@ std::shared_ptr<CSSValue> CSSParser::consumeFontWeight(CSSTokenStream& input)
     if(auto value = consumeIdent(input, table))
         return value;
 
-    if(input->type() != CSSToken::Type::Number || input->number() < 1.0 || input->number() > 1000.0)
+    if(input->type() != CSSToken::Type::Number || input->numberType() != CSSToken::NumberType::Integer)
         return nullptr;
-    auto value = input->number();
+    auto value = input->integer();
+    if(value < 1 || value > 1000)
+        return nullptr;
     input.consumeIncludingWhitespace();
-    return CSSNumberValue::create(value);
+    return CSSIntegerValue::create(value);
 }
 
 std::shared_ptr<CSSValue> CSSParser::consumeFontSize(CSSTokenStream& input, bool unitless)
