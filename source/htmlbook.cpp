@@ -150,6 +150,16 @@ void Book::load(const std::string_view& content)
     m_document->load(content);
 }
 
+void Book::setUserStyleSheet(const std::string_view& content)
+{
+    m_document->setUserStyleSheet(content);
+}
+
+void Book::clearUserStyleSheet()
+{
+    m_document->clearUserStyleSheet();
+}
+
 void Book::save(const std::string& filename)
 {
 }

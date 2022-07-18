@@ -985,6 +985,8 @@ void CSSStyleSheet::addPageRule(const CSSPageRule* rule)
 
 void CSSStyleSheet::addImportRule(const CSSImportRule* rule)
 {
+    if(m_document == nullptr)
+        return;
     auto textResource = m_document->fetchTextResource(rule->href());
     if(textResource == nullptr)
         return;
@@ -993,6 +995,8 @@ void CSSStyleSheet::addImportRule(const CSSImportRule* rule)
 
 void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
 {
+    if(m_document == nullptr)
+        return;
     std::shared_ptr<CSSValue> fontFamily;
     std::shared_ptr<CSSValue> fontStyle;
     std::shared_ptr<CSSValue> fontVariant;
@@ -1020,7 +1024,7 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
         }
     }
 
-    if(fontWeight == nullptr || !fontWeight->isListValue())
+    if(fontFamily == nullptr || !fontFamily->isListValue())
         return;
     if(src == nullptr || !src->isListValue())
         return;
@@ -1091,7 +1095,7 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
                 break;
             }
         } else {
-            auto url = source->at(0)->toUrlValue()->value();
+            auto& url = source->at(0)->toUrlValue()->value();
             if(source->length() > 1) {
                 auto function = source->at(1)->toFunctionValue();
                 assert(function->id() == CSSValueID::Format);
