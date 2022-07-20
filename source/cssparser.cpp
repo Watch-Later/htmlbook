@@ -821,7 +821,7 @@ bool CSSParser::consumeDeclaractionValue(CSSTokenStream& input, CSSPropertyList&
     return false;
 }
 
-void CSSParser::addProperty(CSSPropertyList& properties, CSSPropertyID id, bool important, std::shared_ptr<CSSValue> value)
+void CSSParser::addProperty(CSSPropertyList& properties, CSSPropertyID id, bool important, RefPtr<CSSValue> value)
 {
     if(value == nullptr) {
         switch(id) {
@@ -851,7 +851,7 @@ void CSSParser::addProperty(CSSPropertyList& properties, CSSPropertyID id, bool 
     properties.emplace_back(id, important, value);
 }
 
-void CSSParser::addExpandedProperty(CSSPropertyList& properties, CSSPropertyID id, bool important, std::shared_ptr<CSSValue> value)
+void CSSParser::addExpandedProperty(CSSPropertyList& properties, CSSPropertyID id, bool important, RefPtr<CSSValue> value)
 {
     auto longhand = CSSShorthand::longhand(id);
     if(longhand.empty()) {
@@ -887,7 +887,7 @@ inline CSSValueID matchIdent(const CSSTokenStream& input, const idententry_t(&ta
 }
 
 template<unsigned int N>
-inline std::shared_ptr<CSSValue> consumeIdent(CSSTokenStream& input, const idententry_t(&table)[N])
+inline RefPtr<CSSValue> consumeIdent(CSSTokenStream& input, const idententry_t(&table)[N])
 {
     auto id = matchIdent(input, table);
     if(id == CSSValueID::Unknown)
@@ -896,7 +896,7 @@ inline std::shared_ptr<CSSValue> consumeIdent(CSSTokenStream& input, const ident
     return CSSIdentValue::create(id);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeNone(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeNone(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::Ident && equals(input->data(), "none", false)) {
         input.consumeIncludingWhitespace();
@@ -906,7 +906,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeNone(CSSTokenStream& input)
     return nullptr;
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeAuto(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeAuto(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::Ident && equals(input->data(), "auto", false)) {
         input.consumeIncludingWhitespace();
@@ -916,7 +916,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeAuto(CSSTokenStream& input)
     return nullptr;
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeNormal(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeNormal(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::Ident && equals(input->data(), "normal", false)) {
         input.consumeIncludingWhitespace();
@@ -926,21 +926,21 @@ std::shared_ptr<CSSValue> CSSParser::consumeNormal(CSSTokenStream& input)
     return nullptr;
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeNoneOrAuto(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeNoneOrAuto(CSSTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
     return consumeAuto(input);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeNoneOrNormal(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeNoneOrNormal(CSSTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
     return consumeNormal(input);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeInteger(CSSTokenStream& input, bool negative)
+RefPtr<CSSValue> CSSParser::consumeInteger(CSSTokenStream& input, bool negative)
 {
     if(input->type() != CSSToken::Type::Number || input->numberType() != CSSToken::NumberType::Integer || (input->integer() < 0 && !negative))
         return nullptr;
@@ -950,7 +950,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeInteger(CSSTokenStream& input, bool 
     return CSSIntegerValue::create(value);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumePositiveInteger(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumePositiveInteger(CSSTokenStream& input)
 {
     if(input->type() != CSSToken::Type::Number || input->numberType() != CSSToken::NumberType::Integer || input->integer() < 1)
         return nullptr;
@@ -960,7 +960,7 @@ std::shared_ptr<CSSValue> CSSParser::consumePositiveInteger(CSSTokenStream& inpu
     return CSSIntegerValue::create(value);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumePercent(CSSTokenStream& input, bool negative)
+RefPtr<CSSValue> CSSParser::consumePercent(CSSTokenStream& input, bool negative)
 {
     if(input->type() != CSSToken::Type::Percentage || (input->number() < 0 && !negative))
         return nullptr;
@@ -970,7 +970,7 @@ std::shared_ptr<CSSValue> CSSParser::consumePercent(CSSTokenStream& input, bool 
     return CSSPercentValue::create(value);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeNumber(CSSTokenStream& input, bool negative)
+RefPtr<CSSValue> CSSParser::consumeNumber(CSSTokenStream& input, bool negative)
 {
     if(input->type() != CSSToken::Type::Number || (input->number() < 0 && !negative))
         return nullptr;
@@ -980,7 +980,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeNumber(CSSTokenStream& input, bool n
     return CSSNumberValue::create(value);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeLength(CSSTokenStream& input, bool negative, bool unitless)
+RefPtr<CSSValue> CSSParser::consumeLength(CSSTokenStream& input, bool negative, bool unitless)
 {
     if(input->type() != CSSToken::Type::Dimension && input->type() != CSSToken::Type::Number)
         return nullptr;
@@ -1021,21 +1021,21 @@ std::shared_ptr<CSSValue> CSSParser::consumeLength(CSSTokenStream& input, bool n
     return CSSLengthValue::create(value, it->unit);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeLengthOrAuto(CSSTokenStream& input, bool negative, bool unitless)
+RefPtr<CSSValue> CSSParser::consumeLengthOrAuto(CSSTokenStream& input, bool negative, bool unitless)
 {
     if(auto value = consumeAuto(input))
         return value;
     return consumeLength(input, negative, unitless);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeLengthOrNormal(CSSTokenStream& input, bool negative, bool unitless)
+RefPtr<CSSValue> CSSParser::consumeLengthOrNormal(CSSTokenStream& input, bool negative, bool unitless)
 {
     if(auto value = consumeNormal(input))
         return value;
     return consumeLength(input, negative, unitless);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeLengthOrPercent(CSSTokenStream& input, bool negative, bool unitless)
+RefPtr<CSSValue> CSSParser::consumeLengthOrPercent(CSSTokenStream& input, bool negative, bool unitless)
 {
     auto value = consumeLength(input, negative, unitless);
     if(value == nullptr)
@@ -1043,7 +1043,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeLengthOrPercent(CSSTokenStream& inpu
     return value;
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeNumberOrPercent(CSSTokenStream& input, bool negative)
+RefPtr<CSSValue> CSSParser::consumeNumberOrPercent(CSSTokenStream& input, bool negative)
 {
     auto value = consumeNumber(input, negative);
     if(value == nullptr)
@@ -1051,42 +1051,42 @@ std::shared_ptr<CSSValue> CSSParser::consumeNumberOrPercent(CSSTokenStream& inpu
     return value;
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeIntegerOrAuto(CSSTokenStream& input, bool negative)
+RefPtr<CSSValue> CSSParser::consumeIntegerOrAuto(CSSTokenStream& input, bool negative)
 {
     if(auto value = consumeAuto(input))
         return value;
     return consumeInteger(input, negative);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumePositiveIntegerOrAuto(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumePositiveIntegerOrAuto(CSSTokenStream& input)
 {
     if(auto value = consumeAuto(input))
         return value;
     return consumePositiveInteger(input);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeLengthOrPercentOrAuto(CSSTokenStream& input, bool negative, bool unitless)
+RefPtr<CSSValue> CSSParser::consumeLengthOrPercentOrAuto(CSSTokenStream& input, bool negative, bool unitless)
 {
     if(auto value = consumeAuto(input))
         return value;
     return consumeLengthOrPercent(input, negative, unitless);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeLengthOrPercentOrNone(CSSTokenStream& input, bool negative, bool unitless)
+RefPtr<CSSValue> CSSParser::consumeLengthOrPercentOrNone(CSSTokenStream& input, bool negative, bool unitless)
 {
     if(auto value = consumeNone(input))
         return value;
     return consumeLengthOrPercent(input, negative, unitless);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeLengthOrPercentOrNormal(CSSTokenStream& input, bool negative, bool unitless)
+RefPtr<CSSValue> CSSParser::consumeLengthOrPercentOrNormal(CSSTokenStream& input, bool negative, bool unitless)
 {
     if(auto value = consumeNormal(input))
         return value;
     return consumeLengthOrPercent(input, negative, unitless);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeString(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeString(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::String) {
         std::string value(input->data());
@@ -1097,7 +1097,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeString(CSSTokenStream& input)
     return nullptr;
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeCustomIdent(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeCustomIdent(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::Ident) {
         auto value = input->data();
@@ -1108,7 +1108,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeCustomIdent(CSSTokenStream& input)
     return nullptr;
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeUrl(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeUrl(CSSTokenStream& input)
 {
     std::string value;
     switch(input->type()) {
@@ -1139,14 +1139,14 @@ std::shared_ptr<CSSValue> CSSParser::consumeUrl(CSSTokenStream& input)
     return CSSUrlValue::create(std::move(value));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeUrlOrNone(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeUrlOrNone(CSSTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
     return consumeUrl(input);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeColor(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeColor(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::Hash) {
         int count = 0;
@@ -1368,7 +1368,7 @@ inline bool consumeRgbComponent(CSSTokenStream& input, int& component)
     return true;
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeRgb(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeRgb(CSSTokenStream& input)
 {
     CSSTokenStreamGuard guard(input);
     auto block = input.consumeBlock();
@@ -1417,7 +1417,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeRgb(CSSTokenStream& input)
     return CSSColorValue::create(red, green, blue, alpha);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeFillOrStroke(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeFillOrStroke(CSSTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
@@ -1434,7 +1434,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeFillOrStroke(CSSTokenStream& input)
     return CSSPairValue::create(first, second);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeQuotes(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeQuotes(CSSTokenStream& input)
 {
     if(auto value = consumeNoneOrAuto(input))
         return value;
@@ -1452,7 +1452,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeQuotes(CSSTokenStream& input)
     return nullptr;
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeContent(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeContent(CSSTokenStream& input)
 {
     if(auto value = consumeNoneOrNormal(input))
         return value;
@@ -1494,7 +1494,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeContent(CSSTokenStream& input)
     return CSSListValue::create(std::move(values));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeContentAttr(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeContentAttr(CSSTokenStream& input)
 {
     auto value = consumeCustomIdent(input);
     if(value == nullptr || !input.empty())
@@ -1502,7 +1502,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeContentAttr(CSSTokenStream& input)
     return CSSFunctionValue::create(CSSValueID::Attr, std::move(value));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool counters)
+RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool counters)
 {
     if(input->type() != CSSToken::Type::Ident)
         return nullptr;
@@ -1548,7 +1548,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input
     return CSSCounterValue::create(listStyle, identifier, std::move(seperator));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeCounter(CSSTokenStream& input, bool increment)
+RefPtr<CSSValue> CSSParser::consumeCounter(CSSTokenStream& input, bool increment)
 {
     if(auto value = consumeNone(input))
         return value;
@@ -1571,14 +1571,14 @@ std::shared_ptr<CSSValue> CSSParser::consumeCounter(CSSTokenStream& input, bool 
     return CSSListValue::create(std::move(values));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumePage(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumePage(CSSTokenStream& input)
 {
     if(auto value = consumeAuto(input))
         return value;
     return consumeCustomIdent(input);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeSize(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeSize(CSSTokenStream& input)
 {
     if(auto value = consumeAuto(input))
         return value;
@@ -1590,8 +1590,8 @@ std::shared_ptr<CSSValue> CSSParser::consumeSize(CSSTokenStream& input)
         return CSSPairValue::create(width, height);
     }
 
-    std::shared_ptr<CSSValue> size;
-    std::shared_ptr<CSSValue> orientation;
+    RefPtr<CSSValue> size;
+    RefPtr<CSSValue> orientation;
     for(int index = 0; index < 2; ++index) {
         if(size == nullptr) {
             static const idententry_t table[] = {
@@ -1631,7 +1631,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeSize(CSSTokenStream& input)
     return CSSPairValue::create(size, orientation);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeFontWeight(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeFontWeight(CSSTokenStream& input)
 {
     static const idententry_t table[] = {
         {"normal", CSSValueID::Normal},
@@ -1652,7 +1652,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeFontWeight(CSSTokenStream& input)
     return CSSIntegerValue::create(value);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeFontSize(CSSTokenStream& input, bool unitless)
+RefPtr<CSSValue> CSSParser::consumeFontSize(CSSTokenStream& input, bool unitless)
 {
     static const idententry_t table[] = {
         {"xx-small", CSSValueID::XxSmall},
@@ -1663,8 +1663,8 @@ std::shared_ptr<CSSValue> CSSParser::consumeFontSize(CSSTokenStream& input, bool
         {"x-large", CSSValueID::XLarge},
         {"xx-large", CSSValueID::XxLarge},
         {"xxx-large", CSSValueID::XxxLarge},
-        {"larger", CSSValueID::Larger},
-        {"smaller", CSSValueID::Smaller}
+        {"smaller", CSSValueID::Smaller},
+        {"larger", CSSValueID::Larger}
     };
 
     if(auto value = consumeIdent(input, table))
@@ -1672,7 +1672,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeFontSize(CSSTokenStream& input, bool
     return consumeLengthOrPercent(input, false, unitless);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeFontFamilyName(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeFontFamilyName(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::String) {
         std::string value(input->data());
@@ -1693,7 +1693,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeFontFamilyName(CSSTokenStream& input
     return CSSStringValue::create(std::move(value));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeFontFamilyValue(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeFontFamilyValue(CSSTokenStream& input)
 {
     static const idententry_t table[] = {
         {"serif", CSSValueID::Serif},
@@ -1708,7 +1708,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeFontFamilyValue(CSSTokenStream& inpu
     return consumeFontFamilyName(input);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeFontFamily(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeFontFamily(CSSTokenStream& input)
 {
     CSSValueList values;
     while(!input.empty()) {
@@ -1721,7 +1721,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeFontFamily(CSSTokenStream& input)
     return CSSListValue::create(std::move(values));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& input)
 {
     CSSValueList values;
     if(input->type() == CSSToken::Type::Function && equals(input->data(), "local", false)) {
@@ -1751,7 +1751,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& 
     return CSSListValue::create(std::move(values));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeFontFaceSource(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeFontFaceSource(CSSTokenStream& input)
 {
     CSSValueList values;
     auto value = consumeFontFaceSourceValue(input);
@@ -1770,7 +1770,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeFontFaceSource(CSSTokenStream& input
     return CSSListValue::create(std::move(values));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeLineWidth(CSSTokenStream& input, bool unitless)
+RefPtr<CSSValue> CSSParser::consumeLineWidth(CSSTokenStream& input, bool unitless)
 {
     static const idententry_t table[] = {
         {"thin", CSSValueID::Thin},
@@ -1783,7 +1783,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeLineWidth(CSSTokenStream& input, boo
     return consumeLength(input, false, unitless);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeBorderRadiusValue(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeBorderRadiusValue(CSSTokenStream& input)
 {
     auto first = consumeLengthOrPercent(input, false, false);
     if(first == nullptr)
@@ -1794,7 +1794,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeBorderRadiusValue(CSSTokenStream& in
     return CSSPairValue::create(first, second);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeClip(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeClip(CSSTokenStream& input)
 {
     if(auto value = consumeAuto(input))
         return value;
@@ -1832,7 +1832,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeClip(CSSTokenStream& input)
     return CSSRectValue::create(top, right, bottom, left);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeDashList(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeDashList(CSSTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
@@ -1855,7 +1855,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeDashList(CSSTokenStream& input)
     return CSSListValue::create(std::move(values));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeVerticalAlign(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeVerticalAlign(CSSTokenStream& input)
 {
     static const idententry_t table[] = {
         {"baseline", CSSValueID::Baseline},
@@ -1871,7 +1871,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeVerticalAlign(CSSTokenStream& input)
     return consumeLengthOrPercent(input, true, true);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeTextDecorationLine(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeTextDecorationLine(CSSTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
@@ -1893,10 +1893,10 @@ std::shared_ptr<CSSValue> CSSParser::consumeTextDecorationLine(CSSTokenStream& i
     return CSSListValue::create(std::move(values));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeBackgroundPosition(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeBackgroundPosition(CSSTokenStream& input)
 {
-    std::shared_ptr<CSSValue> first;
-    std::shared_ptr<CSSValue> second;
+    RefPtr<CSSValue> first;
+    RefPtr<CSSValue> second;
     for(int index = 0; index < 2; ++index) {
         if(first == nullptr && (first = consumeLengthOrPercent(input, true, false)))
             continue;
@@ -1936,7 +1936,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeBackgroundPosition(CSSTokenStream& i
     return CSSPairValue::create(first, second);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeBackgroundSize(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeBackgroundSize(CSSTokenStream& input)
 {
     static const idententry_t table[] = {
         {"contain", CSSValueID::Contain},
@@ -1955,7 +1955,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeBackgroundSize(CSSTokenStream& input
     return CSSPairValue::create(first, second);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeAngle(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeAngle(CSSTokenStream& input)
 {
     if(input->type() != CSSToken::Type::Dimension)
         return nullptr;
@@ -1979,7 +1979,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeAngle(CSSTokenStream& input)
     return CSSAngleValue::create(value, it->unit);
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
 {
     if(input->type() != CSSToken::Type::Function)
         return nullptr;
@@ -2096,7 +2096,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input
     return CSSFunctionValue::create(id, std::move(values));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeTransformList(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeTransformList(CSSTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
@@ -2112,7 +2112,7 @@ std::shared_ptr<CSSValue> CSSParser::consumeTransformList(CSSTokenStream& input)
     return CSSListValue::create(std::move(values));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumePaintOrder(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumePaintOrder(CSSTokenStream& input)
 {
     if(auto value = consumeNormal(input))
         return value;
@@ -2134,7 +2134,7 @@ std::shared_ptr<CSSValue> CSSParser::consumePaintOrder(CSSTokenStream& input)
     return CSSListValue::create(std::move(values));
 }
 
-std::shared_ptr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID id)
+RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID id)
 {
     switch(id) {
     case CSSPropertyID::FlexGrow:
@@ -2844,9 +2844,9 @@ std::shared_ptr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSP
 
 bool CSSParser::consumeFlex(CSSTokenStream& input, CSSPropertyList& properties, bool important)
 {
-    std::shared_ptr<CSSValue> grow;
-    std::shared_ptr<CSSValue> shrink;
-    std::shared_ptr<CSSValue> basis;
+    RefPtr<CSSValue> grow;
+    RefPtr<CSSValue> shrink;
+    RefPtr<CSSValue> basis;
     for(int index = 0; index < 3; ++index) {
         if(input->type() == CSSToken::Type::Ident) {
             if(!equals(input->data(), "none", false))
@@ -2893,14 +2893,14 @@ bool CSSParser::consumeFlex(CSSTokenStream& input, CSSPropertyList& properties, 
 
 bool CSSParser::consumeBackground(CSSTokenStream& input, CSSPropertyList& properties, bool important)
 {
-    std::shared_ptr<CSSValue> color;
-    std::shared_ptr<CSSValue> image;
-    std::shared_ptr<CSSValue> repeat;
-    std::shared_ptr<CSSValue> attachment;
-    std::shared_ptr<CSSValue> origin;
-    std::shared_ptr<CSSValue> clip;
-    std::shared_ptr<CSSValue> position;
-    std::shared_ptr<CSSValue> size;
+    RefPtr<CSSValue> color;
+    RefPtr<CSSValue> image;
+    RefPtr<CSSValue> repeat;
+    RefPtr<CSSValue> attachment;
+    RefPtr<CSSValue> origin;
+    RefPtr<CSSValue> clip;
+    RefPtr<CSSValue> position;
+    RefPtr<CSSValue> size;
     while(!input.empty()) {
         if(position == nullptr && (position = consumeBackgroundPosition(input))) {
             if(input->type() == CSSToken::Type::Delim && input->delim() == '/') {
@@ -2945,8 +2945,8 @@ bool CSSParser::consumeBackground(CSSTokenStream& input, CSSPropertyList& proper
 
 bool CSSParser::consumeColumns(CSSTokenStream& input, CSSPropertyList& properties, bool important)
 {
-    std::shared_ptr<CSSValue> width;
-    std::shared_ptr<CSSValue> count;
+    RefPtr<CSSValue> width;
+    RefPtr<CSSValue> count;
     for(int index = 0; index < 2; ++index) {
         if(input->type() == CSSToken::Type::Ident) {
             if(!equals(input->data(), "auto", false))
@@ -2972,10 +2972,10 @@ bool CSSParser::consumeColumns(CSSTokenStream& input, CSSPropertyList& propertie
 
 bool CSSParser::consumeFont(CSSTokenStream& input, CSSPropertyList& properties, bool important)
 {
-    std::shared_ptr<CSSValue> style;
-    std::shared_ptr<CSSValue> variant;
-    std::shared_ptr<CSSValue> weight;
-    std::shared_ptr<CSSValue> lineHeight;
+    RefPtr<CSSValue> style;
+    RefPtr<CSSValue> variant;
+    RefPtr<CSSValue> weight;
+    RefPtr<CSSValue> lineHeight;
     for(int index = 0; index < 3; ++index) {
         if(input->type() == CSSToken::Type::Ident && equals(input->data(), "normal", false)) {
             input.consumeIncludingWhitespace();
@@ -3022,9 +3022,9 @@ bool CSSParser::consumeFont(CSSTokenStream& input, CSSPropertyList& properties, 
 
 bool CSSParser::consumeBorder(CSSTokenStream& input, CSSPropertyList& properties, bool important)
 {
-    std::shared_ptr<CSSValue> width;
-    std::shared_ptr<CSSValue> style;
-    std::shared_ptr<CSSValue> color;
+    RefPtr<CSSValue> width;
+    RefPtr<CSSValue> style;
+    RefPtr<CSSValue> color;
     while(!input.empty()) {
         if(width == nullptr && (width = consumeLineWidth(input, false)))
             continue;
@@ -3043,8 +3043,8 @@ bool CSSParser::consumeBorder(CSSTokenStream& input, CSSPropertyList& properties
 
 bool CSSParser::consumeBorderRadius(CSSTokenStream& input, CSSPropertyList& properties, bool important)
 {
-    std::shared_ptr<CSSValue> horizontal[4] = {nullptr, nullptr, nullptr, nullptr};
-    std::shared_ptr<CSSValue> vertical[4] = {nullptr, nullptr, nullptr, nullptr};
+    RefPtr<CSSValue> horizontal[4] = {nullptr, nullptr, nullptr, nullptr};
+    RefPtr<CSSValue> vertical[4] = {nullptr, nullptr, nullptr, nullptr};
 
     auto completesides = [](auto sides[4]) {
         if(sides[1] == nullptr) sides[1] = sides[0];
@@ -3156,7 +3156,7 @@ bool CSSParser::consume4Shorthand(CSSTokenStream& input, CSSPropertyList& proper
 
 bool CSSParser::consumeShorthand(CSSTokenStream& input, CSSPropertyList& properties, CSSPropertyID id, bool important)
 {
-    std::shared_ptr<CSSValue> values[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+    RefPtr<CSSValue> values[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
     auto longhand = CSSShorthand::longhand(id);
     while(!input.empty()) {
         bool consumed = false;

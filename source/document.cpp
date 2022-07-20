@@ -3,6 +3,7 @@
 #include "htmlelement.h"
 #include "cssstylesheet.h"
 #include "cssparser.h"
+#include "resource.h"
 
 namespace htmlbook {
 
@@ -374,15 +375,6 @@ void Document::updateIdCache(const GlobalString& oldValue, const GlobalString& n
     m_idCache.emplace(newValue, element);
 }
 
-void Document::addFontData(const std::string_view& family, bool italic, bool smallCaps, int weight, std::shared_ptr<FontData> data)
-{
-}
-
-std::shared_ptr<FontData> Document::getFontData(const std::string_view& family, bool italic, bool smallCaps, int weight)
-{
-    return nullptr;
-}
-
 void Document::addAuthorStyleSheet(const std::string_view& content)
 {
     if(m_authorStyleSheet == nullptr)
@@ -401,17 +393,17 @@ void Document::clearUserStyleSheet()
     m_userStyleSheet.reset();
 }
 
-std::shared_ptr<TextResource> Document::fetchTextResource(const std::string_view& url)
+RefPtr<TextResource> Document::fetchTextResource(const std::string_view& url)
 {
     return nullptr;
 }
 
-std::shared_ptr<ImageResource> Document::fetchImageResource(const std::string_view& url)
+RefPtr<ImageResource> Document::fetchImageResource(const std::string_view& url)
 {
     return nullptr;
 }
 
-std::shared_ptr<FontResource> Document::fetchFontResource(const std::string_view& url)
+RefPtr<FontResource> Document::fetchFontResource(const std::string_view& url)
 {
     return nullptr;
 }

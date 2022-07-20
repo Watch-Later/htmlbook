@@ -2,6 +2,7 @@
 #define CSSSTYLESHEET_H
 
 #include "globalstring.h"
+#include "refptr.h"
 
 #include <memory>
 #include <list>
@@ -27,7 +28,7 @@ class CSSRectValue;
 class CSSListValue;
 class CSSFunctionValue;
 
-class CSSValue {
+class CSSValue : public RefCounted<CSSValue> {
 public:
     virtual ~CSSValue() = default;
     virtual bool isInitialValue() const { return false; }
@@ -70,11 +71,11 @@ protected:
     CSSValue() = default;
 };
 
-using CSSValueList = std::vector<std::shared_ptr<CSSValue>>;
+using CSSValueList = std::vector<RefPtr<CSSValue>>;
 
 class CSSInitialValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSInitialValue> create();
+    static RefPtr<CSSInitialValue> create();
 
     bool isInitialValue() const final { return true; }
 
@@ -90,7 +91,7 @@ inline const CSSInitialValue* CSSValue::toInitialValue() const {
 
 class CSSInheritValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSInheritValue> create();
+    static RefPtr<CSSInheritValue> create();
 
     bool isInheritValue() const final { return true; }
 
@@ -312,7 +313,7 @@ enum class CSSValueID {
 
 class CSSIdentValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSIdentValue> create(CSSValueID value);
+    static RefPtr<CSSIdentValue> create(CSSValueID value);
 
     CSSValueID value() const { return m_value; }
     bool isIdentValue() const final { return true; }
@@ -330,7 +331,7 @@ inline const CSSIdentValue* CSSValue::toIdentValue() const {
 
 class CSSCustomIdentValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSCustomIdentValue> create(const GlobalString& value);
+    static RefPtr<CSSCustomIdentValue> create(const GlobalString& value);
 
     const GlobalString& value() const { return m_value; }
     bool isCustomIdentValue() const final { return true; }
@@ -348,7 +349,7 @@ inline const CSSCustomIdentValue* CSSValue::toCustomIdentValue() const {
 
 class CSSIntegerValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSIntegerValue> create(int value);
+    static RefPtr<CSSIntegerValue> create(int value);
 
     int value() const { return m_value; }
     bool isIntegerValue() const final { return true; }
@@ -366,7 +367,7 @@ inline const CSSIntegerValue* CSSValue::toIntegerValue() const {
 
 class CSSNumberValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSNumberValue> create(double value);
+    static RefPtr<CSSNumberValue> create(double value);
 
     double value() const { return m_value; }
     bool isNumberValue() const final { return true; }
@@ -384,7 +385,7 @@ inline const CSSNumberValue* CSSValue::toNumberValue() const {
 
 class CSSPercentValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSPercentValue> create(double value);
+    static RefPtr<CSSPercentValue> create(double value);
 
     double value() const { return m_value; }
     bool isPercentValue() const final { return true; }
@@ -409,7 +410,7 @@ public:
         Turns,
     };
 
-    static std::shared_ptr<CSSAngleValue> create(double value, Unit unit);
+    static RefPtr<CSSAngleValue> create(double value, Unit unit);
 
     double value() const { return m_value; }
     Unit unit() const { return m_unit; }
@@ -450,7 +451,7 @@ public:
         Chs
     };
 
-    static std::shared_ptr<CSSLengthValue> create(double value, Unit unit);
+    static RefPtr<CSSLengthValue> create(double value, Unit unit);
 
     double value() const { return m_value; }
     Unit unit() const { return m_unit; }
@@ -473,7 +474,7 @@ inline const CSSLengthValue* CSSValue::toLengthValue() const {
 
 class CSSStringValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSStringValue> create(std::string value);
+    static RefPtr<CSSStringValue> create(std::string value);
 
     const std::string& value() const { return m_value; }
     bool isStringValue() const final { return true; }
@@ -491,7 +492,7 @@ inline const CSSStringValue* CSSValue::toStringValue() const {
 
 class CSSUrlValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSUrlValue> create(std::string value);
+    static RefPtr<CSSUrlValue> create(std::string value);
 
     const std::string& value() const { return m_value; }
     bool isUrlValue() const final { return true; }
@@ -509,8 +510,8 @@ inline const CSSUrlValue* CSSValue::toUrlValue() const {
 
 class CSSColorValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSColorValue> create(uint32_t value);
-    static std::shared_ptr<CSSColorValue> create(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+    static RefPtr<CSSColorValue> create(uint32_t value);
+    static RefPtr<CSSColorValue> create(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
     uint32_t value() const { return m_value; }
     bool isColorValue() const final { return true; }
@@ -528,7 +529,7 @@ inline const CSSColorValue* CSSValue::toColorValue() const {
 
 class CSSCounterValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSCounterValue> create(CSSValueID listStyle, const GlobalString& identifier, std::string seperator);
+    static RefPtr<CSSCounterValue> create(CSSValueID listStyle, const GlobalString& identifier, std::string seperator);
 
     CSSValueID listStyle() const { return m_listStyle; }
     const GlobalString& identifier() const { return m_identifier; }
@@ -553,19 +554,19 @@ inline const CSSCounterValue* CSSValue::toCounterValue() const {
 
 class CSSPairValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSPairValue> create(std::shared_ptr<CSSValue> first, std::shared_ptr<CSSValue> second);
+    static RefPtr<CSSPairValue> create(RefPtr<CSSValue> first, RefPtr<CSSValue> second);
 
-    std::shared_ptr<CSSValue> first() const { return m_first; }
-    std::shared_ptr<CSSValue> second() const { return m_second; }
+    const CSSValue* first() const { return m_first.get(); }
+    const CSSValue* second() const { return m_second.get(); }
     bool isPairValue() const final { return true; }
 
 private:
-    CSSPairValue(std::shared_ptr<CSSValue> first, std::shared_ptr<CSSValue> second)
+    CSSPairValue(RefPtr<CSSValue> first, RefPtr<CSSValue> second)
         : m_first(first), m_second(second)
     {}
 
-    std::shared_ptr<CSSValue> m_first;
-    std::shared_ptr<CSSValue> m_second;
+    RefPtr<CSSValue> m_first;
+    RefPtr<CSSValue> m_second;
 };
 
 inline const CSSPairValue* CSSValue::toPairValue() const {
@@ -576,23 +577,23 @@ inline const CSSPairValue* CSSValue::toPairValue() const {
 
 class CSSRectValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSRectValue> create(std::shared_ptr<CSSValue> top, std::shared_ptr<CSSValue> right, std::shared_ptr<CSSValue> bottom, std::shared_ptr<CSSValue> left);
+    static RefPtr<CSSRectValue> create(RefPtr<CSSValue> top, RefPtr<CSSValue> right, RefPtr<CSSValue> bottom, RefPtr<CSSValue> left);
 
-    std::shared_ptr<CSSValue> top() const { return m_top; }
-    std::shared_ptr<CSSValue> right() const { return m_right; }
-    std::shared_ptr<CSSValue> bottom() const { return m_bottom; }
-    std::shared_ptr<CSSValue> left() const { return m_left; }
+    const CSSValue* top() const { return m_top.get(); }
+    const CSSValue* right() const { return m_right.get(); }
+    const CSSValue* bottom() const { return m_bottom.get(); }
+    const CSSValue* left() const { return m_left.get(); }
     bool isRectValue() const final { return true; }
 
 private:
-    CSSRectValue(std::shared_ptr<CSSValue> top, std::shared_ptr<CSSValue> right, std::shared_ptr<CSSValue> bottom, std::shared_ptr<CSSValue> left)
+    CSSRectValue(RefPtr<CSSValue> top, RefPtr<CSSValue> right, RefPtr<CSSValue> bottom, RefPtr<CSSValue> left)
         : m_top(top), m_right(right), m_bottom(bottom), m_left(left)
     {}
 
-    std::shared_ptr<CSSValue> m_top;
-    std::shared_ptr<CSSValue> m_right;
-    std::shared_ptr<CSSValue> m_bottom;
-    std::shared_ptr<CSSValue> m_left;
+    RefPtr<CSSValue> m_top;
+    RefPtr<CSSValue> m_right;
+    RefPtr<CSSValue> m_bottom;
+    RefPtr<CSSValue> m_left;
 };
 
 inline const CSSRectValue* CSSValue::toRectValue() const {
@@ -603,10 +604,10 @@ inline const CSSRectValue* CSSValue::toRectValue() const {
 
 class CSSListValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSListValue> create(CSSValueList values);
+    static RefPtr<CSSListValue> create(CSSValueList values);
 
     size_t length() const { return m_values.size(); }
-    const std::shared_ptr<CSSValue>& at(size_t index) const { return m_values.at(index); }
+    const CSSValue* at(size_t index) const { return m_values[index].get(); }
     const CSSValueList& values() const { return m_values; }
     bool isListValue() const final { return true; }
 
@@ -623,12 +624,12 @@ inline const CSSListValue* CSSValue::toListValue() const {
 
 class CSSFunctionValue final : public CSSValue {
 public:
-    static std::shared_ptr<CSSFunctionValue> create(CSSValueID id, CSSValueList values);
-    static std::shared_ptr<CSSFunctionValue> create(CSSValueID id, std::shared_ptr<CSSValue> value);
+    static RefPtr<CSSFunctionValue> create(CSSValueID id, CSSValueList values);
+    static RefPtr<CSSFunctionValue> create(CSSValueID id, RefPtr<CSSValue> value);
 
     CSSValueID id() const { return m_id; }
     size_t length() const { return m_values.size(); }
-    const std::shared_ptr<CSSValue>& at(size_t index) const { return m_values.at(index); }
+    const CSSValue* at(size_t index) const { return m_values[index].get(); }
     const CSSValueList& values() const { return m_values; }
     bool isFunctionValue() const final { return true; }
 
@@ -837,21 +838,22 @@ CSSPropertyID csspropertyid(const std::string_view& name);
 
 class CSSProperty {
 public:
-    CSSProperty(CSSPropertyID id, bool important, std::shared_ptr<CSSValue> value)
+    CSSProperty(CSSPropertyID id, bool important, RefPtr<CSSValue> value)
         : m_id(id), m_important(important), m_value(value)
     {}
 
     CSSPropertyID id() const { return m_id; }
     bool important() const { return m_important; }
-    std::shared_ptr<CSSValue> value() const { return m_value; }
+    const CSSValue* value() const { return m_value.get(); }
 
 private:
     CSSPropertyID m_id;
     bool m_important;
-    std::shared_ptr<CSSValue> m_value;
+    RefPtr<CSSValue> m_value;
 };
 
 using CSSPropertyList = std::vector<CSSProperty>;
+using CSSPropertyMap = std::map<CSSPropertyID, RefPtr<CSSValue>>;
 
 class CSSShorthand {
 public:

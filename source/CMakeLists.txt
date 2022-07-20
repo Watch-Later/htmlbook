@@ -8,7 +8,6 @@ PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/csstokenizer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/cssparser.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/cssstylesheet.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/cssstylebuilder.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/pdfdocument.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/document.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/boxstyle.cpp"

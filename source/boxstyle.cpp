@@ -23,16 +23,21 @@ const LengthRect LengthRect::Auto(Length::Auto, Length::Auto, Length::Auto, Leng
 const LengthRect LengthRect::ZeroPercent(Length::ZeroPercent, Length::ZeroPercent, Length::ZeroPercent, Length::ZeroPercent);
 const LengthRect LengthRect::ZeroFixed(Length::ZeroFixed, Length::ZeroFixed, Length::ZeroFixed, Length::ZeroFixed);
 
-std::shared_ptr<BoxStyle> BoxStyle::create(const Element* element)
+RefPtr<BoxStyle> BoxStyle::create(const Element* element)
 {
-    return std::shared_ptr<BoxStyle>(new BoxStyle(element));
+    return adoptPtr(new BoxStyle(element));
 }
 
-std::shared_ptr<BoxStyle> BoxStyle::create(const BoxStyle& parentStyle)
+RefPtr<BoxStyle> BoxStyle::create(const BoxStyle& parentStyle)
 {
-    std::shared_ptr<BoxStyle> newStyle(new BoxStyle(parentStyle.element()));
+    auto newStyle = adoptPtr(new BoxStyle(parentStyle.element()));
     newStyle->inheritFrom(parentStyle);
     return newStyle;
+}
+
+BoxStyle::BoxStyle(const Element* element)
+    : m_element(element)
+{
 }
 
 Display BoxStyle::display() const
@@ -1269,17 +1274,34 @@ int BoxStyle::orphans() const
     return convertInteger(*value);
 }
 
-std::shared_ptr<CSSValue> BoxStyle::get(CSSPropertyID id) const
+const CSSValue* BoxStyle::get(CSSPropertyID id) const
 {
     auto it = m_properties.find(id);
     if(it == m_properties.end())
         return nullptr;
-    return it->second;
+    return it->second.get();
 }
 
-void BoxStyle::set(CSSPropertyID id, std::shared_ptr<CSSValue> value)
+void BoxStyle::set(CSSPropertyID id, RefPtr<CSSValue> value)
 {
     assert(!value->isInitialValue() && !value->isInheritValue());
+    switch(id) {
+    case CSSPropertyID::Color:
+        m_currentColor = convertColor(*value);
+        break;
+    case CSSPropertyID::FontSize:
+        m_fontSize = convertFontSize(*value);
+        break;
+    case CSSPropertyID::FontFamily:
+    case CSSPropertyID::FontStyle:
+    case CSSPropertyID::FontVariant:
+    case CSSPropertyID::FontWeight:
+        m_fontData = nullptr;
+        break;
+    default:
+        break;
+    }
+
     m_properties.insert_or_assign(id, std::move(value));
 }
 
@@ -1378,6 +1400,40 @@ float BoxStyle::convertLineWidth(const CSSValue& value) const
         }
     }
 
+    return convertLengthValue(value);
+}
+
+float BoxStyle::convertFontSize(const CSSValue& value) const
+{
+    if(auto ident = value.toIdentValue()) {
+        switch(ident->value()) {
+        case CSSValueID::XxSmall:
+            return 1.0;
+        case CSSValueID::XSmall:
+            return 2.0;
+        case CSSValueID::Small:
+            return 3.0;
+        case CSSValueID::Medium:
+            return 4.0;
+        case CSSValueID::Large:
+            return 5.0;
+        case CSSValueID::XLarge:
+            return 6.0;
+        case CSSValueID::XxLarge:
+            return 7.0;
+        case CSSValueID::XxxLarge:
+            return 8.0;
+        case CSSValueID::Smaller:
+            return m_fontSize / 1.2;
+        case CSSValueID::Larger:
+            return m_fontSize * 1.2;
+        default:
+            assert(false);
+        }
+    }
+
+    if(auto percent = value.toPercentValue())
+        return percent->value() * m_fontSize / 100.0;
     return convertLengthValue(value);
 }
 
@@ -1564,6 +1620,23 @@ float BoxStyle::convertNumber(const CSSValue& value)
 
 void BoxStyle::inheritFrom(const BoxStyle& parentStyle)
 {
+    m_fontData = parentStyle.fontData();
+    m_fontSize = parentStyle.fontSize();
+    m_currentColor = parentStyle.currentColor();
+    for(auto& [id, value] : parentStyle.properties()) {
+        switch(id) {
+        case CSSPropertyID::Color:
+        case CSSPropertyID::FontSize:
+        case CSSPropertyID::FontFamily:
+        case CSSPropertyID::FontStyle:
+        case CSSPropertyID::FontVariant:
+        case CSSPropertyID::FontWeight:
+            m_properties.insert_or_assign(id, value);
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 } // namespace htmlbook

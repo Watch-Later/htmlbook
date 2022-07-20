@@ -426,16 +426,20 @@ private:
     Length m_value;
 };
 
-class ImageData;
 class Element;
+class FontData;
+class ImageData;
 
-class BoxStyle {
+class BoxStyle : public RefCounted<BoxStyle> {
 public:
-    static std::shared_ptr<BoxStyle> create(const Element* element);
-    static std::shared_ptr<BoxStyle> create(const BoxStyle& parentStyle);
+    static RefPtr<BoxStyle> create(const Element* element);
+    static RefPtr<BoxStyle> create(const BoxStyle& parentStyle);
 
     const Element* element() const { return m_element; }
+    const FontData* fontData() const { return m_fontData.get(); }
+    float fontSize() const { return m_fontSize; }
     const Color& currentColor() const { return m_currentColor; }
+    const CSSPropertyMap& properties() const { return m_properties; }
 
     Display display() const;
     Visibility visibility() const;
@@ -488,9 +492,9 @@ public:
 
     ListStyleType listStyleType() const;
     ListStylePosition listStylePosition() const;
-    std::shared_ptr<ImageData> listStyleImage() const;
+    RefPtr<ImageData> listStyleImage() const;
 
-    std::shared_ptr<ImageData> backgroundImage() const;
+    RefPtr<ImageData> backgroundImage() const;
     Color backgroundColor() const;
     BackgroundRepeat backgroundRepeat() const;
     BackgroundBox backgroundOrigin() const;
@@ -552,8 +556,8 @@ public:
     int widows() const;
     int orphans() const;
 
-    std::shared_ptr<CSSValue> get(CSSPropertyID id) const;
-    void set(CSSPropertyID id, std::shared_ptr<CSSValue> value);
+    const CSSValue* get(CSSPropertyID id) const;
+    void set(CSSPropertyID id, RefPtr<CSSValue> value);
 
     float emFontSize() const;
     float exFontSize() const;
@@ -567,6 +571,7 @@ public:
 
     float convertLengthValue(const CSSValue& value) const;
     float convertLineWidth(const CSSValue& value) const;
+    float convertFontSize(const CSSValue& value) const;
     std::optional<float> convertLengthOrAuto(const CSSValue& value) const;
     std::optional<float> convertLengthOrNormal(const CSSValue& value) const;
     Length convertLength(const CSSValue& value) const;
@@ -587,10 +592,12 @@ public:
     void inheritFrom(const BoxStyle& parentStyle);
 
 private:
-    BoxStyle(const Element* element) : m_element(element) {}
+    BoxStyle(const Element* element);
     const Element* m_element;
-    Color m_currentColor;
-    std::map<CSSPropertyID, std::shared_ptr<CSSValue>> m_properties;
+    RefPtr<FontData> m_fontData;
+    float m_fontSize{12.0};
+    Color m_currentColor{Color::Black};
+    CSSPropertyMap m_properties;
 };
 
 } // namespace htmlbook

@@ -202,8 +202,8 @@ public:
     void load(const std::string_view& content);
 
     void updateIdCache(const GlobalString& oldValue, const GlobalString& newValue, Element* element);
-    void addFontData(const std::string_view& family, bool italic, bool smallCaps, int weight, std::shared_ptr<FontData> data);
-    std::shared_ptr<FontData> getFontData(const std::string_view& family, bool italic, bool smallCaps, int weight);
+    void addFontData(const std::string_view& family, bool italic, bool smallCaps, int weight, RefPtr<FontData> data);
+    RefPtr<FontData> getFontData(const std::string_view& family, bool italic, bool smallCaps, int weight);
 
     void addAuthorStyleSheet(const std::string_view& content);
     void setUserStyleSheet(const std::string_view& content);
@@ -212,13 +212,13 @@ public:
     const CSSStyleSheet* authorStyleSheet() const { return m_authorStyleSheet.get(); }
     const CSSStyleSheet* userStyleSheet() const { return m_userStyleSheet.get(); }
 
-    std::shared_ptr<TextResource> fetchTextResource(const std::string_view& url);
-    std::shared_ptr<ImageResource> fetchImageResource(const std::string_view& url);
-    std::shared_ptr<FontResource> fetchFontResource(const std::string_view& url);
+    RefPtr<TextResource> fetchTextResource(const std::string_view& url);
+    RefPtr<ImageResource> fetchImageResource(const std::string_view& url);
+    RefPtr<FontResource> fetchFontResource(const std::string_view& url);
 
 private:
     Url m_baseUrl;
-    std::map<Url, std::shared_ptr<Resource>> m_resourceCache;
+    std::map<Url, RefPtr<Resource>> m_resourceCache;
     std::multimap<GlobalString, Element*> m_idCache;
     std::unique_ptr<CSSStyleSheet> m_authorStyleSheet;
     std::unique_ptr<CSSStyleSheet> m_userStyleSheet;

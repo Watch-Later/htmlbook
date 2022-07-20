@@ -3,114 +3,113 @@
 #include "document.h"
 #include "resource.h"
 
-#include <algorithm>
-
 namespace htmlbook {
 
-std::shared_ptr<CSSInitialValue> CSSInitialValue::create()
+RefPtr<CSSInitialValue> CSSInitialValue::create()
 {
-    static std::shared_ptr<CSSInitialValue> value(new CSSInitialValue);
+    static auto value = adoptPtr(new CSSInitialValue);
     return value;
 }
 
-std::shared_ptr<CSSInheritValue> CSSInheritValue::create()
+RefPtr<CSSInheritValue> CSSInheritValue::create()
 {
-    static std::shared_ptr<CSSInheritValue> value(new CSSInheritValue);
+    static auto value = adoptPtr(new CSSInheritValue);
     return value;
 }
 
-std::shared_ptr<CSSIdentValue> CSSIdentValue::create(CSSValueID value)
+RefPtr<CSSIdentValue> CSSIdentValue::create(CSSValueID value)
 {
-    static std::map<CSSValueID, std::shared_ptr<CSSIdentValue>> table;
+    static std::map<CSSValueID, RefPtr<CSSIdentValue>> table;
     auto it = table.find(value);
     if(it == table.end()) {
-        std::shared_ptr<CSSIdentValue> item(new CSSIdentValue(value));
-        return std::get<1>(*table.emplace_hint(it, value, item));
+        auto item = adoptPtr(new CSSIdentValue(value));
+        table.emplace(value, item);
+        return item;
     }
 
     return it->second;
 }
 
-std::shared_ptr<CSSCustomIdentValue> CSSCustomIdentValue::create(const GlobalString& value)
+RefPtr<CSSCustomIdentValue> CSSCustomIdentValue::create(const GlobalString& value)
 {
-    return std::shared_ptr<CSSCustomIdentValue>(new CSSCustomIdentValue(value));
+    return adoptPtr(new CSSCustomIdentValue(value));
 }
 
-std::shared_ptr<CSSIntegerValue> CSSIntegerValue::create(int value)
+RefPtr<CSSIntegerValue> CSSIntegerValue::create(int value)
 {
-    return std::shared_ptr<CSSIntegerValue>(new CSSIntegerValue(value));
+    return adoptPtr(new CSSIntegerValue(value));
 }
 
-std::shared_ptr<CSSNumberValue> CSSNumberValue::create(double value)
+RefPtr<CSSNumberValue> CSSNumberValue::create(double value)
 {
-    return std::shared_ptr<CSSNumberValue>(new CSSNumberValue(value));
+    return adoptPtr(new CSSNumberValue(value));
 }
 
-std::shared_ptr<CSSPercentValue> CSSPercentValue::create(double value)
+RefPtr<CSSPercentValue> CSSPercentValue::create(double value)
 {
-    return std::shared_ptr<CSSPercentValue>(new CSSPercentValue(value));
+    return adoptPtr(new CSSPercentValue(value));
 }
 
-std::shared_ptr<CSSAngleValue> CSSAngleValue::create(double value, Unit unit)
+RefPtr<CSSAngleValue> CSSAngleValue::create(double value, Unit unit)
 {
-    return std::shared_ptr<CSSAngleValue>(new CSSAngleValue(value, unit));
+    return adoptPtr(new CSSAngleValue(value, unit));
 }
 
-std::shared_ptr<CSSLengthValue> CSSLengthValue::create(double value, Unit unit)
+RefPtr<CSSLengthValue> CSSLengthValue::create(double value, Unit unit)
 {
-    return std::shared_ptr<CSSLengthValue>(new CSSLengthValue(value, unit));
+    return adoptPtr(new CSSLengthValue(value, unit));
 }
 
-std::shared_ptr<CSSStringValue> CSSStringValue::create(std::string value)
+RefPtr<CSSStringValue> CSSStringValue::create(std::string value)
 {
-    return std::shared_ptr<CSSStringValue>(new CSSStringValue(std::move(value)));
+    return adoptPtr(new CSSStringValue(std::move(value)));
 }
 
-std::shared_ptr<CSSUrlValue> CSSUrlValue::create(std::string value)
+RefPtr<CSSUrlValue> CSSUrlValue::create(std::string value)
 {
-    return std::shared_ptr<CSSUrlValue>(new CSSUrlValue(std::move(value)));
+    return adoptPtr(new CSSUrlValue(std::move(value)));
 }
 
-std::shared_ptr<CSSColorValue> CSSColorValue::create(uint32_t value)
+RefPtr<CSSColorValue> CSSColorValue::create(uint32_t value)
 {
-    return std::shared_ptr<CSSColorValue>(new CSSColorValue(value));
+    return adoptPtr(new CSSColorValue(value));
 }
 
-std::shared_ptr<CSSColorValue> CSSColorValue::create(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+RefPtr<CSSColorValue> CSSColorValue::create(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
-    return create(a << 24 | r << 16 | g << 8 | b);
+    return adoptPtr(new CSSColorValue(a << 24 | r << 16 | g << 8 | b));
 }
 
-std::shared_ptr<CSSCounterValue> CSSCounterValue::create(CSSValueID listStyle, const GlobalString& identifier, std::string seperator)
+RefPtr<CSSCounterValue> CSSCounterValue::create(CSSValueID listStyle, const GlobalString& identifier, std::string seperator)
 {
-    return std::shared_ptr<CSSCounterValue>(new CSSCounterValue(listStyle, identifier, std::move(seperator)));
+    return adoptPtr(new CSSCounterValue(listStyle, identifier, std::move(seperator)));
 }
 
-std::shared_ptr<CSSPairValue> CSSPairValue::create(std::shared_ptr<CSSValue> first, std::shared_ptr<CSSValue> second)
+RefPtr<CSSPairValue> CSSPairValue::create(RefPtr<CSSValue> first, RefPtr<CSSValue> second)
 {
-    return std::shared_ptr<CSSPairValue>(new CSSPairValue(std::move(first), std::move(second)));
+    return adoptPtr(new CSSPairValue(std::move(first), std::move(second)));
 }
 
-std::shared_ptr<CSSRectValue> CSSRectValue::create(std::shared_ptr<CSSValue> top, std::shared_ptr<CSSValue> right, std::shared_ptr<CSSValue> bottom, std::shared_ptr<CSSValue> left)
+RefPtr<CSSRectValue> CSSRectValue::create(RefPtr<CSSValue> top, RefPtr<CSSValue> right, RefPtr<CSSValue> bottom, RefPtr<CSSValue> left)
 {
-    return std::shared_ptr<CSSRectValue>(new CSSRectValue(std::move(top), std::move(right), std::move(bottom), std::move(left)));
+    return adoptPtr(new CSSRectValue(std::move(top), std::move(right), std::move(bottom), std::move(left)));
 }
 
-std::shared_ptr<CSSListValue> CSSListValue::create(CSSValueList values)
+RefPtr<CSSListValue> CSSListValue::create(CSSValueList values)
 {
-    return std::shared_ptr<CSSListValue>(new CSSListValue(std::move(values)));
+    return adoptPtr(new CSSListValue(std::move(values)));
 }
 
-std::shared_ptr<CSSFunctionValue> CSSFunctionValue::create(CSSValueID id, CSSValueList values)
+RefPtr<CSSFunctionValue> CSSFunctionValue::create(CSSValueID id, CSSValueList values)
 {
-    return std::shared_ptr<CSSFunctionValue>(new CSSFunctionValue(id, std::move(values)));
+    return adoptPtr(new CSSFunctionValue(id, std::move(values)));
 }
 
-std::shared_ptr<CSSFunctionValue> CSSFunctionValue::create(CSSValueID id, std::shared_ptr<CSSValue> value)
+RefPtr<CSSFunctionValue> CSSFunctionValue::create(CSSValueID id, RefPtr<CSSValue> value)
 {
     CSSValueList values;
     values.push_back(std::move(value));
-    return create(id, std::move(values));
+    return adoptPtr(new CSSFunctionValue(id, std::move(values)));;
 }
 
 CSSShorthand CSSShorthand::longhand(CSSPropertyID id)
@@ -997,11 +996,11 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
 {
     if(m_document == nullptr)
         return;
-    std::shared_ptr<CSSValue> fontFamily;
-    std::shared_ptr<CSSValue> fontStyle;
-    std::shared_ptr<CSSValue> fontVariant;
-    std::shared_ptr<CSSValue> fontWeight;
-    std::shared_ptr<CSSValue> src;
+    RefPtr<CSSValue> fontFamily;
+    RefPtr<CSSValue> fontStyle;
+    RefPtr<CSSValue> fontVariant;
+    RefPtr<CSSValue> fontWeight;
+    RefPtr<CSSValue> src;
     for(auto& property : rule->properties()) {
         switch(property.id()) {
         case CSSPropertyID::FontFamily:
@@ -1082,42 +1081,6 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
             auto integer = fontWeight->toIntegerValue();
             weight = integer->value();
         }
-    }
-
-    std::shared_ptr<FontData> data;
-    for(auto& item : src->toListValue()->values()) {
-        assert(item->isListValue());
-        auto source = item->toListValue();
-        if(auto function = source->at(0)->toFunctionValue()) {
-            assert(function->id() == CSSValueID::Local);
-            auto& family = function->at(0)->toStringValue()->value();
-            if(data = m_document->getFontData(family, italic, smallCaps, weight)) {
-                break;
-            }
-        } else {
-            auto& url = source->at(0)->toUrlValue()->value();
-            if(source->length() > 1) {
-                auto function = source->at(1)->toFunctionValue();
-                assert(function->id() == CSSValueID::Format);
-                auto& format = function->at(0)->toStringValue()->value();
-                if(!equals(format, "truetype", false) && !equals(format, "opentype", false)) {
-                    continue;
-                }
-            }
-
-            if(auto fontResource = m_document->fetchFontResource(url)) {
-                data = fontResource->font();
-                break;
-            }
-        }
-    }
-
-    if(data == nullptr)
-        return;
-    for(auto& item : fontFamily->toListValue()->values()) {
-        assert(item->isStringValue());
-        auto& family = item->toStringValue()->value();
-        m_document->addFontData(family, italic, smallCaps, weight, data);
     }
 }
 
