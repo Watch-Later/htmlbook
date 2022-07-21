@@ -8,9 +8,6 @@
 
 namespace htmlbook {
 
-template<typename T, typename U>
-constexpr T* badcast(const U& value) { return (T*)(&*value); }
-
 class ContainerNode;
 class Document;
 class Box;
@@ -67,6 +64,11 @@ private:
     std::string m_data;
 };
 
+template<>
+struct is<TextNode> {
+    static bool check(const Node& value) { return value.isTextNode(); }
+};
+
 class ContainerNode : public Node {
 public:
     ContainerNode(Document* document);
@@ -93,6 +95,11 @@ public:
 private:
     Node* m_firstChild{nullptr};
     Node* m_lastChild{nullptr};
+};
+
+template<>
+struct is<ContainerNode> {
+    static bool check(const Node& value) { return value.isContainerNode(); }
 };
 
 class Attribute {
@@ -165,17 +172,22 @@ private:
     GlobalStringList m_classNames;
 };
 
+template<>
+struct is<Element> {
+    static bool check(const Node& value) { return value.isElementNode(); }
+};
+
 inline const GlobalString& Node::tagName() const
 {
     if(isElementNode())
-        return badcast<Element>(this)->tagName();
+        return to<Element>(this)->tagName();
     return emptyString;
 }
 
 inline const GlobalString& Node::namespaceUri() const
 {
     if(isElementNode())
-        return badcast<Element>(this)->tagName();
+        return to<Element>(this)->tagName();
     return emptyString;
 }
 

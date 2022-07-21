@@ -12,25 +12,6 @@ namespace htmlbook {
 
 class Document;
 
-class CSSInitialValue;
-class CSSInheritValue;
-class CSSIdentValue;
-class CSSCustomIdentValue;
-class CSSIntegerValue;
-class CSSNumberValue;
-class CSSPercentValue;
-class CSSAngleValue;
-class CSSLengthValue;
-class CSSStringValue;
-class CSSUrlValue;
-class CSSImageValue;
-class CSSColorValue;
-class CSSCounterValue;
-class CSSPairValue;
-class CSSRectValue;
-class CSSListValue;
-class CSSFunctionValue;
-
 class CSSValue : public RefCounted<CSSValue> {
 public:
     virtual ~CSSValue() = default;
@@ -53,25 +34,6 @@ public:
     virtual bool isListValue() const { return false; }
     virtual bool isFunctionValue() const { return false; }
 
-    const CSSInitialValue* toInitialValue() const;
-    const CSSInheritValue* toInheritValue() const;
-    const CSSIdentValue* toIdentValue() const;
-    const CSSCustomIdentValue* toCustomIdentValue() const;
-    const CSSIntegerValue* toIntegerValue() const;
-    const CSSNumberValue* toNumberValue() const;
-    const CSSPercentValue* toPercentValue() const;
-    const CSSAngleValue* toAngleValue() const;
-    const CSSLengthValue* toLengthValue() const;
-    const CSSStringValue* toStringValue() const;
-    const CSSUrlValue* toUrlValue() const;
-    const CSSImageValue* toImageValue() const;
-    const CSSColorValue* toColorValue() const;
-    const CSSCounterValue* toCounterValue() const;
-    const CSSPairValue* toPairValue() const;
-    const CSSRectValue* toRectValue() const;
-    const CSSListValue* toListValue() const;
-    const CSSFunctionValue* toFunctionValue() const;
-
 protected:
     CSSValue() = default;
 };
@@ -88,11 +50,10 @@ private:
     CSSInitialValue() = default;
 };
 
-inline const CSSInitialValue* CSSValue::toInitialValue() const {
-    if(!isInitialValue())
-        return nullptr;
-    return (CSSInitialValue*)(this);
-}
+template<>
+struct is<CSSInitialValue> {
+    static bool check(const CSSValue& value) { return value.isInitialValue(); }
+};
 
 class CSSInheritValue final : public CSSValue {
 public:
@@ -104,11 +65,10 @@ private:
     CSSInheritValue() = default;
 };
 
-inline const CSSInheritValue* CSSValue::toInheritValue() const {
-    if(!isInheritValue())
-        return nullptr;
-    return (CSSInheritValue*)(this);
-}
+template<>
+struct is<CSSInheritValue> {
+    static bool check(const CSSValue& value) { return value.isInheritValue(); }
+};
 
 enum class CSSValueID {
     Format,
@@ -328,11 +288,10 @@ private:
     CSSValueID m_value;
 };
 
-inline const CSSIdentValue* CSSValue::toIdentValue() const {
-    if(!isIdentValue())
-        return nullptr;
-    return (CSSIdentValue*)(this);
-}
+template<>
+struct is<CSSIdentValue> {
+    static bool check(const CSSValue& value) { return value.isIdentValue(); }
+};
 
 class CSSCustomIdentValue final : public CSSValue {
 public:
@@ -346,11 +305,10 @@ private:
     GlobalString m_value;
 };
 
-inline const CSSCustomIdentValue* CSSValue::toCustomIdentValue() const {
-    if(!isCustomIdentValue())
-        return nullptr;
-    return (CSSCustomIdentValue*)(this);
-}
+template<>
+struct is<CSSCustomIdentValue> {
+    static bool check(const CSSValue& value) { return value.isCustomIdentValue(); }
+};
 
 class CSSIntegerValue final : public CSSValue {
 public:
@@ -364,11 +322,10 @@ private:
     int m_value;
 };
 
-inline const CSSIntegerValue* CSSValue::toIntegerValue() const {
-    if(!isIntegerValue())
-        return nullptr;
-    return (CSSIntegerValue*)(this);
-}
+template<>
+struct is<CSSIntegerValue> {
+    static bool check(const CSSValue& value) { return value.isIntegerValue(); }
+};
 
 class CSSNumberValue final : public CSSValue {
 public:
@@ -382,11 +339,10 @@ private:
     double m_value;
 };
 
-inline const CSSNumberValue* CSSValue::toNumberValue() const {
-    if(!isNumberValue())
-        return nullptr;
-    return (CSSNumberValue*)(this);
-}
+template<>
+struct is<CSSNumberValue> {
+    static bool check(const CSSValue& value) { return value.isNumberValue(); }
+};
 
 class CSSPercentValue final : public CSSValue {
 public:
@@ -400,11 +356,10 @@ private:
     double m_value;
 };
 
-inline const CSSPercentValue* CSSValue::toPercentValue() const {
-    if(!isPercentValue())
-        return nullptr;
-    return (CSSPercentValue*)(this);
-}
+template<>
+struct is<CSSPercentValue> {
+    static bool check(const CSSValue& value) { return value.isPercentValue(); }
+};
 
 class CSSAngleValue final : public CSSValue {
 public:
@@ -430,11 +385,10 @@ private:
     Unit m_unit;
 };
 
-inline const CSSAngleValue* CSSValue::toAngleValue() const {
-    if(!isAngleValue())
-        return nullptr;
-    return (CSSAngleValue*)(this);
-}
+template<>
+struct is<CSSAngleValue> {
+    static bool check(const CSSValue& value) { return value.isAngleValue(); }
+};
 
 class CSSLengthValue final : public CSSValue {
 public:
@@ -471,11 +425,10 @@ private:
     Unit m_unit;
 };
 
-inline const CSSLengthValue* CSSValue::toLengthValue() const {
-    if(!isLengthValue())
-        return nullptr;
-    return (CSSLengthValue*)(this);
-}
+template<>
+struct is<CSSLengthValue> {
+    static bool check(const CSSValue& value) { return value.isLengthValue(); }
+};
 
 class CSSStringValue final : public CSSValue {
 public:
@@ -489,11 +442,10 @@ private:
     std::string m_value;
 };
 
-inline const CSSStringValue* CSSValue::toStringValue() const {
-    if(!isStringValue())
-        return nullptr;
-    return (CSSStringValue*)(this);
-}
+template<>
+struct is<CSSStringValue> {
+    static bool check(const CSSValue& value) { return value.isStringValue(); }
+};
 
 class CSSUrlValue final : public CSSValue {
 public:
@@ -507,11 +459,10 @@ private:
     std::string m_value;
 };
 
-inline const CSSUrlValue* CSSValue::toUrlValue() const {
-    if(!isUrlValue())
-        return nullptr;
-    return (CSSUrlValue*)(this);
-}
+template<>
+struct is<CSSUrlValue> {
+    static bool check(const CSSValue& value) { return value.isUrlValue(); }
+};
 
 class Image;
 
@@ -530,11 +481,10 @@ private:
     mutable RefPtr<Image> m_image;
 };
 
-inline const CSSImageValue* CSSValue::toImageValue() const {
-    if(!isImageValue())
-        return nullptr;
-    return (CSSImageValue*)(this);
-}
+template<>
+struct is<CSSImageValue> {
+    static bool check(const CSSValue& value) { return value.isImageValue(); }
+};
 
 class CSSColorValue final : public CSSValue {
 public:
@@ -549,11 +499,10 @@ private:
     uint32_t m_value;
 };
 
-inline const CSSColorValue* CSSValue::toColorValue() const {
-    if(!isColorValue())
-        return nullptr;
-    return (CSSColorValue*)(this);
-}
+template<>
+struct is<CSSColorValue> {
+    static bool check(const CSSValue& value) { return value.isColorValue(); }
+};
 
 class CSSCounterValue final : public CSSValue {
 public:
@@ -574,11 +523,10 @@ private:
     std::string m_seperator;
 };
 
-inline const CSSCounterValue* CSSValue::toCounterValue() const {
-    if(!isCounterValue())
-        return nullptr;
-    return (CSSCounterValue*)(this);
-}
+template<>
+struct is<CSSCounterValue> {
+    static bool check(const CSSValue& value) { return value.isCounterValue(); }
+};
 
 class CSSPairValue final : public CSSValue {
 public:
@@ -597,11 +545,10 @@ private:
     RefPtr<CSSValue> m_second;
 };
 
-inline const CSSPairValue* CSSValue::toPairValue() const {
-    if(!isPairValue())
-        return nullptr;
-    return (CSSPairValue*)(this);
-}
+template<>
+struct is<CSSPairValue> {
+    static bool check(const CSSValue& value) { return value.isPairValue(); }
+};
 
 class CSSRectValue final : public CSSValue {
 public:
@@ -624,11 +571,10 @@ private:
     RefPtr<CSSValue> m_left;
 };
 
-inline const CSSRectValue* CSSValue::toRectValue() const {
-    if(!isRectValue())
-        return nullptr;
-    return (CSSRectValue*)(this);
-}
+template<>
+struct is<CSSRectValue> {
+    static bool check(const CSSValue& value) { return value.isRectValue(); }
+};
 
 class CSSListValue final : public CSSValue {
 public:
@@ -644,11 +590,10 @@ private:
     CSSValueList m_values;
 };
 
-inline const CSSListValue* CSSValue::toListValue() const {
-    if(!isListValue())
-        return nullptr;
-    return (CSSListValue*)(this);
-}
+template<>
+struct is<CSSListValue> {
+    static bool check(const CSSValue& value) { return value.isListValue(); }
+};
 
 class CSSFunctionValue final : public CSSValue {
 public:
@@ -670,11 +615,10 @@ private:
     CSSValueList m_values;
 };
 
-inline const CSSFunctionValue* CSSValue::toFunctionValue() const {
-    if(!isFunctionValue())
-        return nullptr;
-    return (CSSFunctionValue*)(this);
-}
+template<>
+struct is<CSSFunctionValue> {
+    static bool check(const CSSValue& value) { return value.isFunctionValue(); }
+};
 
 enum class CSSPropertyID {
     BorderSpacing,
@@ -1017,12 +961,6 @@ private:
     CSSCompoundSelector m_compoundSelector;
 };
 
-class CSSStyleRule;
-class CSSImportRule;
-class CSSFontFaceRule;
-class CSSPageMarginRule;
-class CSSPageRule;
-
 class CSSRule {
 public:
     virtual ~CSSRule() = default;
@@ -1031,12 +969,6 @@ public:
     virtual bool isFontFaceRule() const { return false; }
     virtual bool isPageMarginRule() const { return false; }
     virtual bool isPageRule() const { return false; }
-
-    const CSSStyleRule* toStyleRule() const;
-    const CSSImportRule* toImportRule() const;
-    const CSSFontFaceRule* toFontFaceRule() const;
-    const CSSPageMarginRule* toPageMarginRule() const;
-    const CSSPageRule* toPageRule() const;
 
 protected:
     CSSRule() = default;
@@ -1061,11 +993,10 @@ private:
     CSSPropertyList m_properties;
 };
 
-inline const CSSStyleRule* CSSRule::toStyleRule() const {
-    if(!isStyleRule())
-        return nullptr;
-    return (CSSStyleRule*)(this);
-}
+template<>
+struct is<CSSStyleRule> {
+    static bool check(const CSSRule& value) { return value.isStyleRule(); }
+};
 
 class CSSImportRule final : public CSSRule {
 public:
@@ -1079,11 +1010,10 @@ private:
     std::string m_href;
 };
 
-inline const CSSImportRule* CSSRule::toImportRule() const {
-    if(!isImportRule())
-        return nullptr;
-    return (CSSImportRule*)(this);
-}
+template<>
+struct is<CSSImportRule> {
+    static bool check(const CSSRule& value) { return value.isImportRule(); }
+};
 
 class CSSFontFaceRule : public CSSRule {
 public:
@@ -1100,11 +1030,10 @@ private:
     CSSPropertyList m_properties;
 };
 
-inline const CSSFontFaceRule* CSSRule::toFontFaceRule() const {
-    if(!isFontFaceRule())
-        return nullptr;
-    return (CSSFontFaceRule*)(this);
-}
+template<>
+struct is<CSSFontFaceRule> {
+    static bool check(const CSSRule& value) { return value.isFontFaceRule(); }
+};
 
 class CSSPageMarginRule final : public CSSRule {
 public:
@@ -1142,11 +1071,10 @@ private:
     CSSPropertyList m_properties;
 };
 
-inline const CSSPageMarginRule* CSSRule::toPageMarginRule() const {
-    if(!isPageMarginRule())
-        return nullptr;
-    return (CSSPageMarginRule*)(this);
-}
+template<>
+struct is<CSSPageMarginRule> {
+    static bool check(const CSSRule& value) { return value.isPageMarginRule(); }
+};
 
 using CSSPageMarginRuleList = std::vector<std::unique_ptr<CSSPageMarginRule>>;
 
@@ -1169,11 +1097,10 @@ private:
     CSSPropertyList m_properties;
 };
 
-inline const CSSPageRule* CSSRule::toPageRule() const {
-    if(!isPageRule())
-        return nullptr;
-    return (CSSPageRule*)(this);
-}
+template<>
+struct is<CSSPageRule> {
+    static bool check(const CSSRule& value) { return value.isPageRule(); }
+};
 
 enum class PseudoType : uint8_t {
     None,

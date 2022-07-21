@@ -7,6 +7,40 @@
 namespace htmlbook {
 
 template<typename T>
+struct is {
+    template<typename U>
+    static bool check(const U& value);
+};
+
+template<typename T, typename U>
+constexpr const T* to(const U& value) {
+    if(is<T>::check(value))
+        return static_cast<const T*>(&value);
+    return nullptr;
+}
+
+template<typename T, typename U>
+constexpr const T* to(const U* value) {
+    if(value && is<T>::check(*value))
+        return static_cast<const T*>(value);
+    return nullptr;
+}
+
+template<typename T, typename U>
+constexpr T* to(U& value) {
+    if(is<T>::check(value))
+        return static_cast<T*>(&value);
+    return nullptr;
+}
+
+template<typename T, typename U>
+constexpr T* to(U* value) {
+    if(value && is<T>::check(*value))
+        return static_cast<T*>(value);
+    return nullptr;
+}
+
+template<typename T>
 class RefCounted {
 public:
     RefCounted() = default;

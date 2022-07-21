@@ -743,7 +743,7 @@ void HTMLParser::insert(const InsertionLocation& location)
     if(!location.child->isContainerNode())
         return;
 
-    auto child = badcast<ContainerNode>(location.child);
+    auto child = to<ContainerNode>(location.child);
     child->beginParsingChildern();
     if(location.selfClosing)
         child->finishParsingChildern();
@@ -1100,7 +1100,7 @@ void HTMLParser::insertTextNode(const std::string& data)
         previousChild = location.nextChild->previousSibling();
 
     if(previousChild && previousChild->isTextNode()) {
-        auto textNode = badcast<TextNode>(previousChild);
+        auto textNode = to<TextNode>(previousChild);
         textNode->appendData(data);
         return;
     }

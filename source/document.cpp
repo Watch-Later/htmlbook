@@ -279,7 +279,7 @@ Element* Element::parentElement() const
 {
     auto parent = parentNode();
     if(parent->isElementNode())
-        return badcast<Element>(parent);
+        return to<Element>(parent);
     return nullptr;
 }
 
@@ -288,7 +288,7 @@ Element* Element::previousElement() const
     auto previousChild = previousSibling();
     while(previousChild) {
         if(previousChild->isElementNode())
-            return badcast<Element>(previousChild);
+            return to<Element>(previousChild);
         previousChild = previousChild->previousSibling();
     }
 
@@ -300,7 +300,7 @@ Element* Element::nextElement() const
     auto nextChild = nextSibling();
     while(nextChild) {
         if(nextChild->isElementNode())
-            return badcast<Element>(nextChild);
+            return to<Element>(nextChild);
         nextChild = nextChild->nextSibling();
     }
 
