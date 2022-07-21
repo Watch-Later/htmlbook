@@ -1296,7 +1296,7 @@ void BoxStyle::set(CSSPropertyID id, RefPtr<CSSValue> value)
     case CSSPropertyID::FontStyle:
     case CSSPropertyID::FontVariant:
     case CSSPropertyID::FontWeight:
-        m_fontData = nullptr;
+        m_fontFace = nullptr;
         break;
     default:
         break;
@@ -1620,7 +1620,7 @@ float BoxStyle::convertNumber(const CSSValue& value)
 
 void BoxStyle::inheritFrom(const BoxStyle& parentStyle)
 {
-    m_fontData = parentStyle.fontData();
+    m_fontFace = parentStyle.fontFace();
     m_fontSize = parentStyle.fontSize();
     m_currentColor = parentStyle.currentColor();
     for(auto& [id, value] : parentStyle.properties()) {

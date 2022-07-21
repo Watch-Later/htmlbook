@@ -47,11 +47,10 @@ class RefPtr {
 public:
     RefPtr() = default;
     RefPtr(std::nullptr_t) : m_ptr(nullptr) {}
+    RefPtr(T* ptr) : m_ptr(ptr) { refIfNotNull(m_ptr); }
+    RefPtr(T& ref) : m_ptr(&ref) { m_ptr->ref(); }
     RefPtr(const RefPtr<T>& p) : m_ptr(p.get()) { refIfNotNull(m_ptr); }
     RefPtr(RefPtr<T>&& p) : m_ptr(p.release()) {}
-
-    RefPtr(const T* ptr) : m_ptr(const_cast<T*>(ptr)) { refIfNotNull(m_ptr); }
-    RefPtr(const T& ref) : m_ptr(const_cast<T*>(&ref)) { m_ptr->ref(); }
 
     template<typename U>
     RefPtr(const RefPtr<U>& p) : m_ptr(p.get()) { refIfNotNull(m_ptr); }
@@ -74,14 +73,14 @@ public:
         return *this;
     }
 
-    RefPtr<T>& operator=(const T* o)
+    RefPtr<T>& operator=(T* o)
     {
         RefPtr<T> p = o;
         swap(p);
         return *this;
     }
 
-    RefPtr<T>& operator=(const T& o)
+    RefPtr<T>& operator=(T& o)
     {
         RefPtr<T> p = o;
         swap(p);

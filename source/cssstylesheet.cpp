@@ -70,6 +70,11 @@ RefPtr<CSSUrlValue> CSSUrlValue::create(std::string value)
     return adoptPtr(new CSSUrlValue(std::move(value)));
 }
 
+RefPtr<CSSImageValue> CSSImageValue::create(std::string value)
+{
+    return adoptPtr(new CSSImageValue(std::move(value)));
+}
+
 RefPtr<CSSColorValue> CSSColorValue::create(uint32_t value)
 {
     return adoptPtr(new CSSColorValue(value));
@@ -996,11 +1001,11 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
 {
     if(m_document == nullptr)
         return;
-    RefPtr<CSSValue> fontFamily;
-    RefPtr<CSSValue> fontStyle;
-    RefPtr<CSSValue> fontVariant;
-    RefPtr<CSSValue> fontWeight;
-    RefPtr<CSSValue> src;
+    const CSSValue* fontFamily = nullptr;
+    const CSSValue* fontStyle = nullptr;
+    const CSSValue* fontVariant = nullptr;
+    const CSSValue* fontWeight = nullptr;
+    const CSSValue* src = nullptr;
     for(auto& property : rule->properties()) {
         switch(property.id()) {
         case CSSPropertyID::FontFamily:

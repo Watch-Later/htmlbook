@@ -37,30 +37,30 @@ private:
     std::string m_text;
 };
 
-class ImageData;
+class Image;
 
 class ImageResource final : public Resource {
 public:
     static RefPtr<ImageResource> create(std::shared_ptr<ResourceData> data);
-    const ImageData* image() const { return m_image.get(); }
+    Image* image() const { return m_image.get(); }
     Type type() const final { return Resource::Type::Image; }
 
 private:
-    ImageResource(RefPtr<ImageData> image);
-    RefPtr<ImageData> m_image;
+    ImageResource(RefPtr<Image> image);
+    RefPtr<Image> m_image;
 };
 
-class FontData;
+class Font;
 
 class FontResource final : public Resource {
 public:
     static RefPtr<FontResource> create(std::shared_ptr<ResourceData> data);
-    const FontData* font() const { return m_font.get(); }
+    Font* font() const { return m_font.get(); }
     Type type() const final { return Resource::Type::Font; }
 
 private:
-    FontResource(RefPtr<FontData> font);
-    RefPtr<FontData> m_font;
+    FontResource(RefPtr<Font> font);
+    RefPtr<Font> m_font;
 };
 
 } // namespace htmlbook

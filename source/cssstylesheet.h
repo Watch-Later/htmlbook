@@ -10,6 +10,8 @@
 
 namespace htmlbook {
 
+class Document;
+
 class CSSInitialValue;
 class CSSInheritValue;
 class CSSIdentValue;
@@ -21,6 +23,7 @@ class CSSAngleValue;
 class CSSLengthValue;
 class CSSStringValue;
 class CSSUrlValue;
+class CSSImageValue;
 class CSSColorValue;
 class CSSCounterValue;
 class CSSPairValue;
@@ -42,6 +45,7 @@ public:
     virtual bool isLengthValue() const { return false; }
     virtual bool isStringValue() const { return false; }
     virtual bool isUrlValue() const { return false; }
+    virtual bool isImageValue() const { return false; }
     virtual bool isColorValue() const { return false; }
     virtual bool isCounterValue() const { return false; }
     virtual bool isPairValue() const { return false; }
@@ -60,6 +64,7 @@ public:
     const CSSLengthValue* toLengthValue() const;
     const CSSStringValue* toStringValue() const;
     const CSSUrlValue* toUrlValue() const;
+    const CSSImageValue* toImageValue() const;
     const CSSColorValue* toColorValue() const;
     const CSSCounterValue* toCounterValue() const;
     const CSSPairValue* toPairValue() const;
@@ -508,6 +513,29 @@ inline const CSSUrlValue* CSSValue::toUrlValue() const {
     return (CSSUrlValue*)(this);
 }
 
+class Image;
+
+class CSSImageValue final : public CSSValue {
+public:
+    static RefPtr<CSSImageValue> create(std::string value);
+
+    const std::string& value() const { return m_value; }
+    Image* image() const { return m_image.get(); }
+    Image* fetch(Document* document) const;
+    bool isImageValue() const final { return true; }
+
+private:
+    CSSImageValue(std::string value);
+    std::string m_value;
+    mutable RefPtr<Image> m_image;
+};
+
+inline const CSSImageValue* CSSValue::toImageValue() const {
+    if(!isImageValue())
+        return nullptr;
+    return (CSSImageValue*)(this);
+}
+
 class CSSColorValue final : public CSSValue {
 public:
     static RefPtr<CSSColorValue> create(uint32_t value);
@@ -556,8 +584,8 @@ class CSSPairValue final : public CSSValue {
 public:
     static RefPtr<CSSPairValue> create(RefPtr<CSSValue> first, RefPtr<CSSValue> second);
 
-    const CSSValue* first() const { return m_first.get(); }
-    const CSSValue* second() const { return m_second.get(); }
+    CSSValue* first() const { return m_first.get(); }
+    CSSValue* second() const { return m_second.get(); }
     bool isPairValue() const final { return true; }
 
 private:
@@ -579,10 +607,10 @@ class CSSRectValue final : public CSSValue {
 public:
     static RefPtr<CSSRectValue> create(RefPtr<CSSValue> top, RefPtr<CSSValue> right, RefPtr<CSSValue> bottom, RefPtr<CSSValue> left);
 
-    const CSSValue* top() const { return m_top.get(); }
-    const CSSValue* right() const { return m_right.get(); }
-    const CSSValue* bottom() const { return m_bottom.get(); }
-    const CSSValue* left() const { return m_left.get(); }
+    CSSValue* top() const { return m_top.get(); }
+    CSSValue* right() const { return m_right.get(); }
+    CSSValue* bottom() const { return m_bottom.get(); }
+    CSSValue* left() const { return m_left.get(); }
     bool isRectValue() const final { return true; }
 
 private:
@@ -607,7 +635,7 @@ public:
     static RefPtr<CSSListValue> create(CSSValueList values);
 
     size_t length() const { return m_values.size(); }
-    const CSSValue* at(size_t index) const { return m_values[index].get(); }
+    CSSValue* at(size_t index) const { return m_values[index].get(); }
     const CSSValueList& values() const { return m_values; }
     bool isListValue() const final { return true; }
 
@@ -629,7 +657,7 @@ public:
 
     CSSValueID id() const { return m_id; }
     size_t length() const { return m_values.size(); }
-    const CSSValue* at(size_t index) const { return m_values[index].get(); }
+    CSSValue* at(size_t index) const { return m_values[index].get(); }
     const CSSValueList& values() const { return m_values; }
     bool isFunctionValue() const final { return true; }
 
@@ -844,7 +872,7 @@ public:
 
     CSSPropertyID id() const { return m_id; }
     bool important() const { return m_important; }
-    const CSSValue* value() const { return m_value.get(); }
+    CSSValue* value() const { return m_value.get(); }
 
 private:
     CSSPropertyID m_id;
@@ -1256,8 +1284,6 @@ private:
 };
 
 using CSSPageRuleDataList = std::vector<CSSPageRuleData>;
-
-class Document;
 
 class CSSStyleSheet {
 public:

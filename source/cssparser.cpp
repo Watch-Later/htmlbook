@@ -1108,7 +1108,7 @@ RefPtr<CSSValue> CSSParser::consumeCustomIdent(CSSTokenStream& input)
     return nullptr;
 }
 
-RefPtr<CSSValue> CSSParser::consumeUrl(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeUrl(CSSTokenStream& input, bool image)
 {
     std::string value;
     switch(input->type()) {
@@ -1136,14 +1136,16 @@ RefPtr<CSSValue> CSSParser::consumeUrl(CSSTokenStream& input)
         return nullptr;
     }
 
-    return CSSUrlValue::create(std::move(value));
+    if(!image)
+        return CSSUrlValue::create(std::move(value));
+    return CSSImageValue::create(std::move(value));
 }
 
-RefPtr<CSSValue> CSSParser::consumeUrlOrNone(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeUrlOrNone(CSSTokenStream& input, bool image)
 {
     if(auto value = consumeNone(input))
         return value;
-    return consumeUrl(input);
+    return consumeUrl(input, image);
 }
 
 RefPtr<CSSValue> CSSParser::consumeColor(CSSTokenStream& input)
@@ -1422,7 +1424,7 @@ RefPtr<CSSValue> CSSParser::consumeFillOrStroke(CSSTokenStream& input)
     if(auto value = consumeNone(input))
         return value;
 
-    auto first = consumeUrl(input);
+    auto first = consumeUrl(input, false);
     if(first == nullptr)
         return consumeColor(input);
 
@@ -1468,7 +1470,7 @@ RefPtr<CSSValue> CSSParser::consumeContent(CSSTokenStream& input)
     while(!input.empty()) {
         auto value = consumeString(input);
         if(value == nullptr)
-            value = consumeUrl(input);
+            value = consumeUrl(input, true);
         if(value == nullptr)
             value = consumeIdent(input, table);
         if(value == nullptr && input->type() == CSSToken::Type::Function) {
@@ -1733,7 +1735,7 @@ RefPtr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& input)
         input.consumeWhitespace();
         values.push_back(CSSFunctionValue::create(CSSValueID::Local, std::move(value)));
     } else {
-        auto url = consumeUrl(input);
+        auto url = consumeUrl(input, false);
         if(url == nullptr)
             return nullptr;
         values.push_back(std::move(url));
@@ -1844,6 +1846,7 @@ RefPtr<CSSValue> CSSParser::consumeDashList(CSSTokenStream& input)
 
     values.push_back(value);
     while(input->type() == CSSToken::Type::Comma) {
+        input.consumeIncludingWhitespace();
         auto value = consumeLengthOrPercent(input, false, true);
         if(value == nullptr)
             return nullptr;
@@ -2253,9 +2256,10 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
     case CSSPropertyID::MarkerMid:
     case CSSPropertyID::MarkerStart:
     case CSSPropertyID::Mask:
+        return consumeUrlOrNone(input, false);
     case CSSPropertyID::ListStyleImage:
     case CSSPropertyID::BackgroundImage:
-        return consumeUrlOrNone(input);
+        return consumeUrlOrNone(input, true);
     case CSSPropertyID::Content:
         return consumeContent(input);
     case CSSPropertyID::CounterIncrement:
@@ -2914,7 +2918,7 @@ bool CSSParser::consumeBackground(CSSTokenStream& input, CSSPropertyList& proper
             continue;
         }
 
-        if(image == nullptr && (image = consumeUrl(input)))
+        if(image == nullptr && (image = consumeUrl(input, true)))
             continue;
         if(repeat == nullptr && (repeat = consumeLonghand(input, CSSPropertyID::BackgroundRepeat)))
             continue;

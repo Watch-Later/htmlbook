@@ -337,12 +337,12 @@ private:
 
 class LengthSize {
 public:
-    LengthSize(Length width, Length height)
+    LengthSize(const Length& width, const Length& height)
         : m_width(width), m_height(height)
     {}
 
-    Length width() const { return m_width; }
-    Length height() const { return m_height; }
+    const Length& width() const { return m_width; }
+    const Length& height() const { return m_height; }
 
     static const LengthSize None;
     static const LengthSize Auto;
@@ -356,14 +356,14 @@ private:
 
 class LengthRect {
 public:
-    LengthRect(Length left, Length right, Length top, Length bottom)
+    LengthRect(const Length& left, const Length& right, const Length& top, const Length& bottom)
         : m_left(left), m_right(right), m_top(top), m_bottom(bottom)
     {}
 
-    Length left() const { return m_left; }
-    Length right() const { return m_right; }
-    Length top() const { return m_top; }
-    Length bottom() const { return m_bottom; }
+    const Length& left() const { return m_left; }
+    const Length& right() const { return m_right; }
+    const Length& top() const { return m_top; }
+    const Length& bottom() const { return m_bottom; }
 
     static const LengthRect None;
     static const LengthRect Auto;
@@ -427,8 +427,8 @@ private:
 };
 
 class Element;
-class FontData;
-class ImageData;
+class Image;
+class FontFace;
 
 class BoxStyle : public RefCounted<BoxStyle> {
 public:
@@ -436,7 +436,7 @@ public:
     static RefPtr<BoxStyle> create(const BoxStyle& parentStyle);
 
     const Element* element() const { return m_element; }
-    const FontData* fontData() const { return m_fontData.get(); }
+    FontFace* fontFace() const { return m_fontFace.get(); }
     float fontSize() const { return m_fontSize; }
     const Color& currentColor() const { return m_currentColor; }
     const CSSPropertyMap& properties() const { return m_properties; }
@@ -492,9 +492,9 @@ public:
 
     ListStyleType listStyleType() const;
     ListStylePosition listStylePosition() const;
-    RefPtr<ImageData> listStyleImage() const;
+    RefPtr<Image> listStyleImage() const;
 
-    RefPtr<ImageData> backgroundImage() const;
+    RefPtr<Image> backgroundImage() const;
     Color backgroundColor() const;
     BackgroundRepeat backgroundRepeat() const;
     BackgroundBox backgroundOrigin() const;
@@ -594,7 +594,7 @@ public:
 private:
     BoxStyle(const Element* element);
     const Element* m_element;
-    RefPtr<FontData> m_fontData;
+    RefPtr<FontFace> m_fontFace;
     float m_fontSize{12.0};
     Color m_currentColor{Color::Black};
     CSSPropertyMap m_properties;
