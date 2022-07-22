@@ -334,9 +334,14 @@ void Element::serialize(std::ostream& o) const
     o << '>';
 }
 
-Document::Document()
-    : ContainerNode(nullptr)
+Document::Document(Book* book, const std::string_view& baseUrl)
+    : ContainerNode(nullptr), m_book(book), m_baseUrl(baseUrl)
 {
+}
+
+std::unique_ptr<Document> Document::create(Book* book, const std::string_view& mimeType, const std::string_view& baseUrl)
+{
+    return std::unique_ptr<Document>(new Document(book, baseUrl));
 }
 
 Element* Document::createElement(const GlobalString& tagName, const GlobalString& namespaceUri)
@@ -352,6 +357,10 @@ void Document::load(const std::string_view& content)
 {
     HTMLParser parser(this, content);
     parser.parse();
+}
+
+void Document::loadData(const uint8_t* data, size_t length, std::string_view textEncoding)
+{
 }
 
 void Document::updateIdCache(const GlobalString& oldValue, const GlobalString& newValue, Element* element)

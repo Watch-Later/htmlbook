@@ -1,8 +1,8 @@
 #include "htmlbook.h"
-#include "pdfdocument.h"
+#include "document.h"
+#include "resource.h"
 
 #include <cstring>
-#include <iostream>
 
 namespace htmlbook {
 
@@ -15,7 +15,7 @@ const PageSize PageSize::Letter(8.5, 11, PageUnit::Inches);
 const PageSize PageSize::Legal(8.5, 14, PageUnit::Inches);
 const PageSize PageSize::Ledger(11, 17, PageUnit::Inches);
 
-std::shared_ptr<ResourceData> ResourceData::create(const uint8_t* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding)
+std::shared_ptr<ResourceData> ResourceData::create(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding)
 {
     uint8_t* newdata;
     auto resource = createUninitialized(newdata, length, mimeType, textEncoding);
@@ -23,25 +23,25 @@ std::shared_ptr<ResourceData> ResourceData::create(const uint8_t* data, size_t l
     return resource;
 }
 
-std::shared_ptr<ResourceData> ResourceData::createUninitialized(uint8_t*& data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding)
+std::shared_ptr<ResourceData> ResourceData::createUninitialized(uint8_t*& data, size_t length, std::string_view mimeType, std::string_view textEncoding)
 {
     auto newdata = new uint8_t[length + sizeof(ResourceData)];
     data = newdata + sizeof(ResourceData);
     return std::shared_ptr<ResourceData>(new (newdata) ResourceData(data, length, mimeType, textEncoding));
 }
 
-std::shared_ptr<ResourceData> ResourceData::createStatic(const uint8_t* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding)
+std::shared_ptr<ResourceData> ResourceData::createStatic(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding)
 {
     return std::shared_ptr<ResourceData>(new ResourceData(data, length, mimeType, textEncoding));
 }
 
-ResourceData::ResourceData(const uint8_t* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding)
+ResourceData::ResourceData(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding)
     : m_data(data), m_length(length), m_mimeType(mimeType), m_textEncoding(textEncoding)
 {
 }
 
 Book::Book(const PageSize& pageSize, PageMode pageMode)
-    : m_document(new PdfDocument(pageSize, pageMode))
+    : m_pageSize(pageSize), m_pageMode(pageMode)
 {
 }
 
@@ -49,114 +49,81 @@ Book::~Book() = default;
 
 void Book::setPageSize(const PageSize& pageSize)
 {
-    m_document->setPageSize(pageSize);
+    m_pageSize = pageSize;
 }
 
 const PageSize& Book::pageSize() const
 {
-    return m_document->pageSize();
+    return m_pageSize;
 }
 
 void Book::setClient(BookClient* client)
 {
-    m_document->setClient(client);
+    m_client = client;
 }
 
 BookClient* Book::client() const
 {
-    return m_document->client();
+    return m_client;
 }
 
-void Book::setTitle(const std::string_view& title)
+void Book::setBaseUrl(std::string_view baseUrl)
 {
-    m_document->setTitle(title);
-}
-
-const std::string& Book::title() const
-{
-    return m_document->title();
-}
-
-void Book::setSubject(const std::string_view& subject)
-{
-    m_document->setSubject(subject);
-}
-
-const std::string& Book::subject() const
-{
-    return m_document->subject();
-}
-
-void Book::setAuthor(const std::string_view& author)
-{
-    m_document->setAuthor(author);
-}
-
-const std::string& Book::author() const
-{
-    return m_document->author();
-}
-
-void Book::setCreator(const std::string_view& creator)
-{
-    m_document->setCreator(creator);
-}
-
-const std::string& Book::creator() const
-{
-    return m_document->creator();
-}
-
-void Book::setCreationDate(const std::string_view& creationDate)
-{
-    m_document->setCreationDate(creationDate);
-}
-
-const std::string& Book::creationDate() const
-{
-    return m_document->creationDate();
-}
-
-void Book::setModificationDate(const std::string_view& modificationDate)
-{
-    m_document->setModificationDate(modificationDate);
-}
-
-const std::string& Book::modificationDate() const
-{
-    return m_document->modificationDate();
-}
-
-void Book::setBaseUrl(const std::string_view& baseUrl)
-{
+    if(m_document == nullptr)
+        return;
     m_document->setBaseUrl(baseUrl);
 }
 
-const std::string& Book::baseUrl() const
+std::string_view Book::baseUrl() const
 {
-    return m_document->baseUrl().value();
+    if(m_document == nullptr)
+        return emptyString;
+    return m_document->baseUrl();
 }
 
-void Book::loadUrl(const std::string_view& url)
+void Book::loadUrl(std::string_view url)
 {
+    if(m_client == nullptr)
+        return;
+    auto resourceData = m_client->loadUrl(url);
+    if(resourceData == nullptr)
+        return;
+    load(resourceData->data(), resourceData->length(), resourceData->mimeType(), resourceData->textEncoding(), url);
 }
 
-void Book::loadData(const uint8_t* data, size_t length, const std::string_view& textEncoding)
+void Book::loadHtml(const uint8_t* data, size_t length, std::string_view textEncoding, std::string_view baseUrl)
 {
+    load(data, length, "text/html", textEncoding, baseUrl);
 }
 
-void Book::load(const std::string_view& content)
+void Book::loadHtml(std::string_view content, std::string_view baseUrl)
 {
+    load(content, "text/html", baseUrl);
+}
+
+void Book::load(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding, std::string_view baseUrl)
+{
+    m_document = Document::create(this, mimeType, baseUrl);
+    m_document->loadData(data, length, textEncoding);
+}
+
+void Book::load(std::string_view content, std::string_view mimeType, std::string_view baseUrl)
+{
+    m_document = Document::create(this, mimeType, baseUrl);
     m_document->load(content);
 }
 
-void Book::setUserStyleSheet(const std::string_view& content)
+void Book::setUserStyleSheet(std::string_view content)
 {
+    if(m_document == nullptr)
+        return;
     m_document->setUserStyleSheet(content);
 }
 
 void Book::clearUserStyleSheet()
 {
+    if(m_document == nullptr)
+        return;
     m_document->clearUserStyleSheet();
 }
 
@@ -166,10 +133,12 @@ void Book::save(const std::string& filename)
 
 void Book::serialize(std::ostream& o) const
 {
+    if(m_document == nullptr)
+        return;
     m_document->serialize(o);
 }
 
-PdfDocument* Book::document() const
+Document* Book::document() const
 {
     return m_document.get();
 }

@@ -42,7 +42,7 @@ struct is<TextResource> {
     static bool check(const Resource& value) { return value.type() == Resource::Type::Text; }
 };
 
-class Image;
+class Image : public RefCounted<Image> {};
 
 class ImageResource final : public Resource {
 public:
@@ -60,7 +60,8 @@ struct is<ImageResource> {
     static bool check(const Resource& value) { return value.type() == Resource::Type::Image; }
 };
 
-class Font;
+class FontFace : public RefCounted<FontFace> {};
+class Font : public RefCounted<Font> {};
 
 class FontResource final : public Resource {
 public:

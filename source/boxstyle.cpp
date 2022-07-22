@@ -1,4 +1,5 @@
 #include "boxstyle.h"
+#include "resource.h"
 
 #include <cassert>
 

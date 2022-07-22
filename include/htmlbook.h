@@ -142,9 +142,9 @@ private:
 
 class HTMLBOOK_API ResourceData {
 public:
-    static std::shared_ptr<ResourceData> create(const uint8_t* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding);
-    static std::shared_ptr<ResourceData> createUninitialized(uint8_t*& data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding);
-    static std::shared_ptr<ResourceData> createStatic(const uint8_t* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding);
+    static std::shared_ptr<ResourceData> create(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding);
+    static std::shared_ptr<ResourceData> createUninitialized(uint8_t*& data, size_t length, std::string_view mimeType, std::string_view textEncoding);
+    static std::shared_ptr<ResourceData> createStatic(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding);
 
     const uint8_t* data() const { return m_data; }
     size_t length() const { return m_length; }
@@ -152,7 +152,7 @@ public:
     const std::string& textEncoding() const { return m_textEncoding; }
 
 private:
-    ResourceData(const uint8_t* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding);
+    ResourceData(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding);
     const uint8_t* m_data;
     size_t m_length;
     std::string m_mimeType;
@@ -181,7 +181,7 @@ public:
      * @param url
      * @return
      */
-    virtual std::shared_ptr<ResourceData> loadUrl(const std::string_view& url) = 0;
+    virtual std::shared_ptr<ResourceData> loadUrl(std::string_view url) = 0;
 
     /**
      * @brief loadFont
@@ -191,10 +191,10 @@ public:
      * @param weight
      * @return
      */
-    virtual std::shared_ptr<ResourceData> loadFont(const std::string_view& family, bool italic, bool smallCaps, int weight) = 0;
+    virtual std::shared_ptr<ResourceData> loadFont(std::string_view family, bool italic, bool smallCaps, int weight) = 0;
 };
 
-class PdfDocument;
+class Document;
 
 class HTMLBOOK_API Book {
 public:
@@ -250,117 +250,131 @@ public:
      * @brief setTitle
      * @param title
      */
-    void setTitle(const std::string_view& title);
+    void setTitle(std::string_view title);
 
     /**
      * @brief title
      * @return
      */
-    const std::string& title() const;
+    std::string_view title() const;
 
     /**
      * @brief setSubject
      * @param subject
      */
-    void setSubject(const std::string_view& subject);
+    void setSubject(std::string_view subject);
 
     /**
      * @brief subject
      * @return
      */
-    const std::string& subject() const;
+    std::string_view subject() const;
 
     /**
      * @brief setAuthor
      * @param author
      */
-    void setAuthor(const std::string_view& author);
+    void setAuthor(std::string_view author);
 
     /**
      * @brief author
      * @return
      */
-    const std::string& author() const;
+    std::string_view author() const;
 
     /**
      * @brief setCreator
      * @param creator
      */
-    void setCreator(const std::string_view& creator);
+    void setCreator(std::string_view creator);
 
     /**
      * @brief creator
      * @return
      */
-    const std::string& creator() const;
+    std::string_view creator() const;
 
     /**
      * @brief setCreationDate
      * @param creationDate
      */
-    void setCreationDate(const std::string_view& creationDate);
+    void setCreationDate(std::string_view creationDate);
 
     /**
      * @brief creationDate
      * @return
      */
-    const std::string& creationDate() const;
+    std::string_view creationDate() const;
 
     /**
      * @brief setModificationDate
      * @param modificationDate
      */
-    void setModificationDate(const std::string_view& modificationDate);
+    void setModificationDate(std::string_view modificationDate);
 
     /**
      * @brief modificationDate
      * @return
      */
-    const std::string& modificationDate() const;
+    std::string_view modificationDate() const;
 
     /**
      * @brief setBaseUrl
      * @param baseUrl
      */
-    void setBaseUrl(const std::string_view& baseUrl);
+    void setBaseUrl(std::string_view baseUrl);
 
     /**
      * @brief baseUrl
      * @return
      */
-    const std::string& baseUrl() const;
-
-    /**
-     * @brief loadFile
-     * @param filename
-     */
-    void loadFile(const std::string& filename);
+    std::string_view baseUrl() const;
 
     /**
      * @brief loadUrl
      * @param url
      */
-    void loadUrl(const std::string_view& url);
+    void loadUrl(std::string_view url);
 
     /**
-     * @brief loadData
+     * @brief loadHtml
      * @param data
      * @param length
      * @param textEncoding
+     * @param baseUrl
      */
-    void loadData(const uint8_t* data, size_t length, const std::string_view& textEncoding);
+    void loadHtml(const uint8_t* data, size_t length, std::string_view textEncoding, std::string_view baseUrl);
+
+    /**
+     * @brief loadHtml
+     * @param content
+     * @param baseUrl
+     */
+    void loadHtml(std::string_view content, std::string_view baseUrl);
+
+    /**
+     * @brief load
+     * @param data
+     * @param length
+     * @param mimeType
+     * @param textEncoding
+     * @param baseUrl
+     */
+    void load(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding, std::string_view baseUrl);
 
     /**
      * @brief load
      * @param content
+     * @param mimeType
+     * @param baseUrl
      */
-    void load(const std::string_view& content);
+    void load(std::string_view content, std::string_view mimeType, std::string_view baseUrl);
 
     /**
      * @brief setUserStyleSheet
      * @param content
      */
-    void setUserStyleSheet(const std::string_view& content);
+    void setUserStyleSheet(std::string_view content);
 
     /**
      * @brief clearUserStyleSheet
@@ -472,10 +486,13 @@ public:
      * @brief document
      * @return
      */
-    PdfDocument* document() const;
+    Document* document() const;
 
 private:
-    std::unique_ptr<PdfDocument> m_document;
+    PageSize m_pageSize;
+    PageMode m_pageMode;
+    BookClient* m_client{nullptr};
+    std::unique_ptr<Document> m_document;
 };
 
 inline std::ostream& operator<<(std::ostream& o, const Book& book)

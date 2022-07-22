@@ -75,6 +75,16 @@ RefPtr<CSSImageValue> CSSImageValue::create(std::string value)
     return adoptPtr(new CSSImageValue(std::move(value)));
 }
 
+Image* CSSImageValue::fetch(Document* document) const
+{
+    return m_image.get();
+}
+
+CSSImageValue::CSSImageValue(std::string value)
+    : m_value(std::move(value))
+{
+}
+
 RefPtr<CSSColorValue> CSSColorValue::create(uint32_t value)
 {
     return adoptPtr(new CSSColorValue(value));
