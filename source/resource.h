@@ -37,6 +37,11 @@ private:
     std::string m_text;
 };
 
+template<>
+struct is<TextResource> {
+    static bool check(const Resource& value) { return value.type() == Resource::Type::Text; }
+};
+
 class Image;
 
 class ImageResource final : public Resource {
@@ -50,6 +55,11 @@ private:
     RefPtr<Image> m_image;
 };
 
+template<>
+struct is<ImageResource> {
+    static bool check(const Resource& value) { return value.type() == Resource::Type::Image; }
+};
+
 class Font;
 
 class FontResource final : public Resource {
@@ -61,6 +71,11 @@ public:
 private:
     FontResource(RefPtr<Font> font);
     RefPtr<Font> m_font;
+};
+
+template<>
+struct is<FontResource> {
+    static bool check(const Resource& value) { return value.type() == Resource::Type::Font; }
 };
 
 } // namespace htmlbook
