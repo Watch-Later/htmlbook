@@ -1,5 +1,5 @@
-#ifndef REFPTR_H
-#define REFPTR_H
+#ifndef POINTER_H
+#define POINTER_H
 
 #include <algorithm>
 #include <cstdint>
@@ -250,4 +250,4 @@ constexpr const T* to(const U* value) {
 
 } // namespace htmlbook
 
-#endif // REFPTR_H
+#endif // POINTER_H

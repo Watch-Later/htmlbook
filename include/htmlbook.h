@@ -148,8 +148,8 @@ public:
 
     const uint8_t* data() const { return m_data; }
     size_t length() const { return m_length; }
-    const std::string& mimeType() const { return m_mimeType; }
-    const std::string& textEncoding() const { return m_textEncoding; }
+    std::string_view mimeType() const { return m_mimeType; }
+    std::string_view textEncoding() const { return m_textEncoding; }
 
 private:
     ResourceData(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding);

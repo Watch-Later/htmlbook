@@ -224,7 +224,7 @@ public:
     const CSSStyleSheet* authorStyleSheet() const { return m_authorStyleSheet.get(); }
     const CSSStyleSheet* userStyleSheet() const { return m_userStyleSheet.get(); }
 
-    std::shared_ptr<ResourceData> fetchUrl(const std::string_view& url);
+    std::shared_ptr<ResourceData> fetchUrl(const Url& url);
     std::shared_ptr<ResourceData> fetchFont(const std::string_view& family, bool italic, bool smallCaps, int weight);
 
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
@@ -232,6 +232,8 @@ public:
     RefPtr<FontResource> fetchFontResource(const std::string_view& url);
 
 private:
+    template<typename ResourceType>
+    RefPtr<ResourceType> fetchResource(const std::string_view& url);
     Book* m_book;
     Url m_baseUrl;
     std::multimap<GlobalString, Element*> m_idCache;

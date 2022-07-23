@@ -391,7 +391,7 @@ void Document::clearUserStyleSheet()
     m_userStyleSheet.reset();
 }
 
-std::shared_ptr<ResourceData> Document::fetchUrl(const std::string_view& url)
+std::shared_ptr<ResourceData> Document::fetchUrl(const Url& url)
 {
     return nullptr;
 }
@@ -403,17 +403,40 @@ std::shared_ptr<ResourceData> Document::fetchFont(const std::string_view& family
 
 RefPtr<TextResource> Document::fetchTextResource(const std::string_view& url)
 {
-    return nullptr;
+    return fetchResource<TextResource>(url);
 }
 
 RefPtr<ImageResource> Document::fetchImageResource(const std::string_view& url)
 {
-    return nullptr;
+    return fetchResource<ImageResource>(url);
 }
 
 RefPtr<FontResource> Document::fetchFontResource(const std::string_view& url)
 {
-    return nullptr;
+    return fetchResource<FontResource>(url);
+}
+
+template<typename ResourceType>
+RefPtr<ResourceType> Document::fetchResource(const std::string_view& url)
+{
+    auto completeUrl = m_baseUrl.complete(url);
+    if(completeUrl.empty())
+        return nullptr;
+    auto it = m_resourceCache.find(completeUrl.value());
+    if(it != m_resourceCache.end()) {
+        if(auto resource = to<ResourceType>(*it->second))
+            return resource;
+        m_resourceCache.erase(it);
+    }
+
+    auto resourceData = fetchUrl(completeUrl);
+    if(resourceData == nullptr)
+        return nullptr;
+    auto resource = ResourceType::create(resourceData);
+    if(resource == nullptr)
+        return nullptr;
+    m_resourceCache.emplace(completeUrl.value(), resource);
+    return resource;
 }
 
 } // namespace htmlbook
