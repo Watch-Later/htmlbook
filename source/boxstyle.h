@@ -492,9 +492,9 @@ public:
 
     ListStyleType listStyleType() const;
     ListStylePosition listStylePosition() const;
-    RefPtr<Image> listStyleImage() const;
+    Image* listStyleImage() const;
 
-    RefPtr<Image> backgroundImage() const;
+    Image* backgroundImage() const;
     Color backgroundColor() const;
     BackgroundRepeat backgroundRepeat() const;
     BackgroundBox backgroundOrigin() const;
@@ -556,7 +556,7 @@ public:
     int widows() const;
     int orphans() const;
 
-    const CSSValue* get(CSSPropertyID id) const;
+    CSSValue* get(CSSPropertyID id) const;
     void set(CSSPropertyID id, RefPtr<CSSValue> value);
 
     float emFontSize() const;
@@ -581,6 +581,8 @@ public:
     Length convertPositionLength(CSSValueID min, CSSValueID max, const CSSValue& value) const;
     LengthSize convertBorderRadius(const CSSValue& value) const;
     Color convertColor(const CSSValue& value) const;
+    Image* convertImage(const CSSValue& value) const;
+    Image* convertImageOrNone(const CSSValue& value) const;
 
     static Overflow convertOverflow(const CSSValue& value);
     static BackgroundBox convertBackgroundBox(const CSSValue& value);

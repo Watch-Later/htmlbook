@@ -963,12 +963,16 @@ private:
 
 class CSSRule {
 public:
+    enum class Type {
+        Style,
+        Import,
+        FontFace,
+        PageMargin,
+        Page
+    };
+
     virtual ~CSSRule() = default;
-    virtual bool isStyleRule() const { return false; }
-    virtual bool isImportRule() const { return false; }
-    virtual bool isFontFaceRule() const { return false; }
-    virtual bool isPageMarginRule() const { return false; }
-    virtual bool isPageRule() const { return false; }
+    virtual Type type() const = 0;
 
 protected:
     CSSRule() = default;
@@ -982,7 +986,7 @@ public:
 
     const CSSSelectorList& selectors() const { return m_selectors; }
     const CSSPropertyList& properties() const { return m_properties; }
-    bool isStyleRule() const final { return true; }
+    Type type() const final { return Type::Style; }
 
 private:
     CSSStyleRule(CSSSelectorList selectors, CSSPropertyList properties)
@@ -995,7 +999,7 @@ private:
 
 template<>
 struct is<CSSStyleRule> {
-    static bool check(const CSSRule& value) { return value.isStyleRule(); }
+    static bool check(const CSSRule& value) { return value.type() == CSSRule::Type::Style; }
 };
 
 class CSSImportRule final : public CSSRule {
@@ -1003,7 +1007,7 @@ public:
     static std::unique_ptr<CSSImportRule> create(std::string href);
 
     const std::string& href() const { return m_href; }
-    bool isImportRule() const final { return true; }
+    Type type() const final { return Type::Import; }
 
 private:
     CSSImportRule(std::string href) : m_href(std::move(href)) {}
@@ -1012,7 +1016,7 @@ private:
 
 template<>
 struct is<CSSImportRule> {
-    static bool check(const CSSRule& value) { return value.isImportRule(); }
+    static bool check(const CSSRule& value) { return value.type() == CSSRule::Type::Import; }
 };
 
 class CSSFontFaceRule : public CSSRule {
@@ -1020,7 +1024,7 @@ public:
     static std::unique_ptr<CSSFontFaceRule> create(CSSPropertyList properties);
 
     const CSSPropertyList& properties() const { return m_properties; }
-    bool isFontFaceRule() const final { return true; }
+    Type type() const final { return Type::FontFace; }
 
 private:
     CSSFontFaceRule(CSSPropertyList properties)
@@ -1032,7 +1036,7 @@ private:
 
 template<>
 struct is<CSSFontFaceRule> {
-    static bool check(const CSSRule& value) { return value.isFontFaceRule(); }
+    static bool check(const CSSRule& value) { return value.type() == CSSRule::Type::FontFace; }
 };
 
 class CSSPageMarginRule final : public CSSRule {
@@ -1060,7 +1064,7 @@ public:
 
     MarginType marginType() const { return m_marginType; }
     const CSSPropertyList& properties() const { return m_properties; }
-    bool isPageMarginRule() const final { return true; }
+    Type type() const final { return Type::PageMargin; }
 
 private:
     CSSPageMarginRule(MarginType marginType, CSSPropertyList properties)
@@ -1073,7 +1077,7 @@ private:
 
 template<>
 struct is<CSSPageMarginRule> {
-    static bool check(const CSSRule& value) { return value.isPageMarginRule(); }
+    static bool check(const CSSRule& value) { return value.type() == CSSRule::Type::PageMargin; }
 };
 
 using CSSPageMarginRuleList = std::vector<std::unique_ptr<CSSPageMarginRule>>;
@@ -1085,7 +1089,7 @@ public:
     const CSSPageSelectorList& selectors() const { return m_selectors; }
     const CSSPageMarginRuleList& margins() const { return m_margins; }
     const CSSPropertyList& properties() const { return m_properties; }
-    bool isPageRule() const final { return true; }
+    Type type() const final { return Type::Page; }
 
 private:
     CSSPageRule(CSSPageSelectorList selectors, CSSPageMarginRuleList margins, CSSPropertyList properties)
@@ -1099,7 +1103,7 @@ private:
 
 template<>
 struct is<CSSPageRule> {
-    static bool check(const CSSRule& value) { return value.isPageRule(); }
+    static bool check(const CSSRule& value) { return value.type() == CSSRule::Type::Page; }
 };
 
 enum class PseudoType : uint8_t {

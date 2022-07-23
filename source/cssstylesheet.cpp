@@ -77,6 +77,13 @@ RefPtr<CSSImageValue> CSSImageValue::create(std::string value)
 
 Image* CSSImageValue::fetch(Document* document) const
 {
+    if(m_image == nullptr) {
+        auto imageResource = document->fetchImageResource(m_value);
+        if(imageResource == nullptr)
+            return nullptr;
+        m_image = imageResource->image();
+    }
+
     return m_image.get();
 }
 
@@ -898,15 +905,20 @@ void CSSStyleSheet::parse(const std::string_view& content)
 
 void CSSStyleSheet::addRule(std::unique_ptr<CSSRule> rule)
 {
-    if(auto styleRule = to<CSSStyleRule>(*rule)) {
-        addStyleRule(styleRule);
-    } else if(auto importRule = to<CSSImportRule>(*rule)) {
-        addImportRule(importRule);
-    } else if(auto pageRule = to<CSSPageRule>(*rule)) {
-        addPageRule(pageRule);
-    } else if(auto fontFaceRule = to<CSSFontFaceRule>(*rule)) {
-        addFontFaceRule(fontFaceRule);
-    } else {
+    switch(rule->type()) {
+    case CSSRule::Type::Style:
+        addStyleRule(to<CSSStyleRule>(*rule));
+        break;
+    case CSSRule::Type::Import:
+        addImportRule(to<CSSImportRule>(*rule));
+        break;
+    case CSSRule::Type::FontFace:
+        addFontFaceRule(to<CSSFontFaceRule>(*rule));
+        break;
+    case CSSRule::Type::Page:
+        addPageRule(to<CSSPageRule>(*rule));
+        break;
+    default:
         assert(false);
     }
 

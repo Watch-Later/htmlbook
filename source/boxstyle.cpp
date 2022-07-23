@@ -1,5 +1,6 @@
 #include "boxstyle.h"
 #include "resource.h"
+#include "document.h"
 
 #include <cassert>
 
@@ -516,6 +517,22 @@ ListStylePosition BoxStyle::listStylePosition() const
     default:
         assert(false);
     }
+}
+
+Image* BoxStyle::listStyleImage() const
+{
+    auto value = get(CSSPropertyID::ListStyleImage);
+    if(value == nullptr)
+        return nullptr;
+    return convertImageOrNone(*value);
+}
+
+Image* BoxStyle::backgroundImage() const
+{
+    auto value = get(CSSPropertyID::BackgroundImage);
+    if(value == nullptr)
+        return nullptr;
+    return convertImageOrNone(*value);
 }
 
 Color BoxStyle::backgroundColor() const
@@ -1275,7 +1292,7 @@ int BoxStyle::orphans() const
     return convertInteger(*value);
 }
 
-const CSSValue* BoxStyle::get(CSSPropertyID id) const
+CSSValue* BoxStyle::get(CSSPropertyID id) const
 {
     auto it = m_properties.find(id);
     if(it == m_properties.end())
@@ -1525,6 +1542,23 @@ Color BoxStyle::convertColor(const CSSValue& value) const
     assert(value.isColorValue());
     auto color = to<CSSColorValue>(value);
     return Color(color->value());
+}
+
+Image* BoxStyle::convertImage(const CSSValue& value) const
+{
+    assert(value.isImageValue());
+    auto image = to<CSSImageValue>(value);
+    return image->fetch(m_element->document());
+}
+
+Image* BoxStyle::convertImageOrNone(const CSSValue& value) const
+{
+    if(auto ident = to<CSSIdentValue>(value)) {
+        assert(ident->value() == CSSValueID::None);
+        return nullptr;
+    }
+
+    return convertImage(value);
 }
 
 Overflow BoxStyle::convertOverflow(const CSSValue& value)
