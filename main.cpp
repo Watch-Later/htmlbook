@@ -5,7 +5,7 @@
 int main()
 {
     htmlbook::Book book(htmlbook::PageSize::A5);
-    book.loadHtml("<b> Hello World </b>", "about:blank");
+    book.load("<b> Hello World </b>");
     book.save("hello.pdf");
 
     std::cout << book << std::endl;

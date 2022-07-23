@@ -334,14 +334,9 @@ void Element::serialize(std::ostream& o) const
     o << '>';
 }
 
-Document::Document(Book* book, const std::string_view& baseUrl)
-    : ContainerNode(nullptr), m_book(book), m_baseUrl(baseUrl)
+Document::Document(Book* book)
+    : ContainerNode(nullptr), m_book(book)
 {
-}
-
-std::unique_ptr<Document> Document::create(Book* book, const std::string_view& mimeType, const std::string_view& baseUrl)
-{
-    return std::unique_ptr<Document>(new Document(book, baseUrl));
 }
 
 Element* Document::createElement(const GlobalString& tagName, const GlobalString& namespaceUri)
@@ -351,16 +346,10 @@ Element* Document::createElement(const GlobalString& tagName, const GlobalString
     return new Element(this, tagName, namespaceUri);
 }
 
-Document::~Document() = default;
-
 void Document::load(const std::string_view& content)
 {
     HTMLParser parser(this, content);
     parser.parse();
-}
-
-void Document::loadData(const uint8_t* data, size_t length, std::string_view textEncoding)
-{
 }
 
 void Document::updateIdCache(const GlobalString& oldValue, const GlobalString& newValue, Element* element)
@@ -400,6 +389,16 @@ void Document::setUserStyleSheet(const std::string_view& content)
 void Document::clearUserStyleSheet()
 {
     m_userStyleSheet.reset();
+}
+
+std::shared_ptr<ResourceData> Document::fetchUrl(const std::string_view& url)
+{
+    return nullptr;
+}
+
+std::shared_ptr<ResourceData> Document::fetchFont(const std::string_view& family, bool italic, bool smallCaps, int weight)
+{
+    return nullptr;
 }
 
 RefPtr<TextResource> Document::fetchTextResource(const std::string_view& url)

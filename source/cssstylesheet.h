@@ -2,7 +2,7 @@
 #define CSSSTYLESHEET_H
 
 #include "globalstring.h"
-#include "refptr.h"
+#include "pointer.h"
 
 #include <memory>
 #include <list>

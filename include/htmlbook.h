@@ -337,38 +337,19 @@ public:
     void loadUrl(std::string_view url);
 
     /**
-     * @brief loadHtml
-     * @param data
-     * @param length
-     * @param textEncoding
-     * @param baseUrl
-     */
-    void loadHtml(const uint8_t* data, size_t length, std::string_view textEncoding, std::string_view baseUrl);
-
-    /**
-     * @brief loadHtml
-     * @param content
-     * @param baseUrl
-     */
-    void loadHtml(std::string_view content, std::string_view baseUrl);
-
-    /**
      * @brief load
      * @param data
      * @param length
      * @param mimeType
      * @param textEncoding
-     * @param baseUrl
      */
-    void load(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding, std::string_view baseUrl);
+    void load(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding);
 
     /**
      * @brief load
      * @param content
-     * @param mimeType
-     * @param baseUrl
      */
-    void load(std::string_view content, std::string_view mimeType, std::string_view baseUrl);
+    void load(std::string_view content);
 
     /**
      * @brief setUserStyleSheet

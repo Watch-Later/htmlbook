@@ -1,7 +1,7 @@
 #ifndef RESOURCE_H
 #define RESOURCE_H
 
-#include "refptr.h"
+#include "pointer.h"
 
 #include <memory>
 #include <string>

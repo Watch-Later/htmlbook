@@ -41,7 +41,9 @@ ResourceData::ResourceData(const uint8_t* data, size_t length, std::string_view 
 }
 
 Book::Book(const PageSize& pageSize, PageMode pageMode)
-    : m_pageSize(pageSize), m_pageMode(pageMode)
+    : m_pageSize(pageSize)
+    , m_pageMode(pageMode)
+    , m_document(new Document(this))
 {
 }
 
@@ -69,61 +71,39 @@ BookClient* Book::client() const
 
 void Book::setBaseUrl(std::string_view baseUrl)
 {
-    if(m_document == nullptr)
-        return;
     m_document->setBaseUrl(baseUrl);
 }
 
 std::string_view Book::baseUrl() const
 {
-    if(m_document == nullptr)
-        return emptyString;
     return m_document->baseUrl();
 }
 
 void Book::loadUrl(std::string_view url)
 {
-    if(m_client == nullptr)
-        return;
-    auto resourceData = m_client->loadUrl(url);
+    auto resourceData = m_document->fetchUrl(url);
     if(resourceData == nullptr)
         return;
-    load(resourceData->data(), resourceData->length(), resourceData->mimeType(), resourceData->textEncoding(), url);
+    load(resourceData->data(), resourceData->length(), resourceData->mimeType(), resourceData->textEncoding());
 }
 
-void Book::loadHtml(const uint8_t* data, size_t length, std::string_view textEncoding, std::string_view baseUrl)
+void Book::load(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding)
 {
-    load(data, length, "text/html", textEncoding, baseUrl);
+    load(TextResource::decode(data, length, mimeType, textEncoding));
 }
 
-void Book::loadHtml(std::string_view content, std::string_view baseUrl)
+void Book::load(std::string_view content)
 {
-    load(content, "text/html", baseUrl);
-}
-
-void Book::load(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding, std::string_view baseUrl)
-{
-    m_document = Document::create(this, mimeType, baseUrl);
-    m_document->loadData(data, length, textEncoding);
-}
-
-void Book::load(std::string_view content, std::string_view mimeType, std::string_view baseUrl)
-{
-    m_document = Document::create(this, mimeType, baseUrl);
     m_document->load(content);
 }
 
 void Book::setUserStyleSheet(std::string_view content)
 {
-    if(m_document == nullptr)
-        return;
     m_document->setUserStyleSheet(content);
 }
 
 void Book::clearUserStyleSheet()
 {
-    if(m_document == nullptr)
-        return;
     m_document->clearUserStyleSheet();
 }
 
@@ -133,8 +113,6 @@ void Book::save(const std::string& filename)
 
 void Book::serialize(std::ostream& o) const
 {
-    if(m_document == nullptr)
-        return;
     m_document->serialize(o);
 }
 

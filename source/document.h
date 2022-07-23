@@ -20,6 +20,7 @@ public:
     virtual bool isTextNode() const { return false; }
     virtual bool isContainerNode() const { return false; }
     virtual bool isElementNode() const { return false; }
+    virtual bool isDocumentNode() const { return false; }
 
     const GlobalString& tagName() const;
     const GlobalString& namespaceUri() const;
@@ -199,18 +200,18 @@ class FontResource;
 class FontFace;
 class Book;
 
-class Document : public ContainerNode {
+class Document final : public ContainerNode {
 public:
-    static std::unique_ptr<Document> create(Book* book, const std::string_view& mimeType, const std::string_view& baseUrl);
+    Document(Book* book);
 
-    virtual ~Document();
+    bool isDocumentNode() const final { return true; }
+
     Element* createElement(const GlobalString& tagName, const GlobalString& namespaceUri);
 
     const std::string& baseUrl() const { return m_baseUrl.value(); }
     void setBaseUrl(const std::string_view& value) { m_baseUrl = value; }
 
-    virtual void load(const std::string_view& content);
-    virtual void loadData(const uint8_t* data, size_t length, std::string_view textEncoding);
+    void load(const std::string_view& content);
 
     void updateIdCache(const GlobalString& oldValue, const GlobalString& newValue, Element* element);
     void addFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
@@ -230,9 +231,6 @@ public:
     RefPtr<ImageResource> fetchImageResource(const std::string_view& url);
     RefPtr<FontResource> fetchFontResource(const std::string_view& url);
 
-protected:
-    Document(Book* book, const std::string_view& baseUrl);
-
 private:
     Book* m_book;
     Url m_baseUrl;
@@ -246,6 +244,11 @@ private:
     std::string m_creator;
     std::string m_creationDate;
     std::string m_modificationDate;
+};
+
+template<>
+struct is<Document> {
+    static bool check(const Node& value) { return value.isDocumentNode(); }
 };
 
 } // namespace htmlbook
