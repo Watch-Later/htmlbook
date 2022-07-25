@@ -42,7 +42,14 @@ struct is<TextResource> {
     static bool check(const Resource& value) { return value.type() == Resource::Type::Text; }
 };
 
-class Image : public RefCounted<Image> {};
+class Image : public RefCounted<Image> {
+public:
+    virtual ~Image() = default;
+
+protected:
+    Image(std::shared_ptr<ResourceData> data);
+    std::shared_ptr<ResourceData> m_data;
+};
 
 class ImageResource final : public Resource {
 public:
@@ -60,18 +67,24 @@ struct is<ImageResource> {
     static bool check(const Resource& value) { return value.type() == Resource::Type::Image; }
 };
 
-class FontFace : public RefCounted<FontFace> {};
-class Font : public RefCounted<Font> {};
+class FontFace : public RefCounted<FontFace> {
+public:
+    virtual ~FontFace() = default;
+
+protected:
+    FontFace(std::shared_ptr<ResourceData> data);
+    std::shared_ptr<ResourceData> m_data;
+};
 
 class FontResource final : public Resource {
 public:
     static RefPtr<FontResource> create(std::shared_ptr<ResourceData> data);
-    Font* font() const { return m_font.get(); }
+    FontFace* fontFace() const { return m_fontFace.get(); }
     Type type() const final { return Type::Font; }
 
 private:
-    FontResource(RefPtr<Font> font);
-    RefPtr<Font> m_font;
+    FontResource(RefPtr<FontFace> font);
+    RefPtr<FontFace> m_fontFace;
 };
 
 template<>
