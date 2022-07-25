@@ -45,6 +45,8 @@ struct is<TextResource> {
 class Image : public RefCounted<Image> {
 public:
     virtual ~Image() = default;
+    virtual bool isBitmapImage() const { return false; }
+    virtual bool isVectorImage() const { return false; }
 
 protected:
     Image(std::shared_ptr<ResourceData> data);
@@ -69,9 +71,9 @@ struct is<ImageResource> {
 
 class FontFace : public RefCounted<FontFace> {
 public:
-    virtual ~FontFace() = default;
+    RefPtr<FontFace> create(std::shared_ptr<ResourceData> data);
 
-protected:
+private:
     FontFace(std::shared_ptr<ResourceData> data);
     std::shared_ptr<ResourceData> m_data;
 };
