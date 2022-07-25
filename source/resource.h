@@ -83,7 +83,7 @@ public:
     Type type() const final { return Type::Font; }
 
 private:
-    FontResource(RefPtr<FontFace> font);
+    FontResource(RefPtr<FontFace> fontFace);
     RefPtr<FontFace> m_fontFace;
 };
 
