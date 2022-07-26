@@ -2,7 +2,7 @@
 
 namespace htmlbook {
 
-RefPtr<TextResource> TextResource::create(std::shared_ptr<ResourceData> data)
+RefPtr<TextResource> TextResource::create(std::shared_ptr<ByteData> data, std::string_view mimeType, std::string_view textEncoding)
 {
     return nullptr;
 }
@@ -13,12 +13,12 @@ std::string TextResource::decode(const uint8_t* data, size_t length, std::string
     return value;
 }
 
-RefPtr<ImageResource> ImageResource::create(std::shared_ptr<ResourceData> data)
+RefPtr<ImageResource> ImageResource::create(std::shared_ptr<ByteData> data, std::string_view mimeType, std::string_view textEncoding)
 {
     return nullptr;
 }
 
-RefPtr<FontResource> FontResource::create(std::shared_ptr<ResourceData> data)
+RefPtr<FontResource> FontResource::create(std::shared_ptr<ByteData> data, std::string_view mimeType, std::string_view textEncoding)
 {
     return nullptr;
 }

@@ -391,12 +391,12 @@ void Document::clearUserStyleSheet()
     m_userStyleSheet.reset();
 }
 
-std::shared_ptr<ResourceData> Document::fetchUrl(const Url& url)
+std::shared_ptr<ByteData> Document::fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding)
 {
     return nullptr;
 }
 
-std::shared_ptr<ResourceData> Document::fetchFont(const std::string_view& family, bool italic, bool smallCaps, int weight)
+std::shared_ptr<ByteData> Document::fetchFont(const std::string_view& family, bool italic, bool smallCaps, int weight)
 {
     return nullptr;
 }
@@ -429,10 +429,12 @@ RefPtr<ResourceType> Document::fetchResource(const std::string_view& url)
         m_resourceCache.erase(it);
     }
 
-    auto resourceData = fetchUrl(completeUrl);
-    if(resourceData == nullptr)
+    std::string mimeType;
+    std::string textEncoding;
+    auto data = fetchUrl(completeUrl, mimeType, textEncoding);
+    if(data == nullptr)
         return nullptr;
-    auto resource = ResourceType::create(resourceData);
+    auto resource = ResourceType::create(data, mimeType, textEncoding);
     if(resource == nullptr)
         return nullptr;
     m_resourceCache.emplace(completeUrl.value(), resource);

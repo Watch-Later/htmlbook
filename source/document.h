@@ -192,7 +192,7 @@ inline const GlobalString& Node::namespaceUri() const
     return emptyString;
 }
 
-class ResourceData;
+class ByteData;
 class Resource;
 class TextResource;
 class ImageResource;
@@ -224,8 +224,8 @@ public:
     const CSSStyleSheet* authorStyleSheet() const { return m_authorStyleSheet.get(); }
     const CSSStyleSheet* userStyleSheet() const { return m_userStyleSheet.get(); }
 
-    std::shared_ptr<ResourceData> fetchUrl(const Url& url);
-    std::shared_ptr<ResourceData> fetchFont(const std::string_view& family, bool italic, bool smallCaps, int weight);
+    std::shared_ptr<ByteData> fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding);
+    std::shared_ptr<ByteData> fetchFont(const std::string_view& family, bool italic, bool smallCaps, int weight);
 
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
     RefPtr<ImageResource> fetchImageResource(const std::string_view& url);

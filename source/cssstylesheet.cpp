@@ -138,149 +138,243 @@ CSSShorthand CSSShorthand::longhand(CSSPropertyID id)
 {
     switch(id) {
     case CSSPropertyID::BorderColor: {
-        static const CSSPropertyID data[4] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::BorderTopColor,
             CSSPropertyID::BorderRightColor,
             CSSPropertyID::BorderBottomColor,
             CSSPropertyID::BorderLeftColor
         };
 
-        return CSSShorthand(data, 4);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::BorderStyle: {
-        static const CSSPropertyID data[4] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::BorderTopStyle,
             CSSPropertyID::BorderRightStyle,
             CSSPropertyID::BorderBottomStyle,
             CSSPropertyID::BorderLeftStyle
         };
 
-        return CSSShorthand(data, 4);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::BorderWidth: {
-        static const CSSPropertyID data[4] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::BorderTopWidth,
             CSSPropertyID::BorderRightWidth,
             CSSPropertyID::BorderBottomWidth,
             CSSPropertyID::BorderLeftWidth
         };
 
-        return CSSShorthand(data, 4);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::BorderTop: {
-        static const CSSPropertyID data[3] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::BorderTopColor,
             CSSPropertyID::BorderTopStyle,
             CSSPropertyID::BorderTopWidth
         };
 
-        return CSSShorthand(data, 3);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::BorderRight: {
-        static const CSSPropertyID data[3] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::BorderRightColor,
             CSSPropertyID::BorderRightStyle,
             CSSPropertyID::BorderRightWidth
         };
 
-        return CSSShorthand(data, 3);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::BorderBottom: {
-        static const CSSPropertyID data[3] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::BorderBottomColor,
             CSSPropertyID::BorderBottomStyle,
             CSSPropertyID::BorderBottomWidth
         };
 
-        return CSSShorthand(data, 3);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::BorderLeft: {
-        static const CSSPropertyID data[3] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::BorderLeftColor,
             CSSPropertyID::BorderLeftStyle,
             CSSPropertyID::BorderLeftWidth
         };
 
-        return CSSShorthand(data, 3);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::BorderRadius: {
-        static const CSSPropertyID data[4] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::BorderTopRightRadius,
             CSSPropertyID::BorderTopLeftRadius,
             CSSPropertyID::BorderBottomLeftRadius,
             CSSPropertyID::BorderBottomRightRadius
         };
 
-        return CSSShorthand(data, 3);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::BorderSpacing: {
-        static const CSSPropertyID data[2] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::BorderHorizontalSpacing,
             CSSPropertyID::BorderVerticalSpacing
         };
 
-        return CSSShorthand(data, 2);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::Padding: {
-        static const CSSPropertyID data[4] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::PaddingTop,
             CSSPropertyID::PaddingRight,
             CSSPropertyID::PaddingBottom,
             CSSPropertyID::PaddingLeft
         };
 
-        return CSSShorthand(data, 4);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::Margin: {
-        static const CSSPropertyID data[4] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::MarginTop,
             CSSPropertyID::MarginRight,
             CSSPropertyID::MarginBottom,
             CSSPropertyID::MarginLeft
         };
 
-        return CSSShorthand(data, 4);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::Outline: {
-        static const CSSPropertyID data[4] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::OutlineColor,
             CSSPropertyID::OutlineOffset,
             CSSPropertyID::OutlineStyle,
             CSSPropertyID::OutlineWidth
         };
 
-        return CSSShorthand(data, 4);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::ListStyle: {
-        static const CSSPropertyID data[3] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::ListStyleImage,
             CSSPropertyID::ListStylePosition,
             CSSPropertyID::ListStyleType
         };
 
-        return CSSShorthand(data, 3);
+        return CSSShorthand(data, std::size(data));
     }
 
     case CSSPropertyID::ColumnRule: {
-        static const CSSPropertyID data[3] = {
+        static const CSSPropertyID data[] = {
             CSSPropertyID::ColumnRuleColor,
             CSSPropertyID::ColumnRuleStyle,
             CSSPropertyID::ColumnRuleWidth
         };
 
-        return CSSShorthand(data, 3);
+        return CSSShorthand(data, std::size(data));
+    }
+
+    case CSSPropertyID::FlexFlow: {
+        static const CSSPropertyID data[] = {
+            CSSPropertyID::FlexDirection,
+            CSSPropertyID::FlexWrap
+        };
+
+        return CSSShorthand(data, std::size(data));
+    }
+
+    case CSSPropertyID::Flex: {
+        static const CSSPropertyID data[] = {
+            CSSPropertyID::FlexGrow,
+            CSSPropertyID::FlexShrink,
+            CSSPropertyID::FlexBasis
+        };
+
+        return CSSShorthand(data, std::size(data));
+    }
+
+    case CSSPropertyID::Background: {
+        static const CSSPropertyID data[] = {
+            CSSPropertyID::BackgroundColor,
+            CSSPropertyID::BackgroundImage,
+            CSSPropertyID::BackgroundRepeat,
+            CSSPropertyID::BackgroundAttachment,
+            CSSPropertyID::BackgroundOrigin,
+            CSSPropertyID::BackgroundClip,
+            CSSPropertyID::BackgroundPosition,
+            CSSPropertyID::BackgroundSize
+        };
+
+        return CSSShorthand(data, std::size(data));
+    }
+
+    case CSSPropertyID::Columns: {
+        static const CSSPropertyID data[] = {
+            CSSPropertyID::ColumnWidth,
+            CSSPropertyID::ColumnCount
+        };
+
+        return CSSShorthand(data, std::size(data));
+    }
+
+    case CSSPropertyID::Font: {
+        static const CSSPropertyID data[] = {
+            CSSPropertyID::FontStyle,
+            CSSPropertyID::FontVariant,
+            CSSPropertyID::FontWeight,
+            CSSPropertyID::FontSize,
+            CSSPropertyID::LineHeight,
+            CSSPropertyID::FontFamily
+        };
+
+        return CSSShorthand(data, std::size(data));
+    }
+
+    case CSSPropertyID::Border: {
+        static const CSSPropertyID data[] = {
+            CSSPropertyID::BorderTopWidth,
+            CSSPropertyID::BorderRightWidth,
+            CSSPropertyID::BorderBottomWidth,
+            CSSPropertyID::BorderLeftWidth,
+            CSSPropertyID::BorderTopStyle,
+            CSSPropertyID::BorderRightStyle,
+            CSSPropertyID::BorderBottomStyle,
+            CSSPropertyID::BorderLeftStyle,
+            CSSPropertyID::BorderTopColor,
+            CSSPropertyID::BorderRightColor,
+            CSSPropertyID::BorderBottomColor,
+            CSSPropertyID::BorderLeftColor
+        };
+
+        return CSSShorthand(data, std::size(data));
+    }
+
+    case CSSPropertyID::Overflow: {
+        static const CSSPropertyID data[] = {
+            CSSPropertyID::OverflowX,
+            CSSPropertyID::OverflowY
+        };
+
+        return CSSShorthand(data, std::size(data));
+    }
+
+    case CSSPropertyID::TextDecoration: {
+        static const CSSPropertyID data[] = {
+            CSSPropertyID::TextDecorationLine,
+            CSSPropertyID::TextDecorationStyle,
+            CSSPropertyID::TextDecorationColor
+        };
+
+        return CSSShorthand(data, std::size(data));
     }
 
     default:

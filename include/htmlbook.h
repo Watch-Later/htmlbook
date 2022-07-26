@@ -140,23 +140,19 @@ private:
     int m_stride;
 };
 
-class HTMLBOOK_API ResourceData {
+class HTMLBOOK_API ByteData {
 public:
-    static std::shared_ptr<ResourceData> create(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding);
-    static std::shared_ptr<ResourceData> createUninitialized(uint8_t*& data, size_t length, std::string_view mimeType, std::string_view textEncoding);
-    static std::shared_ptr<ResourceData> createStatic(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding);
+    static std::shared_ptr<ByteData> create(const uint8_t* data, size_t length);
+    static std::shared_ptr<ByteData> createUninitialized(uint8_t*& data, size_t length);
+    static std::shared_ptr<ByteData> createStatic(const uint8_t* data, size_t length);
 
     const uint8_t* data() const { return m_data; }
     size_t length() const { return m_length; }
-    std::string_view mimeType() const { return m_mimeType; }
-    std::string_view textEncoding() const { return m_textEncoding; }
 
 private:
-    ResourceData(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding);
+    ByteData(const uint8_t* data, size_t length);
     const uint8_t* m_data;
     size_t m_length;
-    std::string m_mimeType;
-    std::string m_textEncoding;
 };
 
 enum class PageMode {
@@ -179,9 +175,11 @@ public:
     /**
      * @brief loadUrl
      * @param url
+     * @param mimeType
+     * @param textEncoding
      * @return
      */
-    virtual std::shared_ptr<ResourceData> loadUrl(std::string_view url) = 0;
+    virtual std::shared_ptr<ByteData> loadUrl(std::string_view url, std::string& mimeType, std::string& textEncoding) = 0;
 
     /**
      * @brief loadFont
@@ -191,7 +189,7 @@ public:
      * @param weight
      * @return
      */
-    virtual std::shared_ptr<ResourceData> loadFont(std::string_view family, bool italic, bool smallCaps, int weight) = 0;
+    virtual std::shared_ptr<ByteData> loadFont(std::string_view family, bool italic, bool smallCaps, int weight) = 0;
 };
 
 class Document;
@@ -462,6 +460,22 @@ public:
      * @param o
      */
     void serialize(std::ostream& o) const;
+
+    /**
+     * @brief addFontFace
+     * @param data
+     */
+    static void addFontFace(std::shared_ptr<ByteData> data);
+
+    /**
+     * @brief addFontFace
+     * @param family
+     * @param italic
+     * @param smallCaps
+     * @param weight
+     * @param data
+     */
+    static void addFontFace(std::string_view family, bool italic, bool smallCaps, int weight, std::shared_ptr<ByteData> data);
 
     /**
      * @brief document

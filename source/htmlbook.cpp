@@ -15,28 +15,28 @@ const PageSize PageSize::Letter(8.5, 11, PageUnit::Inches);
 const PageSize PageSize::Legal(8.5, 14, PageUnit::Inches);
 const PageSize PageSize::Ledger(11, 17, PageUnit::Inches);
 
-std::shared_ptr<ResourceData> ResourceData::create(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding)
+std::shared_ptr<ByteData> ByteData::create(const uint8_t* data, size_t length)
 {
     uint8_t* newdata;
-    auto resource = createUninitialized(newdata, length, mimeType, textEncoding);
+    auto resource = createUninitialized(newdata, length);
     std::memcpy(newdata, data, length);
     return resource;
 }
 
-std::shared_ptr<ResourceData> ResourceData::createUninitialized(uint8_t*& data, size_t length, std::string_view mimeType, std::string_view textEncoding)
+std::shared_ptr<ByteData> ByteData::createUninitialized(uint8_t*& data, size_t length)
 {
-    auto newdata = new uint8_t[length + sizeof(ResourceData)];
-    data = newdata + sizeof(ResourceData);
-    return std::shared_ptr<ResourceData>(new (newdata) ResourceData(data, length, mimeType, textEncoding));
+    auto newdata = new uint8_t[length + sizeof(ByteData)];
+    data = newdata + sizeof(ByteData);
+    return std::shared_ptr<ByteData>(new (newdata) ByteData(data, length));
 }
 
-std::shared_ptr<ResourceData> ResourceData::createStatic(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding)
+std::shared_ptr<ByteData> ByteData::createStatic(const uint8_t* data, size_t length)
 {
-    return std::shared_ptr<ResourceData>(new ResourceData(data, length, mimeType, textEncoding));
+    return std::shared_ptr<ByteData>(new ByteData(data, length));
 }
 
-ResourceData::ResourceData(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding)
-    : m_data(data), m_length(length), m_mimeType(mimeType), m_textEncoding(textEncoding)
+ByteData::ByteData(const uint8_t* data, size_t length)
+    : m_data(data), m_length(length)
 {
 }
 
@@ -81,10 +81,12 @@ std::string_view Book::baseUrl() const
 
 void Book::loadUrl(std::string_view url)
 {
-    auto resourceData = m_document->fetchUrl(url);
-    if(resourceData == nullptr)
+    std::string mimeType;
+    std::string textEncoding;
+    auto data = m_document->fetchUrl(url, mimeType, textEncoding);
+    if(data == nullptr)
         return;
-    load(resourceData->data(), resourceData->length(), resourceData->mimeType(), resourceData->textEncoding());
+    load(data->data(), data->length(), mimeType, textEncoding);
 }
 
 void Book::load(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding)
