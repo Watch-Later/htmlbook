@@ -1674,7 +1674,7 @@ RefPtr<CSSValue> CSSParser::consumeFontSize(CSSTokenStream& input, bool unitless
     return consumeLengthOrPercent(input, false, unitless);
 }
 
-RefPtr<CSSValue> CSSParser::consumeFontFamilyName(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeFontFamilyValue(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::String) {
         std::string value(input->data());
@@ -1693,21 +1693,6 @@ RefPtr<CSSValue> CSSParser::consumeFontFamilyName(CSSTokenStream& input)
     if(value.empty())
         return nullptr;
     return CSSStringValue::create(std::move(value));
-}
-
-RefPtr<CSSValue> CSSParser::consumeFontFamilyValue(CSSTokenStream& input)
-{
-    static const idententry_t table[] = {
-        {"serif", CSSValueID::Serif},
-        {"sans-serif", CSSValueID::SansSerif},
-        {"cursive", CSSValueID::Cursive},
-        {"fantasy", CSSValueID::Fantasy},
-        {"monospace", CSSValueID::Monospace}
-    };
-
-    if(auto value = consumeIdent(input, table))
-        return value;
-    return consumeFontFamilyName(input);
 }
 
 RefPtr<CSSValue> CSSParser::consumeFontFamily(CSSTokenStream& input)
@@ -1729,7 +1714,7 @@ RefPtr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& input)
     if(input->type() == CSSToken::Type::Function && equals(input->data(), "local", false)) {
         auto block = input.consumeBlock();
         block.consumeWhitespace();
-        auto value = consumeFontFamilyName(block);
+        auto value = consumeFontFamilyValue(block);
         if(value == nullptr || !block.empty())
             return nullptr;
         input.consumeWhitespace();
@@ -2099,7 +2084,7 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
     return CSSFunctionValue::create(id, std::move(values));
 }
 
-RefPtr<CSSValue> CSSParser::consumeTransformList(CSSTokenStream& input)
+RefPtr<CSSValue> CSSParser::consumeTransform(CSSTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
@@ -2279,7 +2264,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
     case CSSPropertyID::TransformOrigin:
         return consumeBackgroundPosition(input);
     case CSSPropertyID::Transform:
-        return consumeTransformList(input);
+        return consumeTransform(input);
     case CSSPropertyID::PaintOrder:
         return consumePaintOrder(input);
     case CSSPropertyID::BackgroundAttachment: {

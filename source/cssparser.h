@@ -80,7 +80,6 @@ private:
     static RefPtr<CSSValue> consumeSize(CSSTokenStream& input);
     static RefPtr<CSSValue> consumeFontWeight(CSSTokenStream& input);
     static RefPtr<CSSValue> consumeFontSize(CSSTokenStream& input, bool unitless);
-    static RefPtr<CSSValue> consumeFontFamilyName(CSSTokenStream& input);
     static RefPtr<CSSValue> consumeFontFamilyValue(CSSTokenStream& input);
     static RefPtr<CSSValue> consumeFontFamily(CSSTokenStream& input);
     static RefPtr<CSSValue> consumeFontFaceSourceValue(CSSTokenStream& input);
@@ -95,7 +94,7 @@ private:
     static RefPtr<CSSValue> consumeBackgroundSize(CSSTokenStream& input);
     static RefPtr<CSSValue> consumeAngle(CSSTokenStream& input);
     static RefPtr<CSSValue> consumeTransformValue(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeTransformList(CSSTokenStream& input);
+    static RefPtr<CSSValue> consumeTransform(CSSTokenStream& input);
     static RefPtr<CSSValue> consumePaintOrder(CSSTokenStream& input);
     static RefPtr<CSSValue> consumeLonghand(CSSTokenStream& input, CSSPropertyID id);
 

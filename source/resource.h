@@ -49,8 +49,7 @@ public:
     virtual bool isVectorImage() const { return false; }
 
 protected:
-    Image(std::shared_ptr<ResourceData> data);
-    std::shared_ptr<ResourceData> m_data;
+    Image() = default;
 };
 
 class ImageResource final : public Resource {
@@ -81,12 +80,12 @@ private:
 class FontResource final : public Resource {
 public:
     static RefPtr<FontResource> create(std::shared_ptr<ResourceData> data);
-    FontFace* fontFace() const { return m_fontFace.get(); }
+    FontFace* face() const { return m_face.get(); }
     Type type() const final { return Type::Font; }
 
 private:
-    FontResource(RefPtr<FontFace> fontFace);
-    RefPtr<FontFace> m_fontFace;
+    FontResource(RefPtr<FontFace> face);
+    RefPtr<FontFace> m_face;
 };
 
 template<>
