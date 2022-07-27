@@ -40,10 +40,8 @@ ByteData::ByteData(const uint8_t* data, size_t length)
 {
 }
 
-Book::Book(const PageSize& pageSize, PageMode pageMode)
-    : m_pageSize(pageSize)
-    , m_pageMode(pageMode)
-    , m_document(new Document(this))
+Book::Book(const PageSize& pageSize)
+    : m_pageSize(pageSize), m_document(new Document(this))
 {
 }
 
