@@ -5,10 +5,9 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace htmlbook {
-
-class ByteData;
 
 class Resource : public RefCounted<Resource> {
 public:
@@ -27,7 +26,7 @@ protected:
 
 class TextResource final : public Resource {
 public:
-    static RefPtr<TextResource> create(std::shared_ptr<ByteData> data, std::string_view mimeType, std::string_view textEncoding);
+    static RefPtr<TextResource> create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data);
     static std::string decode(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding);
     const std::string& text() const { return m_text; }
     Type type() const final { return Type::Text; }
@@ -54,7 +53,7 @@ protected:
 
 class ImageResource final : public Resource {
 public:
-    static RefPtr<ImageResource> create(std::shared_ptr<ByteData> data, std::string_view mimeType, std::string_view textEncoding);
+    static RefPtr<ImageResource> create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data);
     Image* image() const { return m_image.get(); }
     Type type() const final { return Type::Image; }
 
@@ -70,16 +69,16 @@ struct is<ImageResource> {
 
 class FontFace : public RefCounted<FontFace> {
 public:
-    RefPtr<FontFace> create(std::shared_ptr<ByteData> data);
+    RefPtr<FontFace> create(std::vector<char> data);
 
 private:
-    FontFace(std::shared_ptr<ByteData> data);
-    std::shared_ptr<ByteData> m_data;
+    FontFace(std::vector<char> data);
+    std::vector<char> m_data;
 };
 
 class FontResource final : public Resource {
 public:
-    static RefPtr<FontResource> create(std::shared_ptr<ByteData> data, std::string_view mimeType, std::string_view textEncoding);
+    static RefPtr<FontResource> create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data);
     FontFace* face() const { return m_face.get(); }
     Type type() const final { return Type::Font; }
 

@@ -192,7 +192,6 @@ inline const GlobalString& Node::namespaceUri() const
     return emptyString;
 }
 
-class ByteData;
 class Resource;
 class TextResource;
 class ImageResource;
@@ -216,6 +215,7 @@ public:
     void updateIdCache(const GlobalString& oldValue, const GlobalString& newValue, Element* element);
     void addFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
     RefPtr<FontFace> getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight);
+    RefPtr<FontFace> fetchFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight);
 
     void addAuthorStyleSheet(const std::string_view& content);
     void setUserStyleSheet(const std::string_view& content);
@@ -224,9 +224,7 @@ public:
     const CSSStyleSheet* authorStyleSheet() const { return m_authorStyleSheet.get(); }
     const CSSStyleSheet* userStyleSheet() const { return m_userStyleSheet.get(); }
 
-    std::shared_ptr<ByteData> fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding);
-    std::shared_ptr<ByteData> fetchFont(const std::string_view& family, bool italic, bool smallCaps, int weight);
-
+    bool fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data);
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
     RefPtr<ImageResource> fetchImageResource(const std::string_view& url);
     RefPtr<FontResource> fetchFontResource(const std::string_view& url);

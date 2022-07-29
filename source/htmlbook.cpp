@@ -2,8 +2,6 @@
 #include "document.h"
 #include "resource.h"
 
-#include <cstring>
-
 namespace htmlbook {
 
 const PageSize PageSize::A5(148, 210, PageUnit::Millimeters);
@@ -14,31 +12,6 @@ const PageSize PageSize::B4(250, 353, PageUnit::Millimeters);
 const PageSize PageSize::Letter(8.5, 11, PageUnit::Inches);
 const PageSize PageSize::Legal(8.5, 14, PageUnit::Inches);
 const PageSize PageSize::Ledger(11, 17, PageUnit::Inches);
-
-std::shared_ptr<ByteData> ByteData::create(const uint8_t* data, size_t length)
-{
-    uint8_t* newdata;
-    auto resource = createUninitialized(newdata, length);
-    std::memcpy(newdata, data, length);
-    return resource;
-}
-
-std::shared_ptr<ByteData> ByteData::createUninitialized(uint8_t*& data, size_t length)
-{
-    auto newdata = new uint8_t[length + sizeof(ByteData)];
-    data = newdata + sizeof(ByteData);
-    return std::shared_ptr<ByteData>(new (newdata) ByteData(data, length));
-}
-
-std::shared_ptr<ByteData> ByteData::createStatic(const uint8_t* data, size_t length)
-{
-    return std::shared_ptr<ByteData>(new ByteData(data, length));
-}
-
-ByteData::ByteData(const uint8_t* data, size_t length)
-    : m_data(data), m_length(length)
-{
-}
 
 Book::Book(const PageSize& pageSize)
     : m_pageSize(pageSize), m_document(new Document(this))
@@ -79,17 +52,15 @@ std::string_view Book::baseUrl() const
 
 void Book::loadUrl(std::string_view url)
 {
-    std::string mimeType;
-    std::string textEncoding;
-    auto data = m_document->fetchUrl(url, mimeType, textEncoding);
-    if(data == nullptr)
+    auto textResource = m_document->fetchTextResource(url);
+    if(textResource == nullptr)
         return;
-    load(data->data(), data->length(), mimeType, textEncoding);
+    load(textResource->text());
 }
 
-void Book::load(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding)
+void Book::load(const uint8_t* data, size_t length, std::string_view textEncoding)
 {
-    load(TextResource::decode(data, length, mimeType, textEncoding));
+    load(TextResource::decode(data, length, "text/html", textEncoding));
 }
 
 void Book::load(std::string_view content)

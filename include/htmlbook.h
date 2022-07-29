@@ -76,21 +76,6 @@ public:
     PageUnit unit{PageUnit::Pixels};
 };
 
-class HTMLBOOK_API ByteData {
-public:
-    static std::shared_ptr<ByteData> create(const uint8_t* data, size_t length);
-    static std::shared_ptr<ByteData> createUninitialized(uint8_t*& data, size_t length);
-    static std::shared_ptr<ByteData> createStatic(const uint8_t* data, size_t length);
-
-    const uint8_t* data() const { return m_data; }
-    size_t length() const { return m_length; }
-
-private:
-    ByteData(const uint8_t* data, size_t length);
-    const uint8_t* m_data;
-    size_t m_length;
-};
-
 class HTMLBOOK_API BookClient {
 public:
     /**
@@ -108,9 +93,10 @@ public:
      * @param url
      * @param mimeType
      * @param textEncoding
+     * @param data
      * @return
      */
-    virtual std::shared_ptr<ByteData> loadUrl(std::string_view url, std::string& mimeType, std::string& textEncoding) = 0;
+    virtual bool loadUrl(std::string_view url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data) = 0;
 
     /**
      * @brief loadFont
@@ -118,9 +104,10 @@ public:
      * @param italic
      * @param smallCaps
      * @param weight
+     * @param data
      * @return
      */
-    virtual std::shared_ptr<ByteData> loadFont(std::string_view family, bool italic, bool smallCaps, int weight) = 0;
+    virtual bool loadFont(std::string_view family, bool italic, bool smallCaps, int weight, std::vector<char>& data) = 0;
 };
 
 class Document;
@@ -256,10 +243,9 @@ public:
      * @brief load
      * @param data
      * @param length
-     * @param mimeType
      * @param textEncoding
      */
-    void load(const uint8_t* data, size_t length, std::string_view mimeType, std::string_view textEncoding);
+    void load(const uint8_t* data, size_t length, std::string_view textEncoding);
 
     /**
      * @brief load
@@ -296,13 +282,6 @@ public:
     size_t pageCount() const;
 
     /**
-     * @brief pageSizeAt
-     * @param pageIndex
-     * @return
-     */
-    PageSize pageSizeAt(size_t pageIndex) const;
-
-    /**
      * @brief save
      * @param filename
      */
@@ -327,10 +306,18 @@ public:
     Document* document() const;
 
     /**
-     * @brief addFontFace
-     * @param data
+     * @brief addFontFile
+     * @param filename
+     * @return
      */
-    static void addFontFace(std::shared_ptr<ByteData> data);
+    static bool addFontFile(const std::string& filename);
+
+    /**
+     * @brief addFontData
+     * @param data
+     * @return
+     */
+    static bool addFontData(std::vector<char> data);
 
 private:
     PageSize m_pageSize;
