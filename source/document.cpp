@@ -421,7 +421,7 @@ RefPtr<ResourceType> Document::fetchResource(const std::string_view& url)
         return nullptr;
     auto it = m_resourceCache.find(completeUrl.value());
     if(it != m_resourceCache.end())
-        return to<ResourceType>(*it->second);
+        return to<ResourceType>(it->second.get());
     std::string mimeType;
     std::string textEncoding;
     std::vector<char> data;
