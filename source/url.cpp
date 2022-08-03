@@ -335,4 +335,14 @@ Url Url::complete(std::string_view relative) const
     return Url{value + input};
 }
 
+bool Url::protocolIs(const std::string_view& value) const
+{
+    return equals(m_value.data(), m_schemeEnd, value.data(), value.length(), false);
+}
+
+bool Url::decodeData(std::string& mimeType, std::string& textEncoding, std::vector<char>& data) const
+{
+    return false;
+}
+
 } // namespace htmlbook

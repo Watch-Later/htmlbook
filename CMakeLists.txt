@@ -9,3 +9,4 @@ add_executable(htmlbook main.cpp)
 
 add_subdirectory(include)
 add_subdirectory(source)
+add_subdirectory(3rdparty)

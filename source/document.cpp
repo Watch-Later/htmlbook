@@ -334,8 +334,8 @@ void Element::serialize(std::ostream& o) const
     o << '>';
 }
 
-Document::Document(Book* book)
-    : ContainerNode(nullptr), m_book(book)
+Document::Document(const PageSize& pageSize)
+    : ContainerNode(nullptr), m_pageSize(pageSize)
 {
 }
 
@@ -393,7 +393,9 @@ void Document::clearUserStyleSheet()
 
 bool Document::fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data)
 {
-    return false;
+    if(url.protocolIs("data"))
+        return url.decodeData(mimeType, textEncoding, data);
+    return m_client && m_client->loadUrl(url.value(), mimeType, textEncoding, data);
 }
 
 RefPtr<TextResource> Document::fetchTextResource(const std::string_view& url)
@@ -418,20 +420,14 @@ RefPtr<ResourceType> Document::fetchResource(const std::string_view& url)
     if(completeUrl.empty())
         return nullptr;
     auto it = m_resourceCache.find(completeUrl.value());
-    if(it != m_resourceCache.end()) {
-        if(auto resource = to<ResourceType>(*it->second))
-            return resource;
-        m_resourceCache.erase(it);
-    }
-
+    if(it != m_resourceCache.end())
+        return to<ResourceType>(*it->second);
     std::string mimeType;
     std::string textEncoding;
     std::vector<char> data;
-    if(fetchUrl(completeUrl, mimeType, textEncoding, data))
+    if(!fetchUrl(completeUrl, mimeType, textEncoding, data))
         return nullptr;
     auto resource = ResourceType::create(mimeType, textEncoding, std::move(data));
-    if(resource == nullptr)
-        return nullptr;
     m_resourceCache.emplace(completeUrl.value(), resource);
     return resource;
 }

@@ -245,7 +245,7 @@ public:
      * @param length
      * @param textEncoding
      */
-    void load(const uint8_t* data, size_t length, std::string_view textEncoding);
+    void load(const char* data, size_t length, std::string_view textEncoding);
 
     /**
      * @brief load
@@ -320,8 +320,6 @@ public:
     static bool addFontData(std::vector<char> data);
 
 private:
-    PageSize m_pageSize;
-    BookClient* m_client{nullptr};
     std::unique_ptr<Document> m_document;
 };
 

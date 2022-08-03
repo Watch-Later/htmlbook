@@ -14,31 +14,11 @@ const PageSize PageSize::Legal(8.5, 14, PageUnit::Inches);
 const PageSize PageSize::Ledger(11, 17, PageUnit::Inches);
 
 Book::Book(const PageSize& pageSize)
-    : m_pageSize(pageSize), m_document(new Document(this))
+    : m_document(new Document(pageSize))
 {
 }
 
 Book::~Book() = default;
-
-void Book::setPageSize(const PageSize& pageSize)
-{
-    m_pageSize = pageSize;
-}
-
-const PageSize& Book::pageSize() const
-{
-    return m_pageSize;
-}
-
-void Book::setClient(BookClient* client)
-{
-    m_client = client;
-}
-
-BookClient* Book::client() const
-{
-    return m_client;
-}
 
 void Book::setBaseUrl(std::string_view baseUrl)
 {
@@ -58,7 +38,7 @@ void Book::loadUrl(std::string_view url)
     load(textResource->text());
 }
 
-void Book::load(const uint8_t* data, size_t length, std::string_view textEncoding)
+void Book::load(const char* data, size_t length, std::string_view textEncoding)
 {
     load(TextResource::decode(data, length, "text/html", textEncoding));
 }

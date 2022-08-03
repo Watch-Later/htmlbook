@@ -3,6 +3,7 @@
 
 #include "cssstylesheet.h"
 #include "url.h"
+#include "htmlbook.h"
 
 #include <cassert>
 
@@ -197,11 +198,10 @@ class TextResource;
 class ImageResource;
 class FontResource;
 class FontFace;
-class Book;
 
 class Document final : public ContainerNode {
 public:
-    Document(Book* book);
+    Document(const PageSize& pageSize);
 
     bool isDocumentNode() const final { return true; }
 
@@ -232,7 +232,8 @@ public:
 private:
     template<typename ResourceType>
     RefPtr<ResourceType> fetchResource(const std::string_view& url);
-    Book* m_book;
+    PageSize m_pageSize;
+    BookClient* m_client{nullptr};
     Url m_baseUrl;
     std::multimap<GlobalString, Element*> m_idCache;
     std::map<std::string, RefPtr<Resource>> m_resourceCache;
