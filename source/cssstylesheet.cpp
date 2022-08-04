@@ -1153,8 +1153,7 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
         return;
 
     bool italic = false;
-    if(fontStyle) {
-        assert(fontStyle->isIdentValue());
+    if(fontStyle && fontStyle->isIdentValue()) {
         auto ident = to<CSSIdentValue>(*fontStyle);
         switch(ident->value()) {
         case CSSValueID::Normal:
@@ -1170,8 +1169,7 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
     }
 
     bool smallCaps = false;
-    if(fontVariant) {
-        assert(fontVariant->isIdentValue());
+    if(fontVariant && fontVariant->isIdentValue()) {
         auto ident = to<CSSIdentValue>(*fontVariant);
         switch(ident->value()) {
         case CSSValueID::Normal:
@@ -1187,7 +1185,8 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
 
     int weight = 400;
     if(fontWeight) {
-        if(auto ident = to<CSSIdentValue>(*fontWeight)) {
+        if(fontWeight->isIdentValue()) {
+            auto ident = to<CSSIdentValue>(*fontWeight);
             switch(ident->value()) {
             case CSSValueID::Normal:
             case CSSValueID::Lighter:
@@ -1200,8 +1199,7 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
             default:
                 assert(false);
             }
-        } else {
-            assert(fontWeight->isIntegerValue());
+        } else if(fontWeight->isIntegerValue()) {
             auto integer = to<CSSIntegerValue>(*fontWeight);
             weight = integer->value();
         }
