@@ -12,11 +12,11 @@ public:
     Url() = default;
     Url(const std::string_view& value);
 
-    bool empty() const { return m_value.empty(); }
-    const std::string& value() const { return m_value; }
     Url complete(std::string_view relative) const;
     bool protocolIs(const std::string_view& value) const;
     bool decodeData(std::string& mimeType, std::string& textEncoding, std::vector<char>& data) const;
+    bool empty() const { return m_value.empty(); }
+    const std::string& value() const { return m_value; }
 
 private:
     std::string m_value;

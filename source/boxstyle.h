@@ -436,7 +436,7 @@ public:
     static RefPtr<BoxStyle> create(const BoxStyle& parentStyle);
 
     const Element* element() const { return m_element; }
-    FontFace* fontFace() const { return m_fontFace.get(); }
+    const RefPtr<FontFace>& fontFace() const { return m_fontFace; }
     float fontSize() const { return m_fontSize; }
     const Color& currentColor() const { return m_currentColor; }
     const CSSPropertyMap& properties() const { return m_properties; }
@@ -492,9 +492,9 @@ public:
 
     ListStyleType listStyleType() const;
     ListStylePosition listStylePosition() const;
-    Image* listStyleImage() const;
+    RefPtr<Image> listStyleImage() const;
 
-    Image* backgroundImage() const;
+    RefPtr<Image> backgroundImage() const;
     Color backgroundColor() const;
     BackgroundRepeat backgroundRepeat() const;
     BackgroundBox backgroundOrigin() const;
@@ -556,7 +556,7 @@ public:
     int widows() const;
     int orphans() const;
 
-    CSSValue* get(CSSPropertyID id) const;
+    RefPtr<CSSValue> get(CSSPropertyID id) const;
     void set(CSSPropertyID id, RefPtr<CSSValue> value);
 
     float emFontSize() const;
@@ -581,8 +581,8 @@ public:
     Length convertPositionLength(CSSValueID min, CSSValueID max, const CSSValue& value) const;
     LengthSize convertBorderRadius(const CSSValue& value) const;
     Color convertColor(const CSSValue& value) const;
-    Image* convertImage(const CSSValue& value) const;
-    Image* convertImageOrNone(const CSSValue& value) const;
+    RefPtr<Image> convertImage(const CSSValue& value) const;
+    RefPtr<Image> convertImageOrNone(const CSSValue& value) const;
 
     static Overflow convertOverflow(const CSSValue& value);
     static BackgroundBox convertBackgroundBox(const CSSValue& value);

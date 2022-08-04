@@ -51,7 +51,7 @@ class Image;
 class ImageResource final : public Resource {
 public:
     static RefPtr<ImageResource> create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data);
-    Image* image() const { return m_image.get(); }
+    const RefPtr<Image>& image() const { return m_image; }
     Type type() const final { return Type::Image; }
 
 private:
@@ -69,7 +69,7 @@ class FontFace;
 class FontResource final : public Resource {
 public:
     static RefPtr<FontResource> create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data);
-    FontFace* face() const { return m_face.get(); }
+    const RefPtr<FontFace>& face() const { return m_face; }
     Type type() const final { return Type::Font; }
 
 private:
@@ -138,6 +138,10 @@ class FontFace : public RefCounted<FontFace> {
 public:
     static RefPtr<FontFace> create(std::vector<char> data);
 
+    RefPtr<Glyph> getGlyph(uint32_t codepoint) const;
+    RefPtr<Glyph> findGlyph(uint32_t codepoint) const;
+    RefPtr<Glyph> findGlyph(const FontFace* face, uint32_t codepoint) const;
+
     int ascent() const { return m_ascent; }
     int descent() const { return m_descent; }
     int lineGap() const { return m_lineGap; }
@@ -145,14 +149,15 @@ public:
     int y1() const { return m_y1; }
     int x2() const { return m_x2; }
     int y2() const { return m_y2; }
-    float scale(float pixels) const;
+    float scale(float size) const;
     const stbtt_fontinfo* info() const { return &m_info; }
 
 private:
     FontFace(const stbtt_fontinfo& info, std::vector<char> data);
     std::vector<char> m_data;
     stbtt_fontinfo m_info;
-    std::map<int, std::unique_ptr<GlyphPage>> m_pages;
+    mutable std::map<int, std::unique_ptr<GlyphPage>> m_pages;
+    mutable uint32_t m_version;
     int m_ascent;
     int m_descent;
     int m_lineGap;
@@ -160,6 +165,14 @@ private:
     int m_y1;
     int m_x2;
     int m_y2;
+};
+
+class FontCache {
+public:
+    static RefPtr<FontFace> addFont(std::vector<char> data);
+    static RefPtr<FontFace> getFace(std::string_view family, bool italic, bool bold);
+    static RefPtr<Glyph> findGlyph(const FontFace* face, uint32_t codepoint);
+    static uint32_t version();
 };
 
 } // namespace htmlbook

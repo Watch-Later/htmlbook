@@ -48,7 +48,7 @@ Display BoxStyle::display() const
     if(value == nullptr)
         return Display::Inline;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::None:
         return Display::None;
@@ -95,7 +95,7 @@ Visibility BoxStyle::visibility() const
     if(value == nullptr)
         return Visibility::Visible;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Visible:
         return Visibility::Visible;
@@ -114,7 +114,7 @@ Float BoxStyle::floating() const
     if(value == nullptr)
         return Float::None;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::None:
         return Float::None;
@@ -133,7 +133,7 @@ Clear BoxStyle::clear() const
     if(value == nullptr)
         return Clear::None;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::None:
         return Clear::None;
@@ -154,7 +154,7 @@ Position BoxStyle::position() const
     if(value == nullptr)
         return Position::Static;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Static:
         return Position::Static;
@@ -471,7 +471,7 @@ ListStyleType BoxStyle::listStyleType() const
     if(value == nullptr)
         return ListStyleType::None;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::None:
         return ListStyleType::None;
@@ -508,7 +508,7 @@ ListStylePosition BoxStyle::listStylePosition() const
     if(value == nullptr)
         return ListStylePosition::Inside;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Inside:
         return ListStylePosition::Inside;
@@ -519,7 +519,7 @@ ListStylePosition BoxStyle::listStylePosition() const
     }
 }
 
-Image* BoxStyle::listStyleImage() const
+RefPtr<Image> BoxStyle::listStyleImage() const
 {
     auto value = get(CSSPropertyID::ListStyleImage);
     if(value == nullptr)
@@ -527,7 +527,7 @@ Image* BoxStyle::listStyleImage() const
     return convertImageOrNone(*value);
 }
 
-Image* BoxStyle::backgroundImage() const
+RefPtr<Image> BoxStyle::backgroundImage() const
 {
     auto value = get(CSSPropertyID::BackgroundImage);
     if(value == nullptr)
@@ -549,7 +549,7 @@ BackgroundRepeat BoxStyle::backgroundRepeat() const
     if(value == nullptr)
         return BackgroundRepeat::Repeat;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Repeat:
         return BackgroundRepeat::Repeat;
@@ -586,7 +586,7 @@ BackgroundAttachment BoxStyle::backgroundAttachment() const
     if(value == nullptr)
         return BackgroundAttachment::Scroll;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Scroll:
         return BackgroundAttachment::Scroll;
@@ -604,7 +604,7 @@ BackgroundSize BoxStyle::backgroundSize() const
     auto value = get(CSSPropertyID::BackgroundSize);
     if(value == nullptr)
         return BackgroundSize(BackgroundSize::Type::Length, Length::Auto, Length::Auto);
-    if(auto ident = to<CSSIdentValue>(value)) {
+    if(auto ident = to<CSSIdentValue>(*value)) {
         switch(ident->value()) {
         case CSSValueID::Contain:
             return BackgroundSize(BackgroundSize::Type::Contain);
@@ -616,7 +616,7 @@ BackgroundSize BoxStyle::backgroundSize() const
     }
 
     assert(value->isPairValue());
-    auto pair = to<CSSPairValue>(value);
+    auto pair = to<CSSPairValue>(*value);
     auto width = convertLengthOrPercentOrAuto(*pair->first());
     auto height = convertLengthOrPercentOrAuto(*pair->second());
     return BackgroundSize(BackgroundSize::Type::Length, width, height);
@@ -628,7 +628,7 @@ LengthSize BoxStyle::backgroundPosition() const
     if(value == nullptr)
         return LengthSize::ZeroFixed;
     assert(value->isPairValue());
-    auto pair = to<CSSPairValue>(value);
+    auto pair = to<CSSPairValue>(*value);
     auto horizontal = convertPositionLength(CSSValueID::Left, CSSValueID::Right, *pair->first());
     auto vertical = convertPositionLength(CSSValueID::Top, CSSValueID::Bottom, *pair->second());
     return LengthSize(horizontal, vertical);
@@ -640,7 +640,7 @@ TableLayout BoxStyle::tableLayout() const
     if(value == nullptr)
         return TableLayout::Auto;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Auto:
         return TableLayout::Auto;
@@ -657,7 +657,7 @@ CaptionSide BoxStyle::captionSide() const
     if(value == nullptr)
         return CaptionSide::Top;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Top:
         return CaptionSide::Top;
@@ -674,7 +674,7 @@ EmptyCells BoxStyle::emptyCells() const
     if(value == nullptr)
         return EmptyCells::Show;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Show:
         return EmptyCells::Show;
@@ -691,7 +691,7 @@ BorderCollapse BoxStyle::borderCollapse() const
     if(value == nullptr)
         return BorderCollapse::Separate;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Separate:
         return BorderCollapse::Separate;
@@ -724,7 +724,7 @@ TextAlign BoxStyle::textAlign() const
     if(value == nullptr)
         return TextAlign::Left;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Left:
         return TextAlign::Left;
@@ -745,7 +745,7 @@ TextTransform BoxStyle::textTransform() const
     if(value == nullptr)
         return TextTransform::None;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::None:
         return TextTransform::None;
@@ -766,7 +766,7 @@ TextOverflow BoxStyle::textOverflow() const
     if(value == nullptr)
         return TextOverflow::Clip;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Clip:
         return TextOverflow::Clip;
@@ -783,7 +783,7 @@ TextDecorationStyle BoxStyle::textDecorationStyle() const
     if(value == nullptr)
         return TextDecorationStyle::Solid;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Solid:
         return TextDecorationStyle::Solid;
@@ -814,7 +814,7 @@ WhiteSpace BoxStyle::whiteSpace() const
     if(value == nullptr)
         return WhiteSpace::Normal;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Normal:
         return WhiteSpace::Normal;
@@ -839,7 +839,7 @@ LineBreak BoxStyle::lineBreak() const
     if(value == nullptr)
         return LineBreak::Normal;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Auto:
         return LineBreak::Auto;
@@ -862,7 +862,7 @@ WordBreak BoxStyle::wordBreak() const
     if(value == nullptr)
         return WordBreak::Normal;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Normal:
         return WordBreak::Normal;
@@ -883,7 +883,7 @@ WordWrap BoxStyle::wordWrap() const
     if(value == nullptr)
         return WordWrap::Normal;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Normal:
         return WordWrap::Normal;
@@ -902,7 +902,7 @@ Hyphens BoxStyle::hyphens() const
     if(value == nullptr)
         return Hyphens::Manual;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::None:
         return Hyphens::None;
@@ -937,7 +937,7 @@ BoxSizing BoxStyle::boxSizing() const
     if(value == nullptr)
         return BoxSizing::ContentBox;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::BorderBox:
         return BoxSizing::BorderBox;
@@ -961,7 +961,7 @@ VerticalAlign BoxStyle::verticalAlign() const
     auto value = get(CSSPropertyID::VerticalAlign);
     if(value == nullptr)
         return VerticalAlign(VerticalAlign::Type::Baseline);
-    if(auto ident = to<CSSIdentValue>(value)) {
+    if(auto ident = to<CSSIdentValue>(*value)) {
         switch(ident->value()) {
         case CSSValueID::Baseline:
             return VerticalAlign(VerticalAlign::Type::Baseline);
@@ -988,13 +988,13 @@ LengthRect BoxStyle::clip() const
     auto value = get(CSSPropertyID::Clip);
     if(value == nullptr)
         return LengthRect::Auto;
-    if(auto ident = to<CSSIdentValue>(value)) {
+    if(auto ident = to<CSSIdentValue>(*value)) {
         assert(ident->value() == CSSValueID::Auto);
         return LengthRect::Auto;
     }
 
     assert(value->isRectValue());
-    auto rect = to<CSSRectValue>(value);
+    auto rect = to<CSSRectValue>(*value);
     auto left = convertLengthOrPercentOrAuto(*rect->left());
     auto right = convertLengthOrPercentOrAuto(*rect->right());
     auto top = convertLengthOrPercentOrAuto(*rect->top());
@@ -1040,7 +1040,7 @@ FlexDirection BoxStyle::flexDirection() const
     if(value == nullptr)
         return FlexDirection::Row;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Row:
         return FlexDirection::Row;
@@ -1061,7 +1061,7 @@ FlexWrap BoxStyle::flexWrap() const
     if(value == nullptr)
         return FlexWrap::Nowrap;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Nowrap:
         return FlexWrap::Nowrap;
@@ -1080,7 +1080,7 @@ AlignContent BoxStyle::alignContent() const
     if(value == nullptr)
         return AlignContent::Stretch;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::FlexStart:
         return AlignContent::FlexStart;
@@ -1105,7 +1105,7 @@ AlignItems BoxStyle::alignItems() const
     if(value == nullptr)
         return AlignItems::Stretch;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::FlexStart:
         return AlignItems::FlexStart;
@@ -1128,7 +1128,7 @@ AlignSelf BoxStyle::alignSelf() const
     if(value == nullptr)
         return AlignSelf::Auto;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Auto:
         return AlignSelf::Auto;
@@ -1153,7 +1153,7 @@ JustifyContent BoxStyle::justifyContent() const
     if(value == nullptr)
         return JustifyContent::FlexStart;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::FlexStart:
         return JustifyContent::FlexStart;
@@ -1224,7 +1224,7 @@ ColumnSpan BoxStyle::columnSpan() const
     if(value == nullptr)
         return ColumnSpan::None;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::None:
         return ColumnSpan::None;
@@ -1241,7 +1241,7 @@ ColumnFill BoxStyle::columnFill() const
     if(value == nullptr)
         return ColumnFill::Auto;
     assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(value);
+    auto ident = to<CSSIdentValue>(*value);
     switch(ident->value()) {
     case CSSValueID::Auto:
         return ColumnFill::Auto;
@@ -1292,12 +1292,12 @@ int BoxStyle::orphans() const
     return convertInteger(*value);
 }
 
-CSSValue* BoxStyle::get(CSSPropertyID id) const
+RefPtr<CSSValue> BoxStyle::get(CSSPropertyID id) const
 {
     auto it = m_properties.find(id);
     if(it == m_properties.end())
         return nullptr;
-    return it->second.get();
+    return it->second;
 }
 
 void BoxStyle::set(CSSPropertyID id, RefPtr<CSSValue> value)
@@ -1544,14 +1544,14 @@ Color BoxStyle::convertColor(const CSSValue& value) const
     return Color(color->value());
 }
 
-Image* BoxStyle::convertImage(const CSSValue& value) const
+RefPtr<Image> BoxStyle::convertImage(const CSSValue& value) const
 {
     assert(value.isImageValue());
     auto image = to<CSSImageValue>(value);
     return image->fetch(m_element->document());
 }
 
-Image* BoxStyle::convertImageOrNone(const CSSValue& value) const
+RefPtr<Image> BoxStyle::convertImageOrNone(const CSSValue& value) const
 {
     if(auto ident = to<CSSIdentValue>(value)) {
         assert(ident->value() == CSSValueID::None);

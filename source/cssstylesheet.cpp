@@ -75,7 +75,7 @@ RefPtr<CSSImageValue> CSSImageValue::create(std::string value)
     return adoptPtr(new CSSImageValue(std::move(value)));
 }
 
-Image* CSSImageValue::fetch(Document* document) const
+RefPtr<Image> CSSImageValue::fetch(Document* document) const
 {
     if(m_image == nullptr) {
         auto imageResource = document->fetchImageResource(m_value);
@@ -84,7 +84,7 @@ Image* CSSImageValue::fetch(Document* document) const
         m_image = imageResource->image();
     }
 
-    return m_image.get();
+    return m_image;
 }
 
 CSSImageValue::CSSImageValue(std::string value)
@@ -1120,11 +1120,11 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
 {
     if(m_document == nullptr)
         return;
-    const CSSValue* fontFamily = nullptr;
-    const CSSValue* fontStyle = nullptr;
-    const CSSValue* fontVariant = nullptr;
-    const CSSValue* fontWeight = nullptr;
-    const CSSValue* src = nullptr;
+    RefPtr<CSSValue> fontFamily;
+    RefPtr<CSSValue> fontStyle;
+    RefPtr<CSSValue> fontVariant;
+    RefPtr<CSSValue> fontWeight;
+    RefPtr<CSSValue> src;
     for(auto& property : rule->properties()) {
         switch(property.id()) {
         case CSSPropertyID::FontFamily:
@@ -1155,7 +1155,7 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
     bool italic = false;
     if(fontStyle) {
         assert(fontStyle->isIdentValue());
-        auto ident = to<CSSIdentValue>(fontStyle);
+        auto ident = to<CSSIdentValue>(*fontStyle);
         switch(ident->value()) {
         case CSSValueID::Normal:
             italic = false;
@@ -1172,7 +1172,7 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
     bool smallCaps = false;
     if(fontVariant) {
         assert(fontVariant->isIdentValue());
-        auto ident = to<CSSIdentValue>(fontVariant);
+        auto ident = to<CSSIdentValue>(*fontVariant);
         switch(ident->value()) {
         case CSSValueID::Normal:
             smallCaps = false;
@@ -1187,7 +1187,7 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
 
     int weight = 400;
     if(fontWeight) {
-        if(auto ident = to<CSSIdentValue>(fontWeight)) {
+        if(auto ident = to<CSSIdentValue>(*fontWeight)) {
             switch(ident->value()) {
             case CSSValueID::Normal:
             case CSSValueID::Lighter:
@@ -1202,7 +1202,7 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
             }
         } else {
             assert(fontWeight->isIntegerValue());
-            auto integer = to<CSSIntegerValue>(fontWeight);
+            auto integer = to<CSSIntegerValue>(*fontWeight);
             weight = integer->value();
         }
     }

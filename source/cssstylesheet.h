@@ -466,8 +466,8 @@ public:
     static RefPtr<CSSImageValue> create(std::string value);
 
     const std::string& value() const { return m_value; }
-    Image* image() const { return m_image.get(); }
-    Image* fetch(Document* document) const;
+    const RefPtr<Image>& image() const { return m_image; }
+    RefPtr<Image> fetch(Document* document) const;
     bool isImageValue() const final { return true; }
 
 private:
@@ -527,8 +527,8 @@ class CSSPairValue final : public CSSValue {
 public:
     static RefPtr<CSSPairValue> create(RefPtr<CSSValue> first, RefPtr<CSSValue> second);
 
-    CSSValue* first() const { return m_first.get(); }
-    CSSValue* second() const { return m_second.get(); }
+    const RefPtr<CSSValue>& first() const { return m_first; }
+    const RefPtr<CSSValue>& second() const { return m_second; }
     bool isPairValue() const final { return true; }
 
 private:
@@ -549,10 +549,10 @@ class CSSRectValue final : public CSSValue {
 public:
     static RefPtr<CSSRectValue> create(RefPtr<CSSValue> top, RefPtr<CSSValue> right, RefPtr<CSSValue> bottom, RefPtr<CSSValue> left);
 
-    CSSValue* top() const { return m_top.get(); }
-    CSSValue* right() const { return m_right.get(); }
-    CSSValue* bottom() const { return m_bottom.get(); }
-    CSSValue* left() const { return m_left.get(); }
+    const RefPtr<CSSValue>& top() const { return m_top; }
+    const RefPtr<CSSValue>& right() const { return m_right; }
+    const RefPtr<CSSValue>& bottom() const { return m_bottom; }
+    const RefPtr<CSSValue>& left() const { return m_left; }
     bool isRectValue() const final { return true; }
 
 private:
@@ -576,7 +576,7 @@ public:
     static RefPtr<CSSListValue> create(CSSValueList values);
 
     size_t length() const { return m_values.size(); }
-    CSSValue* at(size_t index) const { return m_values[index].get(); }
+    const RefPtr<CSSValue>& at(size_t index) const { return m_values[index]; }
     const CSSValueList& values() const { return m_values; }
     bool isListValue() const final { return true; }
 
@@ -597,7 +597,7 @@ public:
 
     CSSValueID id() const { return m_id; }
     size_t length() const { return m_values.size(); }
-    CSSValue* at(size_t index) const { return m_values[index].get(); }
+    const RefPtr<CSSValue>& at(size_t index) const { return m_values[index]; }
     const CSSValueList& values() const { return m_values; }
     bool isFunctionValue() const final { return true; }
 
@@ -811,7 +811,7 @@ public:
 
     CSSPropertyID id() const { return m_id; }
     bool important() const { return m_important; }
-    CSSValue* value() const { return m_value.get(); }
+    const RefPtr<CSSValue>& value() const { return m_value; }
 
 private:
     CSSPropertyID m_id;

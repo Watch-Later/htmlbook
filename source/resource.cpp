@@ -25,7 +25,7 @@ RefPtr<ImageResource> ImageResource::create(std::string_view mimeType, std::stri
 
 RefPtr<FontResource> FontResource::create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data)
 {
-    auto face = FontFace::create(std::move(data));
+    auto face = FontCache::addFont(std::move(data));
     if(face == nullptr)
         return nullptr;
     return adoptPtr(new FontResource(face));
@@ -81,17 +81,94 @@ RefPtr<FontFace> FontFace::create(std::vector<char> data)
     return adoptPtr(new FontFace(info, std::move(data)));
 }
 
-float FontFace::scale(float pixels) const
+float FontFace::scale(float size) const
 {
-    return stbtt_ScaleForMappingEmToPixels(&m_info, pixels);
+    return stbtt_ScaleForMappingEmToPixels(&m_info, size);
+}
+
+RefPtr<Glyph> FontFace::getGlyph(uint32_t codepoint) const
+{
+    if(m_version != FontCache::version()) {
+        m_version = FontCache::version();
+        for(auto& [index, page] : m_pages) {
+            if(page == nullptr)
+                continue;
+            for(int i = 0; i < 256; i++) {
+                auto& glyph = page->at(i);
+                if(glyph == nullptr || (glyph->index() && this == glyph->face()))
+                    continue;
+                glyph.clear();
+            }
+        }
+    }
+
+    auto pageIndex = codepoint / 256;
+    auto glyphIndex = codepoint % 256;
+    auto& page = m_pages[pageIndex];
+    if(page == nullptr)
+        page.reset(new GlyphPage);
+    auto& glyph = page->at(glyphIndex);
+    if(glyph == nullptr)
+        glyph = findGlyph(codepoint);
+    return glyph;
+}
+
+RefPtr<Glyph> FontFace::findGlyph(uint32_t codepoint) const
+{
+    if(auto glyph = Glyph::create(this, codepoint))
+        return glyph;
+    return FontCache::findGlyph(this, codepoint);
+}
+
+RefPtr<Glyph> FontFace::findGlyph(const FontFace* face, uint32_t codepoint) const
+{
+    if(face == this)
+        return nullptr;
+    auto pageIndex = codepoint / 256;
+    auto glyphIndex = codepoint % 256;
+    auto& page = m_pages[pageIndex];
+    if(page == nullptr) {
+        auto glyph = Glyph::create(this, codepoint);
+        if(glyph == nullptr)
+            return nullptr;
+        page.reset(new GlyphPage);
+        page->at(glyphIndex) = glyph;
+        return glyph;
+    }
+
+    auto& glyph = page->at(glyphIndex);
+    if(glyph == nullptr)
+        glyph = Glyph::create(this, codepoint);
+    return glyph;
 }
 
 FontFace::FontFace(const stbtt_fontinfo& info, std::vector<char> data)
 {
+    m_version = FontCache::version();
     m_info = info;
     m_data = std::move(data);
     stbtt_GetFontVMetrics(&info, &m_ascent, &m_descent, &m_lineGap);
     stbtt_GetFontBoundingBox(&info, &m_x1, &m_y1, &m_x2, &m_y2);
+}
+
+RefPtr<FontFace> FontCache::addFont(std::vector<char> data)
+{
+    return nullptr;
+}
+
+RefPtr<FontFace> FontCache::getFace(std::string_view family, bool italic, bool bold)
+{
+    return nullptr;
+}
+
+RefPtr<Glyph> FontCache::findGlyph(const FontFace* face, uint32_t codepoint)
+{
+    return nullptr;
+}
+
+uint32_t FontCache::version()
+{
+    return 0;
 }
 
 } // namespace htmlbook
