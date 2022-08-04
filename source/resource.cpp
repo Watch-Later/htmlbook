@@ -34,10 +34,9 @@ RefPtr<FontResource> FontResource::create(std::string_view mimeType, std::string
 RefPtr<Image> Image::create(const char* data, size_t length)
 {
     auto buffer = reinterpret_cast<const uint8_t*>(data);
-    int width    = 0;
-    int height   = 0;
-    int channels = 0;
-    auto image = stbi_load_from_memory(buffer, length, &width, &height, &channels, STBI_rgb_alpha);
+    int width = 0;
+    int height = 0;
+    auto image = stbi_load_from_memory(buffer, length, &width, &height, nullptr, STBI_rgb_alpha);
     if(image == nullptr)
         return nullptr;
     return adoptPtr(new Image(width, height, image));

@@ -167,7 +167,7 @@ Url::Url(const std::string_view& value)
 
         m_userBegin = m_value.length();
         m_value += value.substr(userBegin, userEnd - userBegin);
-        m_userEnd = value.length();
+        m_userEnd = m_value.length();
 
         if(passwordBegin != passwordEnd) {
             m_value += ':';
