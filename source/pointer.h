@@ -13,9 +13,9 @@ public:
 
     void ref() { ++m_refCount; }
     void deref() {
-        if(hasOneRefCount())
+        if(--m_refCount == 0) {
             delete static_cast<T*>(this);
-        --m_refCount;
+        }
     }
 
     uint32_t refCount() const { return m_refCount; }
