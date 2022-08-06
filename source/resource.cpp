@@ -1,6 +1,7 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #include "resource.h"
+#include "parserstring.h"
 
 namespace htmlbook {
 
@@ -80,11 +81,6 @@ RefPtr<FontFace> FontFace::create(std::vector<char> data)
     return adoptPtr(new FontFace(info, std::move(data)));
 }
 
-float FontFace::scale(float size) const
-{
-    return stbtt_ScaleForMappingEmToPixels(&m_info, size);
-}
-
 RefPtr<Glyph> FontFace::getGlyph(uint32_t codepoint) const
 {
     if(m_version != FontCache::version()) {
@@ -139,6 +135,74 @@ RefPtr<Glyph> FontFace::findGlyph(const FontFace* face, uint32_t codepoint) cons
     if(glyph == nullptr)
         glyph = Glyph::create(this, codepoint);
     return glyph;
+}
+
+static std::string ttfname(const stbtt_fontinfo& info, int nameId)
+{
+    std::string name;
+    auto fc = info.data;
+    auto nm = stbtt__find_table(fc, info.fontstart, "name");
+    if(nm == 0) return name;
+
+    auto count = ttUSHORT(fc+nm+2);
+    auto offset = nm + ttUSHORT(fc+nm+4);
+    for(int i = 0;i < count; i++) {
+        auto loc = nm + 6 + 12 * i;
+        if(nameId != ttUSHORT(fc+loc+6))
+            continue;
+        auto platform = ttUSHORT(fc+loc+0);
+        auto encoding = ttUSHORT(fc+loc+2);
+
+        auto data = fc + offset + ttUSHORT(fc+loc+10);
+        auto end = data + ttUSHORT(fc+loc+8);
+        if(platform == 0 || (platform == 3 && (encoding == 0 || encoding == 1 || encoding == 10))) {
+            while(data < end) {
+                uint32_t cp = ttUSHORT(data);
+                if(cp >= 0xD800 && cp < 0xDC00) {
+                    auto ch = ttUSHORT(data+2);
+                    cp = ((cp - 0xD800) << 10) + (ch - 0xDC00) + 0x10000;
+                    data += 2;
+                }
+
+                appendCodepoint(name, cp);
+                data += 2;
+            }
+
+            break;
+        }
+
+        if(platform == 1 && encoding == 0) {
+            name.assign(data, end);
+            break;
+        }
+    }
+
+    return name;
+}
+
+std::string FontFace::family() const
+{
+    return ttfname(m_info, 1);
+}
+
+inline int macstyle(const stbtt_fontinfo& info)
+{
+    return ttUSHORT(info.data + info.head + 44);
+}
+
+bool FontFace::bold() const
+{
+    return macstyle(m_info) & 1;
+}
+
+bool FontFace::italic() const
+{
+    return macstyle(m_info) & 2;
+}
+
+float FontFace::scale(float size) const
+{
+    return stbtt_ScaleForMappingEmToPixels(&m_info, size);
 }
 
 FontFace::FontFace(const stbtt_fontinfo& info, std::vector<char> data)

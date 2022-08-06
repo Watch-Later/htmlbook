@@ -142,6 +142,11 @@ public:
     RefPtr<Glyph> findGlyph(uint32_t codepoint) const;
     RefPtr<Glyph> findGlyph(const FontFace* face, uint32_t codepoint) const;
 
+    std::string family() const;
+    bool bold() const;
+    bool italic() const;
+
+    float scale(float size) const;
     int ascent() const { return m_ascent; }
     int descent() const { return m_descent; }
     int lineGap() const { return m_lineGap; }
@@ -149,7 +154,6 @@ public:
     int y1() const { return m_y1; }
     int x2() const { return m_x2; }
     int y2() const { return m_y2; }
-    float scale(float size) const;
     const stbtt_fontinfo* info() const { return &m_info; }
 
 private:
