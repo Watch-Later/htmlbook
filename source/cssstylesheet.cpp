@@ -970,16 +970,8 @@ bool CSSRuleData::matchPseudoClassNthLastOfTypeSelector(const Element* element, 
 
 void CSSRuleDataListMap::add(const CSSRuleData& data, const GlobalString& name)
 {
-    auto it = m_ruleDataListMap.find(name);
-    if(it != m_ruleDataListMap.end()) {
-        auto& rules = std::get<1>(*it);
-        rules.push_back(data);
-        return;
-    }
-
-    CSSRuleDataList rules;
+    auto& rules = m_ruleDataListMap[name];
     rules.push_back(data);
-    m_ruleDataListMap.emplace(name, std::move(rules));
 }
 
 const CSSRuleDataList* CSSRuleDataListMap::get(const GlobalString& name) const

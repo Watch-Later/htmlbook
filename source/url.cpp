@@ -291,7 +291,7 @@ Url Url::complete(std::string_view relative) const
     }
 
     if(m_value.empty())
-        return Url{input};
+        return Url(input);
     assert(m_value[m_schemeEnd] == ':');
     bool hierarchical = m_schemeEnd < m_userBegin && m_value[m_schemeEnd + 1] == '/';
     if(!input.empty() && isalpha(input.front())) {
@@ -304,15 +304,15 @@ Url Url::complete(std::string_view relative) const
             auto length = it - input.begin();
             ++it;
             if(it == end || *it == '/' || !hierarchical || !equals(input.data(), length, m_value.data(), m_schemeEnd, false))
-                return Url{input};
+                return Url(input);
             input.erase(0, it - input.begin());
         }
     }
 
     if(!hierarchical) {
         if(!input.empty() && input.front() == '#')
-            return Url{input};
-        return Url{};
+            return Url(input);
+        return Url();
     }
 
     if(input.empty() || input.front() == '#')
@@ -332,7 +332,7 @@ Url Url::complete(std::string_view relative) const
 
     if(m_portEnd == value.length())
         value += '/';
-    return Url{value + input};
+    return Url(value + input);
 }
 
 bool Url::protocolIs(const std::string_view& value) const
