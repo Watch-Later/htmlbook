@@ -26,7 +26,7 @@ RefPtr<ImageResource> ImageResource::create(std::string_view mimeType, std::stri
 
 RefPtr<FontResource> FontResource::create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data)
 {
-    auto face = FontCache::addFont(std::move(data));
+    auto face = FontFace::create(std::move(data));
     if(face == nullptr)
         return nullptr;
     return adoptPtr(new FontResource(face));
