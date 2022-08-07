@@ -198,7 +198,8 @@ class TextResource;
 class ImageResource;
 class FontResource;
 class FontFace;
-class FontDescription;
+
+using FontDescription = std::tuple<std::string, bool, bool, int>;
 
 class Document final : public ContainerNode {
 public:

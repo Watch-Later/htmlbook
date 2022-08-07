@@ -83,8 +83,8 @@ RefPtr<FontFace> FontFace::create(std::vector<char> data)
 
 RefPtr<Glyph> FontFace::getGlyph(uint32_t codepoint) const
 {
-    if(m_version != FontCache::version()) {
-        m_version = FontCache::version();
+    if(m_version != fontCache()->version()) {
+        m_version = fontCache()->version();
         for(auto& [index, page] : m_pages) {
             if(page == nullptr)
                 continue;
@@ -112,7 +112,7 @@ RefPtr<Glyph> FontFace::findGlyph(uint32_t codepoint) const
 {
     if(auto glyph = Glyph::create(this, codepoint))
         return glyph;
-    return FontCache::findGlyph(this, codepoint);
+    return fontCache()->findGlyph(this, codepoint);
 }
 
 RefPtr<Glyph> FontFace::findGlyph(const FontFace* face, uint32_t codepoint) const
@@ -207,7 +207,7 @@ float FontFace::scale(float size) const
 
 FontFace::FontFace(const stbtt_fontinfo& info, std::vector<char> data)
 {
-    m_version = FontCache::version();
+    m_version = fontCache()->version();
     m_info = info;
     m_data = std::move(data);
     stbtt_GetFontVMetrics(&info, &m_ascent, &m_descent, &m_lineGap);
@@ -216,21 +216,35 @@ FontFace::FontFace(const stbtt_fontinfo& info, std::vector<char> data)
 
 void FontCache::addFont(const FontDescription& description, RefPtr<FontFace> face)
 {
+    m_fontFaceMap.emplace(description, face);
+    m_version += 1;
 }
 
-RefPtr<FontFace> FontCache::getFace(const FontDescription& description)
+RefPtr<FontFace> FontCache::getFace(const FontDescription& description) const
 {
+    auto it = m_fontFaceMap.find(description);
+    if(it == m_fontFaceMap.end())
+        return nullptr;
+    return it->second;
+}
+
+RefPtr<Glyph> FontCache::findGlyph(const FontFace* face, uint32_t codepoint) const
+{
+    for(auto& [description, value] : m_fontFaceMap) {
+        if(auto glyph = value->findGlyph(face, codepoint)) {
+            if(glyph->index() == 0)
+                break;
+            return glyph;
+        }
+    }
+
     return nullptr;
 }
 
-RefPtr<Glyph> FontCache::findGlyph(const FontFace* face, uint32_t codepoint)
+FontCache* fontCache()
 {
-    return nullptr;
-}
-
-uint32_t FontCache::version()
-{
-    return 0;
+    static FontCache cache;
+    return &cache;
 }
 
 } // namespace htmlbook
