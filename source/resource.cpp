@@ -214,12 +214,11 @@ FontFace::FontFace(const stbtt_fontinfo& info, std::vector<char> data)
     stbtt_GetFontBoundingBox(&info, &m_x1, &m_y1, &m_x2, &m_y2);
 }
 
-RefPtr<FontFace> FontCache::addFont(std::vector<char> data)
+void FontCache::addFont(const FontDescription& description, RefPtr<FontFace> face)
 {
-    return nullptr;
 }
 
-RefPtr<FontFace> FontCache::getFace(std::string_view family, bool italic, bool bold)
+RefPtr<FontFace> FontCache::getFace(const FontDescription& description)
 {
     return nullptr;
 }

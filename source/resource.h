@@ -171,10 +171,29 @@ private:
     int m_y2;
 };
 
+class FontDescription {
+public:
+    FontDescription() = default;
+    FontDescription(const std::string& family, bool italic, bool smallCaps, int weight)
+        : m_family(family), m_italic(italic), m_smallCaps(smallCaps), m_weight(weight)
+    {}
+
+    const std::string& family() const { return m_family; }
+    bool italic() const { return m_italic; }
+    bool smallCaps() const { return m_smallCaps; }
+    int weight() const { return m_weight; }
+
+private:
+    std::string m_family;
+    bool m_italic{false};
+    bool m_smallCaps{false};
+    int m_weight{400};
+};
+
 class FontCache {
 public:
-    static RefPtr<FontFace> addFont(std::vector<char> data);
-    static RefPtr<FontFace> getFace(std::string_view family, bool italic, bool bold);
+    static void addFont(const FontDescription& description, RefPtr<FontFace> face);
+    static RefPtr<FontFace> getFace(const FontDescription& description);
     static RefPtr<Glyph> findGlyph(const FontFace* face, uint32_t codepoint);
     static uint32_t version();
 };

@@ -198,6 +198,7 @@ class TextResource;
 class ImageResource;
 class FontResource;
 class FontFace;
+class FontDescription;
 
 class Document final : public ContainerNode {
 public:
@@ -213,16 +214,16 @@ public:
     void load(const std::string_view& content);
 
     void updateIdCache(const GlobalString& oldValue, const GlobalString& newValue, Element* element);
-    void addFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
-    RefPtr<FontFace> getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight);
-    RefPtr<FontFace> fetchFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight);
-
     void addAuthorStyleSheet(const std::string_view& content);
     void setUserStyleSheet(const std::string_view& content);
     void clearUserStyleSheet();
 
     const CSSStyleSheet* authorStyleSheet() const { return m_authorStyleSheet.get(); }
     const CSSStyleSheet* userStyleSheet() const { return m_userStyleSheet.get(); }
+
+    RefPtr<FontFace> fetchFont(const FontDescription& description);
+    RefPtr<FontFace> getFontFace(const FontDescription& description);
+    void addFontFace(const FontDescription& description, RefPtr<FontFace> face);
 
     bool fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data);
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
