@@ -1,9 +1,9 @@
 #ifndef DOCUMENT_H
 #define DOCUMENT_H
 
+#include "htmlbook.h"
 #include "cssstylesheet.h"
 #include "url.h"
-#include "htmlbook.h"
 
 #include <cassert>
 
@@ -214,7 +214,7 @@ public:
 
     void load(const std::string_view& content);
 
-    void updateIdCache(const GlobalString& oldValue, const GlobalString& newValue, Element* element);
+    void updateIdCache(const GlobalString& name, Element* element);
     void addAuthorStyleSheet(const std::string_view& content);
     void setUserStyleSheet(const std::string_view& content);
     void clearUserStyleSheet();
@@ -237,7 +237,7 @@ private:
     PageSize m_pageSize;
     BookClient* m_client{nullptr};
     Url m_baseUrl;
-    std::multimap<GlobalString, Element*> m_idCache;
+    std::map<GlobalString, Element*> m_idCache;
     std::map<std::string, RefPtr<Resource>> m_resourceCache;
     std::unique_ptr<CSSStyleSheet> m_authorStyleSheet;
     std::unique_ptr<CSSStyleSheet> m_userStyleSheet;

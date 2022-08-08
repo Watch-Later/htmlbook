@@ -133,6 +133,7 @@ private:
 };
 
 using GlyphPage = std::array<RefPtr<Glyph>, 256>;
+using FontDescription = std::tuple<std::string, bool, bool, int>;
 
 class FontFace : public RefCounted<FontFace> {
 public:
@@ -142,10 +143,7 @@ public:
     RefPtr<Glyph> findGlyph(uint32_t codepoint) const;
     RefPtr<Glyph> findGlyph(const FontFace* face, uint32_t codepoint) const;
 
-    std::string family() const;
-    bool bold() const;
-    bool italic() const;
-
+    FontDescription description() const;
     float scale(float size) const;
     int ascent() const { return m_ascent; }
     int descent() const { return m_descent; }
@@ -170,8 +168,6 @@ private:
     int m_x2;
     int m_y2;
 };
-
-using FontDescription = std::tuple<std::string, bool, bool, int>;
 
 class FontCache {
 public:

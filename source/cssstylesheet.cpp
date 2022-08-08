@@ -580,8 +580,7 @@ CSSPropertyID csspropertyid(const std::string_view& name)
 
 bool CSSSimpleSelector::matchnth(int count) const
 {
-    auto a = std::get<0>(m_matchPattern);
-    auto b = std::get<1>(m_matchPattern);
+    auto [a, b] = m_matchPattern;
     if(a == 0)
         return count == b;
     if(a > 0) {

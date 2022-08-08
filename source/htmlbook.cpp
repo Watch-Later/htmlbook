@@ -72,4 +72,13 @@ Document* Book::document() const
     return m_document.get();
 }
 
+bool Book::addFontData(std::vector<char> data)
+{
+    auto face = FontFace::create(std::move(data));
+    if(face == nullptr)
+        return false;
+    fontCache()->addFont(face->description(), std::move(face));
+    return true;
+}
+
 } // namespace htmlbook

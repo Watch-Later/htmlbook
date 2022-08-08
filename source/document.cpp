@@ -141,9 +141,8 @@ Element::Element(Document* document, const GlobalString& tagName, const GlobalSt
 
 void Element::setId(const std::string_view& value)
 {
-    GlobalString newValue(value);
-    document()->updateIdCache(m_id, newValue, this);
-    m_id = newValue;
+    m_id = value;
+    document()->updateIdCache(m_id, this);
 }
 
 void Element::setClass(const std::string_view& value)
@@ -352,25 +351,9 @@ void Document::load(const std::string_view& content)
     parser.parse();
 }
 
-void Document::updateIdCache(const GlobalString& oldValue, const GlobalString& newValue, Element* element)
+void Document::updateIdCache(const GlobalString& name, Element* element)
 {
-    if(!oldValue.empty()) {
-        auto range = m_idCache.equal_range(oldValue);
-        assert(range.first != range.second);
-        do {
-            auto oldElement = std::get<1>(*range.first);
-            if(element == oldElement) {
-                m_idCache.erase(range.first);
-                break;
-            }
-
-            ++range.first;
-        } while(range.first != range.second);
-    }
-
-    if(newValue.empty())
-        return;
-    m_idCache.emplace(newValue, element);
+    m_idCache.emplace(name, element);
 }
 
 void Document::addAuthorStyleSheet(const std::string_view& content)
