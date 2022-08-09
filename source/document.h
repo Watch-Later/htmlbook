@@ -201,14 +201,12 @@ class FontFace;
 
 class FontFaceCache {
 public:
+    FontFaceCache() = default;
     RefPtr<FontFace> get(const std::string& family, bool italic, bool smallCaps, int weight);
     void add(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
     void clear();
 
-    friend class Document;
-
 private:
-    FontFaceCache() = default;
     using FontFaceData = std::tuple<bool, bool, int, RefPtr<FontFace>>;
     using FontFaceDataList = std::vector<FontFaceData>;
     using FontFaceDataMap = std::map<std::string, FontFaceDataList>;
