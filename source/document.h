@@ -234,6 +234,7 @@ public:
     const CSSStyleSheet* authorStyleSheet() const { return m_authorStyleSheet.get(); }
     const CSSStyleSheet* userStyleSheet() const { return m_userStyleSheet.get(); }
 
+    RefPtr<FontFace> fetchFont(const std::string& family, bool italic, bool smallCaps, int weight);
     RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight);
     void addFontFace(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
 

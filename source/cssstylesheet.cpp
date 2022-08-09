@@ -1195,6 +1195,37 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
             weight = integer->value();
         }
     }
+
+    auto fetch = [&](auto source) -> RefPtr<FontFace> {
+        if(auto function = to<CSSFunctionValue>(*source->at(0))) {
+            auto family = to<CSSStringValue>(*function->at(0));
+            return m_document->fetchFont(family->value(), italic, smallCaps, weight);
+        }
+
+        auto url = to<CSSUrlValue>(*source->at(0));
+        if(source->length() == 2) {
+            auto function = to<CSSFunctionValue>(*source->at(1));
+            auto format = to<CSSStringValue>(*function->at(0));
+            if(!equals(format->value(), "truetype", false) || !equals(format->value(), "opentype", false)) {
+                return nullptr;
+            }
+        }
+
+        auto fontResource = m_document->fetchFontResource(url->value());
+        if(fontResource == nullptr)
+            return nullptr;
+        return fontResource->face();
+    };
+
+    for(auto& value : to<CSSListValue>(*src)->values()) {
+        auto face = fetch(to<CSSListValue>(*value));
+        if(face == nullptr)
+            continue;
+        for(auto& value : to<CSSListValue>(*fontFamily)->values()) {
+            auto family = to<CSSStringValue>(*value);
+            m_document->addFontFace(family->value(), italic, smallCaps, weight, face);
+        }
+    }
 }
 
 } // namespace htmlbook
