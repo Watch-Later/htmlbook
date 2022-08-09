@@ -179,7 +179,7 @@ public:
 private:
     FontCache() = default;
     using FontDescription = std::tuple<std::string, bool, bool, int>;
-    using FontFaceMap = std::map<FontDescription, RefPtr<FontFace>>;
+    using FontFaceMap = std::map<FontDescription, RefPtr<FontFace>, std::less<>>;
     FontFaceMap m_fontFaceMap;
     uint32_t m_version{0};
 };
