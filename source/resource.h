@@ -169,7 +169,7 @@ private:
 
 class FontCache {
 public:
-    void addFont(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
+    void addFace(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
     RefPtr<FontFace> getFace(const std::string& family, bool italic, bool smallCaps, int weight) const;
     RefPtr<Glyph> findGlyph(const FontFace* face, uint32_t codepoint) const;
     uint32_t version() const { return m_version; }

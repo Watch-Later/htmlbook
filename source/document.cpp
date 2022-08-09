@@ -404,7 +404,7 @@ RefPtr<FontFace> Document::getFontFace(const std::string& family, bool italic, b
     auto face = FontFace::create(std::move(data));
     if(face == nullptr)
         return nullptr;
-    fontCache()->addFont(family, italic, smallCaps, weight, face);
+    fontCache()->addFace(family, italic, smallCaps, weight, face);
     return face;
 }
 

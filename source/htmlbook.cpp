@@ -77,7 +77,7 @@ bool Book::addFontData(const std::string& family, bool italic, bool smallCaps, i
     auto face = FontFace::create(std::move(data));
     if(face == nullptr)
         return false;
-    fontCache()->addFont(family, italic, smallCaps, weight, std::move(face));
+    fontCache()->addFace(family, italic, smallCaps, weight, std::move(face));
     return true;
 }
 

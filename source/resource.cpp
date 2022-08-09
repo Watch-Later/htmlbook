@@ -151,7 +151,7 @@ FontFace::FontFace(const stbtt_fontinfo& info, std::vector<char> data)
     stbtt_GetFontBoundingBox(&info, &m_x1, &m_y1, &m_x2, &m_y2);
 }
 
-void FontCache::addFont(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
+void FontCache::addFace(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
 {
     auto description = std::tie(family, italic, smallCaps, weight);
     m_fontFaceMap.emplace(description, std::move(face));
