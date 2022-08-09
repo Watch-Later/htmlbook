@@ -199,7 +199,21 @@ class ImageResource;
 class FontResource;
 class FontFace;
 
-using FontDescription = std::tuple<std::string, bool, bool, int>;
+class FontFaceCache {
+public:
+    RefPtr<FontFace> get(const std::string& family, bool italic, bool smallCaps, int weight);
+    void add(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
+    void clear();
+
+    friend class Document;
+
+private:
+    FontFaceCache() = default;
+    using FontFaceData = std::tuple<bool, bool, int, RefPtr<FontFace>>;
+    using FontFaceDataList = std::vector<FontFaceData>;
+    using FontFaceDataMap = std::map<std::string, FontFaceDataList>;
+    FontFaceDataMap m_fontFaceDataMap;
+};
 
 class Document final : public ContainerNode {
 public:
@@ -222,9 +236,8 @@ public:
     const CSSStyleSheet* authorStyleSheet() const { return m_authorStyleSheet.get(); }
     const CSSStyleSheet* userStyleSheet() const { return m_userStyleSheet.get(); }
 
-    RefPtr<FontFace> fetchFont(const FontDescription& description);
-    RefPtr<FontFace> getFontFace(const FontDescription& description);
-    void addFontFace(const FontDescription& description, RefPtr<FontFace> face);
+    RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight);
+    void addFontFace(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
 
     bool fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data);
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
@@ -237,6 +250,7 @@ private:
     PageSize m_pageSize;
     BookClient* m_client{nullptr};
     Url m_baseUrl;
+    FontFaceCache m_fontFaceCache;
     std::map<GlobalString, Element*> m_idCache;
     std::map<std::string, RefPtr<Resource>> m_resourceCache;
     std::unique_ptr<CSSStyleSheet> m_authorStyleSheet;

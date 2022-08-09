@@ -1178,16 +1178,16 @@ inline bool operator<(const CSSRuleData& a, const CSSRuleData& b) { return a.spe
 
 using CSSRuleDataList = std::vector<CSSRuleData>;
 
-class CSSRuleDataListMap {
+class CSSRuleDataMap {
 public:
-    CSSRuleDataListMap() = default;
+    CSSRuleDataMap() = default;
 
-    void add(const CSSRuleData& data, const GlobalString& name);
+    void add(const GlobalString& name, const CSSRuleData& data);
     const CSSRuleDataList* get(const GlobalString& name) const;
 
 private:
-    using RuleDataListMap = std::map<GlobalString, CSSRuleDataList>;
-    RuleDataListMap m_ruleDataListMap;
+    using RuleDataMap = std::map<GlobalString, CSSRuleDataList>;
+    RuleDataMap m_ruleDataMap;
 };
 
 class CSSPageRuleData {
@@ -1241,9 +1241,9 @@ private:
     Document* m_document;
     CSSRuleList m_rules;
 
-    CSSRuleDataListMap m_idRules;
-    CSSRuleDataListMap m_classRules;
-    CSSRuleDataListMap m_tagRules;
+    CSSRuleDataMap m_idRules;
+    CSSRuleDataMap m_classRules;
+    CSSRuleDataMap m_tagRules;
 
     CSSRuleDataList m_universeRules;
     CSSRuleDataList m_beforeElementRules;

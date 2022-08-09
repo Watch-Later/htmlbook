@@ -967,16 +967,16 @@ bool CSSRuleData::matchPseudoClassNthLastOfTypeSelector(const Element* element, 
     return selector.matchnth(count);
 }
 
-void CSSRuleDataListMap::add(const CSSRuleData& data, const GlobalString& name)
+void CSSRuleDataMap::add(const GlobalString& name, const CSSRuleData& data)
 {
-    auto& rules = m_ruleDataListMap[name];
+    auto& rules = m_ruleDataMap[name];
     rules.push_back(data);
 }
 
-const CSSRuleDataList* CSSRuleDataListMap::get(const GlobalString& name) const
+const CSSRuleDataList* CSSRuleDataMap::get(const GlobalString& name) const
 {
-    auto it = m_ruleDataListMap.find(name);
-    if(it == m_ruleDataListMap.end())
+    auto it = m_ruleDataMap.find(name);
+    if(it == m_ruleDataMap.end())
         return nullptr;
     return &it->second;
 }
@@ -1040,13 +1040,13 @@ void CSSStyleSheet::addStyleRule(const CSSStyleRule* rule)
         CSSRuleData ruleData(selector, rule->properties(), specificity, m_rules.size());
         switch(lastSimpleSelector->matchType()) {
         case CSSSimpleSelector::MatchType::Id:
-            m_idRules.add(ruleData, lastSimpleSelector->name());
+            m_idRules.add(lastSimpleSelector->name(), ruleData);
             break;
         case CSSSimpleSelector::MatchType::Class:
-            m_classRules.add(ruleData, lastSimpleSelector->name());
+            m_classRules.add(lastSimpleSelector->name(), ruleData);
             break;
         case CSSSimpleSelector::MatchType::Tag:
-            m_tagRules.add(ruleData, lastSimpleSelector->name());
+            m_tagRules.add(lastSimpleSelector->name(), ruleData);
             break;
         case CSSSimpleSelector::MatchType::PseudoElementBefore:
             m_beforeElementRules.push_back(ruleData);

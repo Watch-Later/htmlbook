@@ -137,12 +137,6 @@ RefPtr<Glyph> FontFace::findGlyph(const FontFace* face, uint32_t codepoint) cons
     return glyph;
 }
 
-FontDescription FontFace::description() const
-{
-    FontDescription description;
-    return description;
-}
-
 float FontFace::scale(float size) const
 {
     return stbtt_ScaleForMappingEmToPixels(&m_info, size);
@@ -157,14 +151,16 @@ FontFace::FontFace(const stbtt_fontinfo& info, std::vector<char> data)
     stbtt_GetFontBoundingBox(&info, &m_x1, &m_y1, &m_x2, &m_y2);
 }
 
-void FontCache::addFont(const FontDescription& description, RefPtr<FontFace> face)
+void FontCache::addFont(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
 {
+    auto description = std::tie(family, italic, smallCaps, weight);
     m_fontFaceMap.emplace(description, std::move(face));
     m_version += 1;
 }
 
-RefPtr<FontFace> FontCache::getFace(const FontDescription& description) const
+RefPtr<FontFace> FontCache::getFace(const std::string& family, bool italic, bool smallCaps, int weight) const
 {
+    auto description = std::tie(family, italic, smallCaps, weight);
     auto it = m_fontFaceMap.find(description);
     if(it == m_fontFaceMap.end())
         return nullptr;

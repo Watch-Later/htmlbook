@@ -374,6 +374,40 @@ void Document::clearUserStyleSheet()
     m_userStyleSheet.reset();
 }
 
+RefPtr<FontFace> FontFaceCache::get(const std::string& family, bool italic, bool smallCaps, int weight)
+{
+    return nullptr;
+}
+
+void FontFaceCache::add(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
+{
+    auto& faces = m_fontFaceDataMap[family];
+    faces.emplace_back(italic, smallCaps, weight, std::move(face));
+}
+
+void FontFaceCache::clear()
+{
+    m_fontFaceDataMap.clear();
+}
+
+RefPtr<FontFace> Document::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight)
+{
+    if(auto face = m_fontFaceCache.get(family, italic, smallCaps, weight))
+        return face;
+    if(auto face = fontCache()->getFace(family, italic, smallCaps, weight))
+        return face;
+    if(m_client == nullptr)
+        return nullptr;
+    std::vector<char> data;
+    if(!m_client->loadFont(family, italic, smallCaps, weight, data))
+        return nullptr;
+    auto face = FontFace::create(std::move(data));
+    if(face == nullptr)
+        return nullptr;
+    fontCache()->addFont(family, italic, smallCaps, weight, face);
+    return face;
+}
+
 bool Document::fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data)
 {
     if(url.protocolIs("data"))

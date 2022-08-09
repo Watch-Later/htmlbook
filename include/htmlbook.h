@@ -307,17 +307,25 @@ public:
 
     /**
      * @brief addFontFile
+     * @param family
+     * @param italic
+     * @param smallCaps
+     * @param weight
      * @param filename
      * @return
      */
-    static bool addFontFile(const std::string& filename);
+    static bool addFontFile(const std::string& family, bool italic, bool smallCaps, int weight, const std::string& filename);
 
     /**
      * @brief addFontData
+     * @param family
+     * @param italic
+     * @param smallCaps
+     * @param weight
      * @param data
      * @return
      */
-    static bool addFontData(std::vector<char> data);
+    static bool addFontData(const std::string& family, bool italic, bool smallCaps, int weight, std::vector<char> data);
 
 private:
     std::unique_ptr<Document> m_document;
