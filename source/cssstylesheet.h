@@ -1120,8 +1120,8 @@ public:
 
     const CSSSelector& selector() const { return *m_selector; }
     const CSSPropertyList& properties() const { return *m_properties; }
-    uint32_t specificity() const { return m_specificity; }
-    uint32_t position() const { return m_position; }
+    const uint32_t& specificity() const { return m_specificity; }
+    const uint32_t& position() const { return m_position; }
     bool match(const Element* element, PseudoType pseudoType) const;
 
 private:
@@ -1174,7 +1174,8 @@ private:
     uint32_t m_position;
 };
 
-inline bool operator<(const CSSRuleData& a, const CSSRuleData& b) { return a.specificity() == b.specificity() ? a.position() < b.position() : a.specificity() < b.specificity(); }
+inline bool operator<(const CSSRuleData& a, const CSSRuleData& b) { return std::tie(a.specificity(), a.position()) < std::tie(b.specificity(), b.position()); }
+inline bool operator>(const CSSRuleData& a, const CSSRuleData& b) { return std::tie(a.specificity(), a.position()) > std::tie(b.specificity(), b.position()); }
 
 using CSSRuleDataList = std::vector<CSSRuleData>;
 

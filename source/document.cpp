@@ -408,6 +408,11 @@ RefPtr<FontFace> Document::getFontFace(const std::string& family, bool italic, b
     return face;
 }
 
+void Document::addFontFace(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
+{
+    m_fontFaceCache.add(family, italic, smallCaps, weight, std::move(face));
+}
+
 bool Document::fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data)
 {
     if(url.protocolIs("data"))
