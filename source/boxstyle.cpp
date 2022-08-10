@@ -123,20 +123,18 @@ RefPtr<FontFace> BoxStyle::fontFace() const
     }
 
     auto document = m_element->document();
-    if(fontFamily == nullptr || !fontFamily->isListValue()) {
-        m_fontFace = document->getFontFace("sans-serif", italic, smallCaps, weight);
-        return m_fontFace;
+    if(fontFamily && fontFamily->isListValue()) {
+        for(auto& value : to<CSSListValue>(*fontFamily)->values()) {
+            auto family = to<CSSStringValue>(*value);
+            m_fontFace = document->getFontFace(family->value(), italic, smallCaps, weight);
+            if(m_fontFace == nullptr)
+                continue;
+            return m_fontFace;
+        }
     }
 
-    for(auto& value : to<CSSListValue>(*fontFamily)->values()) {
-        auto family = to<CSSStringValue>(*value);
-        m_fontFace = document->getFontFace(family->value(), italic, smallCaps, weight);
-        if(m_fontFace == nullptr)
-            continue;
-        return m_fontFace;
-    }
-
-    m_fontFace = document->getFontFace("sans-serif", italic, smallCaps, weight);
+    static const std::string family("sans-serif");
+    m_fontFace = document->getFontFace(family, italic, smallCaps, weight);
     return m_fontFace;
 }
 
