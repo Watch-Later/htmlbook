@@ -25,7 +25,7 @@ const LengthRect LengthRect::Auto(Length::Auto, Length::Auto, Length::Auto, Leng
 const LengthRect LengthRect::ZeroPercent(Length::ZeroPercent, Length::ZeroPercent, Length::ZeroPercent, Length::ZeroPercent);
 const LengthRect LengthRect::ZeroFixed(Length::ZeroFixed, Length::ZeroFixed, Length::ZeroFixed, Length::ZeroFixed);
 
-RefPtr<BoxStyle> BoxStyle::create(const Element* element)
+RefPtr<BoxStyle> BoxStyle::create(Element* element)
 {
     return adoptPtr(new BoxStyle(element));
 }
@@ -37,9 +37,107 @@ RefPtr<BoxStyle> BoxStyle::create(const BoxStyle& parentStyle)
     return newStyle;
 }
 
-BoxStyle::BoxStyle(const Element* element)
+BoxStyle::BoxStyle(Element* element)
     : m_element(element)
 {
+}
+
+RefPtr<FontFace> BoxStyle::fontFace() const
+{
+    if(m_fontFace)
+        return m_fontFace;
+    RefPtr<CSSValue> fontFamily;
+    RefPtr<CSSValue> fontStyle;
+    RefPtr<CSSValue> fontVariant;
+    RefPtr<CSSValue> fontWeight;
+    for(auto& [id, value] : m_properties) {
+        switch(id) {
+        case CSSPropertyID::FontFamily:
+            fontFamily = value;
+            break;
+        case CSSPropertyID::FontStyle:
+            fontStyle = value;
+            break;
+        case CSSPropertyID::FontVariant:
+            fontVariant = value;
+            break;
+        case CSSPropertyID::FontWeight:
+            fontWeight = value;
+            break;
+        default:
+            break;
+        }
+    }
+
+    bool italic = false;
+    if(fontStyle && fontStyle->isIdentValue()) {
+        auto ident = to<CSSIdentValue>(*fontStyle);
+        switch(ident->value()) {
+        case CSSValueID::Normal:
+            italic = false;
+            break;
+        case CSSValueID::Italic:
+        case CSSValueID::Oblique:
+            italic = true;
+            break;
+        default:
+            assert(false);
+        }
+    }
+
+    bool smallCaps = false;
+    if(fontVariant && fontVariant->isIdentValue()) {
+        auto ident = to<CSSIdentValue>(*fontVariant);
+        switch(ident->value()) {
+        case CSSValueID::Normal:
+            smallCaps = false;
+            break;
+        case CSSValueID::SmallCaps:
+            smallCaps = true;
+            break;
+        default:
+            assert(false);
+        }
+    }
+
+    int weight = 400;
+    if(fontWeight) {
+        if(fontWeight->isIdentValue()) {
+            auto ident = to<CSSIdentValue>(*fontWeight);
+            switch(ident->value()) {
+            case CSSValueID::Normal:
+            case CSSValueID::Lighter:
+                weight = 400;
+                break;
+            case CSSValueID::Bold:
+            case CSSValueID::Bolder:
+                weight = 700;
+                break;
+            default:
+                assert(false);
+            }
+        } else if(fontWeight->isIntegerValue()) {
+            auto integer = to<CSSIntegerValue>(*fontWeight);
+            weight = integer->value();
+        }
+    }
+
+    auto document = m_element->document();
+    if(fontFamily == nullptr || !fontFamily->isListValue()) {
+        m_fontFace = document->getFontFace("sans-serif", italic, smallCaps, weight);
+        return m_fontFace;
+    }
+
+    for(auto& value : to<CSSListValue>(*fontFamily)->values()) {
+        auto family = to<CSSStringValue>(*value);
+        m_fontFace = document->getFontFace(family->value(), italic, smallCaps, weight);
+        if(m_fontFace == nullptr)
+            continue;
+        return m_fontFace;
+    }
+
+    m_fontFace = document->getFontFace("sans-serif", italic, smallCaps, weight);
+    return m_fontFace;
 }
 
 Display BoxStyle::display() const

@@ -432,11 +432,11 @@ class FontFace;
 
 class BoxStyle : public RefCounted<BoxStyle> {
 public:
-    static RefPtr<BoxStyle> create(const Element* element);
+    static RefPtr<BoxStyle> create(Element* element);
     static RefPtr<BoxStyle> create(const BoxStyle& parentStyle);
 
-    const Element* element() const { return m_element; }
-    const RefPtr<FontFace>& fontFace() const { return m_fontFace; }
+    Element* element() const { return m_element; }
+    RefPtr<FontFace> fontFace() const;
     float fontSize() const { return m_fontSize; }
     const Color& currentColor() const { return m_currentColor; }
     const CSSPropertyMap& properties() const { return m_properties; }
@@ -594,9 +594,9 @@ public:
     void inheritFrom(const BoxStyle& parentStyle);
 
 private:
-    BoxStyle(const Element* element);
-    const Element* m_element;
-    RefPtr<FontFace> m_fontFace;
+    BoxStyle(Element* element);
+    Element* m_element;
+    mutable RefPtr<FontFace> m_fontFace;
     float m_fontSize{12.0};
     Color m_currentColor{Color::Black};
     CSSPropertyMap m_properties;
