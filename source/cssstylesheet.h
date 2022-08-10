@@ -571,16 +571,18 @@ struct is<CSSRectValue> {
     static bool check(const CSSValue& value) { return value.isRectValue(); }
 };
 
-class CSSListValue final : public CSSValue {
+class CSSListValue : public CSSValue {
 public:
     static RefPtr<CSSListValue> create(CSSValueList values);
 
     size_t length() const { return m_values.size(); }
-    const RefPtr<CSSValue>& at(size_t index) const { return m_values[index]; }
+    const RefPtr<CSSValue>& front() const { return m_values.front(); }
+    const RefPtr<CSSValue>& back() const { return m_values.back(); }
+    const RefPtr<CSSValue>& at(size_t index) const { return m_values.at(index); }
     const CSSValueList& values() const { return m_values; }
     bool isListValue() const final { return true; }
 
-private:
+protected:
     CSSListValue(CSSValueList values) : m_values(std::move(values)) {}
     CSSValueList m_values;
 };
@@ -590,24 +592,20 @@ struct is<CSSListValue> {
     static bool check(const CSSValue& value) { return value.isListValue(); }
 };
 
-class CSSFunctionValue final : public CSSValue {
+class CSSFunctionValue final : public CSSListValue {
 public:
     static RefPtr<CSSFunctionValue> create(CSSValueID id, CSSValueList values);
     static RefPtr<CSSFunctionValue> create(CSSValueID id, RefPtr<CSSValue> value);
 
     CSSValueID id() const { return m_id; }
-    size_t length() const { return m_values.size(); }
-    const RefPtr<CSSValue>& at(size_t index) const { return m_values[index]; }
-    const CSSValueList& values() const { return m_values; }
     bool isFunctionValue() const final { return true; }
 
 private:
     CSSFunctionValue(CSSValueID id, CSSValueList values)
-        : m_id(id), m_values(std::move(values))
+        : m_id(id), CSSListValue(std::move(values))
     {}
 
     CSSValueID m_id;
-    CSSValueList m_values;
 };
 
 template<>

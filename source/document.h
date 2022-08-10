@@ -202,7 +202,7 @@ class FontFace;
 class FontFaceCache {
 public:
     FontFaceCache() = default;
-    RefPtr<FontFace> get(const std::string& family, bool italic, bool smallCaps, int weight);
+    RefPtr<FontFace> get(const std::string& family, bool italic, bool smallCaps, int weight) const;
     void add(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
     void clear();
 
@@ -234,11 +234,11 @@ public:
     const CSSStyleSheet* authorStyleSheet() const { return m_authorStyleSheet.get(); }
     const CSSStyleSheet* userStyleSheet() const { return m_userStyleSheet.get(); }
 
-    RefPtr<FontFace> fetchFont(const std::string& family, bool italic, bool smallCaps, int weight);
-    RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight);
+    RefPtr<FontFace> fetchFont(const std::string& family, bool italic, bool smallCaps, int weight) const;
+    RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight) const;
     void addFontFace(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
 
-    bool fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data);
+    bool fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data) const;
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
     RefPtr<ImageResource> fetchImageResource(const std::string_view& url);
     RefPtr<FontResource> fetchFontResource(const std::string_view& url);

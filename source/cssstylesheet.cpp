@@ -1197,16 +1197,16 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
     }
 
     auto fetch = [&](auto source) -> RefPtr<FontFace> {
-        if(auto function = to<CSSFunctionValue>(*source->at(0))) {
-            auto family = to<CSSStringValue>(*function->at(0));
+        if(auto function = to<CSSFunctionValue>(*source->front())) {
+            auto family = to<CSSStringValue>(*function->front());
             return m_document->fetchFont(family->value(), italic, smallCaps, weight);
         }
 
-        auto url = to<CSSUrlValue>(*source->at(0));
+        auto url = to<CSSUrlValue>(*source->front());
         if(source->length() == 2) {
-            auto function = to<CSSFunctionValue>(*source->at(1));
-            auto format = to<CSSStringValue>(*function->at(0));
-            if(!equals(format->value(), "truetype", false) || !equals(format->value(), "opentype", false)) {
+            auto function = to<CSSFunctionValue>(*source->back());
+            auto format = to<CSSStringValue>(*function->front());
+            if(!equals(format->value(), "truetype", false) && !equals(format->value(), "opentype", false)) {
                 return nullptr;
             }
         }

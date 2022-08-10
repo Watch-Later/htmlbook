@@ -374,7 +374,7 @@ void Document::clearUserStyleSheet()
     m_userStyleSheet.reset();
 }
 
-RefPtr<FontFace> FontFaceCache::get(const std::string& family, bool italic, bool smallCaps, int weight)
+RefPtr<FontFace> FontFaceCache::get(const std::string& family, bool italic, bool smallCaps, int weight) const
 {
     return nullptr;
 }
@@ -390,7 +390,7 @@ void FontFaceCache::clear()
     m_fontFaceDataMap.clear();
 }
 
-RefPtr<FontFace> Document::fetchFont(const std::string& family, bool italic, bool smallCaps, int weight)
+RefPtr<FontFace> Document::fetchFont(const std::string& family, bool italic, bool smallCaps, int weight) const
 {
     if(auto face = fontCache()->getFace(family, italic, smallCaps, weight))
         return face;
@@ -406,7 +406,7 @@ RefPtr<FontFace> Document::fetchFont(const std::string& family, bool italic, boo
     return face;
 }
 
-RefPtr<FontFace> Document::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight)
+RefPtr<FontFace> Document::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight) const
 {
     if(auto face = m_fontFaceCache.get(family, italic, smallCaps, weight))
         return face;
@@ -418,7 +418,7 @@ void Document::addFontFace(const std::string& family, bool italic, bool smallCap
     m_fontFaceCache.add(family, italic, smallCaps, weight, std::move(face));
 }
 
-bool Document::fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data)
+bool Document::fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data) const
 {
     if(url.protocolIs("data"))
         return url.decodeData(mimeType, textEncoding, data);
