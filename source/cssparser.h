@@ -2,13 +2,13 @@
 #define CSSPARSER_H
 
 #include "csstokenizer.h"
-#include "cssstylesheet.h"
+#include "cssrule.h"
 
 namespace htmlbook {
 
 class CSSParser {
 public:
-    static void parseSheet(CSSStyleSheet* sheet, const std::string_view& content);
+    static void parseSheet(CSSRuleList& rules, const std::string_view& content);
     static void parseStyle(CSSPropertyList& properties, const std::string_view& content);
 
 private:

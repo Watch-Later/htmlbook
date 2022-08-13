@@ -6,7 +6,7 @@
 
 namespace htmlbook {
 
-void CSSParser::parseSheet(CSSStyleSheet* sheet, const std::string_view& content)
+void CSSParser::parseSheet(CSSRuleList& rules, const std::string_view& content)
 {
     CSSTokenizer tokenizer(content);
     auto input = tokenizer.tokenize();
@@ -21,7 +21,7 @@ void CSSParser::parseSheet(CSSStyleSheet* sheet, const std::string_view& content
         auto rule = consumeRule(input);
         if(rule == nullptr)
             continue;
-        sheet->addRule(std::move(rule));
+        rules.push_back(std::move(rule));
     }
 }
 

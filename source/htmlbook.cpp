@@ -48,9 +48,9 @@ void Book::load(std::string_view content)
     m_document->load(content);
 }
 
-void Book::setUserStyleSheet(std::string_view content)
+void Book::addUserStyleSheet(std::string_view content)
 {
-    m_document->setUserStyleSheet(content);
+    m_document->addUserStyleSheet(content);
 }
 
 void Book::clearUserStyleSheet()

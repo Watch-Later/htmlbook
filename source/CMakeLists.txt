@@ -7,7 +7,7 @@ PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/htmlparser.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/csstokenizer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/cssparser.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/cssstylesheet.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/cssrule.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/document.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/boxstyle.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/globalstring.cpp"

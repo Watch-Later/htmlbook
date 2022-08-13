@@ -64,6 +64,7 @@ public:
     T& operator*() const { return *m_ptr; }
     T* operator->() const { return m_ptr; }
 
+    bool empty() const { return !m_ptr; }
     bool operator!() const { return !m_ptr; }
     operator bool() const { return !!m_ptr; }
 

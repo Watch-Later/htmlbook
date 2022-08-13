@@ -1,7 +1,6 @@
 #include "document.h"
 #include "htmlparser.h"
 #include "htmlelement.h"
-#include "cssstylesheet.h"
 #include "cssparser.h"
 #include "resource.h"
 
@@ -358,36 +357,27 @@ void Document::updateIdCache(const GlobalString& name, Element* element)
 
 void Document::addAuthorStyleSheet(const std::string_view& content)
 {
-    if(m_authorStyleSheet == nullptr)
-        m_authorStyleSheet = CSSStyleSheet::create(this);
-    m_authorStyleSheet->parse(content);
+    CSSParser::parseSheet(m_authorRules, content);
+    m_ruleCache.reset();
 }
 
-void Document::setUserStyleSheet(const std::string_view& content)
+void Document::addUserStyleSheet(const std::string_view& content)
 {
-    m_userStyleSheet = CSSStyleSheet::create(this);
-    m_userStyleSheet->parse(content);
+    CSSParser::parseSheet(m_userRules, content);
+    m_ruleCache.reset();
 }
 
 void Document::clearUserStyleSheet()
 {
-    m_userStyleSheet.reset();
+    m_userRules.clear();
+    m_ruleCache.reset();
 }
 
-RefPtr<FontFace> FontFaceCache::get(const std::string& family, bool italic, bool smallCaps, int weight) const
+const CSSRuleCache* Document::ruleCache()
 {
-    return nullptr;
-}
-
-void FontFaceCache::add(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
-{
-    auto& faces = m_fontFaceDataMap[family];
-    faces.emplace_back(italic, smallCaps, weight, std::move(face));
-}
-
-void FontFaceCache::clear()
-{
-    m_fontFaceDataMap.clear();
+    if(m_ruleCache == nullptr)
+        m_ruleCache = CSSRuleCache::create(this);
+    return m_ruleCache.get();
 }
 
 RefPtr<FontFace> Document::fetchFont(const std::string& family, bool italic, bool smallCaps, int weight) const
@@ -406,16 +396,11 @@ RefPtr<FontFace> Document::fetchFont(const std::string& family, bool italic, boo
     return face;
 }
 
-RefPtr<FontFace> Document::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight) const
+RefPtr<FontFace> Document::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight)
 {
-    if(auto face = m_fontFaceCache.get(family, italic, smallCaps, weight))
+    if(auto face = ruleCache()->getFontFace(family, italic, smallCaps, weight))
         return face;
     return fetchFont(family, italic, smallCaps, weight);
-}
-
-void Document::addFontFace(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
-{
-    m_fontFaceCache.add(family, italic, smallCaps, weight, std::move(face));
 }
 
 bool Document::fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data) const

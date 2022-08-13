@@ -1,7 +1,7 @@
 #ifndef BOXSTYLE_H
 #define BOXSTYLE_H
 
-#include "cssstylesheet.h"
+#include "cssrule.h"
 
 #include <optional>
 
@@ -433,21 +433,25 @@ class FontFace;
 class BoxStyle : public RefCounted<BoxStyle> {
 public:
     static RefPtr<BoxStyle> create(Element* element);
-    static RefPtr<BoxStyle> create(const BoxStyle& parentStyle);
+    static RefPtr<BoxStyle> create(const BoxStyle& parentStyle, Display display);
 
     Element* element() const { return m_element; }
     RefPtr<FontFace> fontFace() const;
-    float fontSize() const { return m_fontSize; }
     const Color& currentColor() const { return m_currentColor; }
     const CSSPropertyMap& properties() const { return m_properties; }
 
-    Display display() const;
-    Visibility visibility() const;
-    Float floating() const;
-    Clear clear() const;
-    Position position() const;
-    Overflow overflowX() const;
-    Overflow overflowY() const;
+    float fontSize() const { return m_fontSize; }
+    int fontWeight() const { return m_fontWeight; }
+    FontStyle fontStyle() const { return m_fontStyle; }
+    FontVariant fontVariant() const { return m_fontVariant; }
+
+    Display display() const { return m_display; }
+    Position position() const { return m_position; }
+    Float floating() const { return m_floating; }
+    Clear clear() const { return m_clear; }
+    Overflow overflowX() const { return m_overflowX; }
+    Overflow overflowY() const { return m_overflowY; }
+    Visibility visibility() const { return m_visibility; }
     Color color() const;
 
     Length left() const;
@@ -510,13 +514,13 @@ public:
     float borderHorizontalSpacing() const;
     float borderVerticalSpacing() const;
 
-    TextAlign textAlign() const;
+    TextAlign textAlign() const { return m_textAlign; }
     TextTransform textTransform() const;
     TextOverflow textOverflow() const;
     TextDecorationLine textDecorationLine() const;
     TextDecorationStyle textDecorationStyle() const;
     Color textDecorationColor() const;
-    WhiteSpace whiteSpace() const;
+    WhiteSpace whiteSpace() const { return m_whiteSpace; }
     LineBreak lineBreak() const;
     WordBreak wordBreak() const;
     WordWrap wordWrap() const;
@@ -524,7 +528,7 @@ public:
     float tabSize() const;
     Length textIndent() const;
 
-    BoxSizing boxSizing() const;
+    BoxSizing boxSizing() const { return m_boxSizing; }
     std::optional<int> zIndex() const;
     VerticalAlign verticalAlign() const;
     LengthRect clip() const;
@@ -572,6 +576,7 @@ public:
     float convertLengthValue(const CSSValue& value) const;
     float convertLineWidth(const CSSValue& value) const;
     float convertFontSize(const CSSValue& value) const;
+    int convertFontWeight(const CSSValue& value) const;
     std::optional<float> convertLengthOrAuto(const CSSValue& value) const;
     std::optional<float> convertLengthOrNormal(const CSSValue& value) const;
     Length convertLength(const CSSValue& value) const;
@@ -584,9 +589,19 @@ public:
     RefPtr<Image> convertImage(const CSSValue& value) const;
     RefPtr<Image> convertImageOrNone(const CSSValue& value) const;
 
+    static Display convertDisplay(const CSSValue& value);
+    static Position convertPosition(const CSSValue& value);
+    static Float convertFloat(const CSSValue& value);
+    static Clear convertClear(const CSSValue& value);
     static Overflow convertOverflow(const CSSValue& value);
+    static Visibility convertVisibility(const CSSValue& value);
+    static BoxSizing convertBoxSizing(const CSSValue& value);
+    static WhiteSpace convertWhiteSpace(const CSSValue& value);
+    static TextAlign convertTextAlign(const CSSValue& value);
     static BackgroundBox convertBackgroundBox(const CSSValue& value);
     static LineStyle convertLineStyle(const CSSValue& value);
+    static FontStyle convertFontStyle(const CSSValue& value);
+    static FontVariant convertFontVariant(const CSSValue& value);
     static int convertInteger(const CSSValue& value);
     static std::optional<int> convertIntegerOrAuto(const CSSValue& value);
     static float convertNumber(const CSSValue& value);
@@ -594,10 +609,23 @@ public:
     void inheritFrom(const BoxStyle& parentStyle);
 
 private:
-    BoxStyle(Element* element);
+    BoxStyle(Element* element, Display display);
     Element* m_element;
     mutable RefPtr<FontFace> m_fontFace;
+    Display m_display;
+    Position m_position{Position::Static};
+    Float m_floating{Float::None};
+    Clear m_clear{Clear::None};
+    Overflow m_overflowX{Overflow::Visible};
+    Overflow m_overflowY{Overflow::Visible};
+    Visibility m_visibility{Visibility::Visible};
+    BoxSizing m_boxSizing{BoxSizing::ContentBox};
+    TextAlign m_textAlign{TextAlign::Left};
+    WhiteSpace m_whiteSpace{WhiteSpace::Normal};
+    FontStyle m_fontStyle{FontStyle::Normal};
+    FontVariant m_fontVariant{FontVariant::Normal};
     float m_fontSize{12.0};
+    int m_fontWeight{400};
     Color m_currentColor{Color::Black};
     CSSPropertyMap m_properties;
 };

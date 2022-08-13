@@ -27,258 +27,42 @@ const LengthRect LengthRect::ZeroFixed(Length::ZeroFixed, Length::ZeroFixed, Len
 
 RefPtr<BoxStyle> BoxStyle::create(Element* element)
 {
-    return adoptPtr(new BoxStyle(element));
+    return adoptPtr(new BoxStyle(element, Display::Inline));
 }
 
-RefPtr<BoxStyle> BoxStyle::create(const BoxStyle& parentStyle)
+RefPtr<BoxStyle> BoxStyle::create(const BoxStyle& parentStyle, Display display)
 {
-    auto newStyle = adoptPtr(new BoxStyle(parentStyle.element()));
+    auto newStyle = adoptPtr(new BoxStyle(parentStyle.element(), display));
     newStyle->inheritFrom(parentStyle);
     return newStyle;
 }
 
-BoxStyle::BoxStyle(Element* element)
-    : m_element(element)
+BoxStyle::BoxStyle(Element* element, Display display)
+    : m_element(element), m_display(display)
 {
 }
 
 RefPtr<FontFace> BoxStyle::fontFace() const
 {
-    if(m_fontFace)
+    if(!m_fontFace.empty())
         return m_fontFace;
-    RefPtr<CSSValue> fontFamily;
-    RefPtr<CSSValue> fontStyle;
-    RefPtr<CSSValue> fontVariant;
-    RefPtr<CSSValue> fontWeight;
-    for(auto& [id, value] : m_properties) {
-        switch(id) {
-        case CSSPropertyID::FontFamily:
-            fontFamily = value;
-            break;
-        case CSSPropertyID::FontStyle:
-            fontStyle = value;
-            break;
-        case CSSPropertyID::FontVariant:
-            fontVariant = value;
-            break;
-        case CSSPropertyID::FontWeight:
-            fontWeight = value;
-            break;
-        default:
-            break;
-        }
-    }
-
-    bool italic = false;
-    if(fontStyle && fontStyle->isIdentValue()) {
-        auto ident = to<CSSIdentValue>(*fontStyle);
-        switch(ident->value()) {
-        case CSSValueID::Normal:
-            italic = false;
-            break;
-        case CSSValueID::Italic:
-        case CSSValueID::Oblique:
-            italic = true;
-            break;
-        default:
-            assert(false);
-        }
-    }
-
-    bool smallCaps = false;
-    if(fontVariant && fontVariant->isIdentValue()) {
-        auto ident = to<CSSIdentValue>(*fontVariant);
-        switch(ident->value()) {
-        case CSSValueID::Normal:
-            smallCaps = false;
-            break;
-        case CSSValueID::SmallCaps:
-            smallCaps = true;
-            break;
-        default:
-            assert(false);
-        }
-    }
-
-    int weight = 400;
-    if(fontWeight) {
-        if(fontWeight->isIdentValue()) {
-            auto ident = to<CSSIdentValue>(*fontWeight);
-            switch(ident->value()) {
-            case CSSValueID::Normal:
-            case CSSValueID::Lighter:
-                weight = 400;
-                break;
-            case CSSValueID::Bold:
-            case CSSValueID::Bolder:
-                weight = 700;
-                break;
-            default:
-                assert(false);
-            }
-        } else if(fontWeight->isIntegerValue()) {
-            auto integer = to<CSSIntegerValue>(*fontWeight);
-            weight = integer->value();
-        }
-    }
-
     auto document = m_element->document();
+    auto italic = (m_fontStyle == FontStyle::Italic || m_fontStyle == FontStyle::Oblique);
+    auto smallCaps = (m_fontVariant == FontVariant::SmallCaps);
+    auto fontFamily = get(CSSPropertyID::FontFamily);
     if(fontFamily && fontFamily->isListValue()) {
         for(auto& value : to<CSSListValue>(*fontFamily)->values()) {
             auto family = to<CSSStringValue>(*value);
-            m_fontFace = document->getFontFace(family->value(), italic, smallCaps, weight);
-            if(m_fontFace == nullptr)
+            m_fontFace = document->getFontFace(family->value(), italic, smallCaps, m_fontWeight);
+            if(m_fontFace.empty())
                 continue;
             return m_fontFace;
         }
     }
 
     static const std::string family("sans-serif");
-    m_fontFace = document->getFontFace(family, italic, smallCaps, weight);
+    m_fontFace = document->getFontFace(family, italic, smallCaps, m_fontWeight);
     return m_fontFace;
-}
-
-Display BoxStyle::display() const
-{
-    auto value = get(CSSPropertyID::Display);
-    if(value == nullptr)
-        return Display::Inline;
-    assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(*value);
-    switch(ident->value()) {
-    case CSSValueID::None:
-        return Display::None;
-    case CSSValueID::Block:
-        return Display::Block;
-    case CSSValueID::Flex:
-        return Display::Flex;
-    case CSSValueID::Inline:
-        return Display::Inline;
-    case CSSValueID::InlineBlock:
-        return Display::InlineBlock;
-    case CSSValueID::InlineFlex:
-        return Display::InlineFlex;
-    case CSSValueID::InlineTable:
-        return Display::InlineTable;
-    case CSSValueID::ListItem:
-        return Display::ListItem;
-    case CSSValueID::Table:
-        return Display::Table;
-    case CSSValueID::TableCaption:
-        return Display::TableCaption;
-    case CSSValueID::TableCell:
-        return Display::TableCell;
-    case CSSValueID::TableColumn:
-        return Display::TableColumn;
-    case CSSValueID::TableColumnGroup:
-        return Display::TableColumnGroup;
-    case CSSValueID::TableFooterGroup:
-        return Display::TableFooterGroup;
-    case CSSValueID::TableHeaderGroup:
-        return Display::TableHeaderGroup;
-    case CSSValueID::TableRow:
-        return Display::TableRow;
-    case CSSValueID::TableRowGroup:
-        return Display::TableRowGroup;
-    default:
-        assert(false);
-    }
-}
-
-Visibility BoxStyle::visibility() const
-{
-    auto value = get(CSSPropertyID::Visibility);
-    if(value == nullptr)
-        return Visibility::Visible;
-    assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(*value);
-    switch(ident->value()) {
-    case CSSValueID::Visible:
-        return Visibility::Visible;
-    case CSSValueID::Hidden:
-        return Visibility::Hidden;
-    case CSSValueID::Collapse:
-        return Visibility::Collapse;
-    default:
-        assert(false);
-    }
-}
-
-Float BoxStyle::floating() const
-{
-    auto value = get(CSSPropertyID::Float);
-    if(value == nullptr)
-        return Float::None;
-    assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(*value);
-    switch(ident->value()) {
-    case CSSValueID::None:
-        return Float::None;
-    case CSSValueID::Left:
-        return Float::Left;
-    case CSSValueID::Right:
-        return Float::Right;
-    default:
-        assert(false);
-    }
-}
-
-Clear BoxStyle::clear() const
-{
-    auto value = get(CSSPropertyID::Clear);
-    if(value == nullptr)
-        return Clear::None;
-    assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(*value);
-    switch(ident->value()) {
-    case CSSValueID::None:
-        return Clear::None;
-    case CSSValueID::Left:
-        return Clear::Left;
-    case CSSValueID::Right:
-        return Clear::Right;
-    case CSSValueID::Both:
-        return Clear::Both;
-    default:
-        assert(false);
-    }
-}
-
-Position BoxStyle::position() const
-{
-    auto value = get(CSSPropertyID::Clear);
-    if(value == nullptr)
-        return Position::Static;
-    assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(*value);
-    switch(ident->value()) {
-    case CSSValueID::Static:
-        return Position::Static;
-    case CSSValueID::Relative:
-        return Position::Relative;
-    case CSSValueID::Absolute:
-        return Position::Absolute;
-    case CSSValueID::Fixed:
-        return Position::Fixed;
-    default:
-        assert(false);
-    }
-}
-
-Overflow BoxStyle::overflowX() const
-{
-    auto value = get(CSSPropertyID::OverflowX);
-    if(value == nullptr)
-        return Overflow::Visible;
-    return convertOverflow(*value);
-}
-
-Overflow BoxStyle::overflowY() const
-{
-    auto value = get(CSSPropertyID::OverflowY);
-    if(value == nullptr)
-        return Overflow::Visible;
-    return convertOverflow(*value);
 }
 
 Color BoxStyle::color() const
@@ -814,27 +598,6 @@ float BoxStyle::borderVerticalSpacing() const
     return convertLengthValue(*value);
 }
 
-TextAlign BoxStyle::textAlign() const
-{
-    auto value = get(CSSPropertyID::TextAlign);
-    if(value == nullptr)
-        return TextAlign::Left;
-    assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(*value);
-    switch(ident->value()) {
-    case CSSValueID::Left:
-        return TextAlign::Left;
-    case CSSValueID::Right:
-        return TextAlign::Right;
-    case CSSValueID::Center:
-        return TextAlign::Center;
-    case CSSValueID::Justify:
-        return TextAlign::Justify;
-    default:
-        assert(false);
-    }
-}
-
 TextTransform BoxStyle::textTransform() const
 {
     auto value = get(CSSPropertyID::TextTransform);
@@ -902,31 +665,6 @@ Color BoxStyle::textDecorationColor() const
     if(value == nullptr)
         return m_currentColor;
     return convertColor(*value);
-}
-
-WhiteSpace BoxStyle::whiteSpace() const
-{
-    auto value = get(CSSPropertyID::WhiteSpace);
-    if(value == nullptr)
-        return WhiteSpace::Normal;
-    assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(*value);
-    switch(ident->value()) {
-    case CSSValueID::Normal:
-        return WhiteSpace::Normal;
-    case CSSValueID::Pre:
-        return WhiteSpace::Pre;
-    case CSSValueID::PreWrap:
-        return WhiteSpace::PreWrap;
-    case CSSValueID::PreLine:
-        return WhiteSpace::PreLine;
-    case CSSValueID::Nowrap:
-        return WhiteSpace::Nowrap;
-    case CSSValueID::BreakSpaces:
-        return WhiteSpace::BreakSpaces;
-    default:
-        assert(false);
-    }
 }
 
 LineBreak BoxStyle::lineBreak() const
@@ -1025,23 +763,6 @@ Length BoxStyle::textIndent() const
     if(value == nullptr)
         return Length::ZeroFixed;
     return convertLengthOrPercent(*value);
-}
-
-BoxSizing BoxStyle::boxSizing() const
-{
-    auto value = get(CSSPropertyID::BoxSizing);
-    if(value == nullptr)
-        return BoxSizing::ContentBox;
-    assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(*value);
-    switch(ident->value()) {
-    case CSSValueID::BorderBox:
-        return BoxSizing::BorderBox;
-    case CSSValueID::ContentBox:
-        return BoxSizing::ContentBox;
-    default:
-        assert(false);
-    }
 }
 
 std::optional<int> BoxStyle::zIndex() const
@@ -1406,11 +1127,50 @@ void BoxStyle::set(CSSPropertyID id, RefPtr<CSSValue> value)
     case CSSPropertyID::FontSize:
         m_fontSize = convertFontSize(*value);
         break;
-    case CSSPropertyID::FontFamily:
     case CSSPropertyID::FontStyle:
+        m_fontStyle = convertFontStyle(*value);
+        m_fontFace.clear();
+        break;
     case CSSPropertyID::FontVariant:
+        m_fontVariant = convertFontVariant(*value);
+        m_fontFace.clear();
+        break;
     case CSSPropertyID::FontWeight:
-        m_fontFace = nullptr;
+        m_fontWeight = convertFontWeight(*value);
+        m_fontFace.clear();
+        break;
+    case CSSPropertyID::FontFamily:
+        m_fontFace.clear();
+        break;
+    case CSSPropertyID::Display:
+        m_display = convertDisplay(*value);
+        break;
+    case CSSPropertyID::Position:
+        m_position = convertPosition(*value);
+        break;
+    case CSSPropertyID::Float:
+        m_floating = convertFloat(*value);
+        break;
+    case CSSPropertyID::Clear:
+        m_clear = convertClear(*value);
+        break;
+    case CSSPropertyID::OverflowX:
+        m_overflowX = convertOverflow(*value);
+        break;
+    case CSSPropertyID::OverflowY:
+        m_overflowY = convertOverflow(*value);
+        break;
+    case CSSPropertyID::Visibility:
+        m_visibility = convertVisibility(*value);
+        break;
+    case CSSPropertyID::BoxSizing:
+        m_boxSizing = convertBoxSizing(*value);
+        break;
+    case CSSPropertyID::TextAlign:
+        m_textAlign = convertTextAlign(*value);
+        break;
+    case CSSPropertyID::WhiteSpace:
+        m_whiteSpace = convertWhiteSpace(*value);
         break;
     default:
         break;
@@ -1551,6 +1311,22 @@ float BoxStyle::convertFontSize(const CSSValue& value) const
     return convertLengthValue(value);
 }
 
+int BoxStyle::convertFontWeight(const CSSValue& value) const
+{
+    if(auto ident = to<CSSIdentValue>(value)) {
+        switch(ident->value()) {
+        case CSSValueID::Normal:
+            return 400;
+        case CSSValueID::Bold:
+            return 700;
+        default:
+            assert(false);
+        }
+    }
+
+    return convertInteger(value);
+}
+
 std::optional<float> BoxStyle::convertLengthOrAuto(const CSSValue& value) const
 {
     if(auto ident = to<CSSIdentValue>(value)) {
@@ -1657,6 +1433,102 @@ RefPtr<Image> BoxStyle::convertImageOrNone(const CSSValue& value) const
     return convertImage(value);
 }
 
+Display BoxStyle::convertDisplay(const CSSValue& value)
+{
+    assert(value.isIdentValue());
+    auto ident = to<CSSIdentValue>(value);
+    switch(ident->value()) {
+    case CSSValueID::None:
+        return Display::None;
+    case CSSValueID::Block:
+        return Display::Block;
+    case CSSValueID::Flex:
+        return Display::Flex;
+    case CSSValueID::Inline:
+        return Display::Inline;
+    case CSSValueID::InlineBlock:
+        return Display::InlineBlock;
+    case CSSValueID::InlineFlex:
+        return Display::InlineFlex;
+    case CSSValueID::InlineTable:
+        return Display::InlineTable;
+    case CSSValueID::ListItem:
+        return Display::ListItem;
+    case CSSValueID::Table:
+        return Display::Table;
+    case CSSValueID::TableCaption:
+        return Display::TableCaption;
+    case CSSValueID::TableCell:
+        return Display::TableCell;
+    case CSSValueID::TableColumn:
+        return Display::TableColumn;
+    case CSSValueID::TableColumnGroup:
+        return Display::TableColumnGroup;
+    case CSSValueID::TableFooterGroup:
+        return Display::TableFooterGroup;
+    case CSSValueID::TableHeaderGroup:
+        return Display::TableHeaderGroup;
+    case CSSValueID::TableRow:
+        return Display::TableRow;
+    case CSSValueID::TableRowGroup:
+        return Display::TableRowGroup;
+    default:
+        assert(false);
+    }
+}
+
+Position BoxStyle::convertPosition(const CSSValue& value)
+{
+    assert(value.isIdentValue());
+    auto ident = to<CSSIdentValue>(value);
+    switch(ident->value()) {
+    case CSSValueID::Static:
+        return Position::Static;
+    case CSSValueID::Relative:
+        return Position::Relative;
+    case CSSValueID::Absolute:
+        return Position::Absolute;
+    case CSSValueID::Fixed:
+        return Position::Fixed;
+    default:
+        assert(false);
+    }
+}
+
+Float BoxStyle::convertFloat(const CSSValue& value)
+{
+    assert(value.isIdentValue());
+    auto ident = to<CSSIdentValue>(value);
+    switch(ident->value()) {
+    case CSSValueID::None:
+        return Float::None;
+    case CSSValueID::Left:
+        return Float::Left;
+    case CSSValueID::Right:
+        return Float::Right;
+    default:
+        assert(false);
+    }
+}
+
+Clear BoxStyle::convertClear(const CSSValue& value)
+{
+    assert(value.isIdentValue());
+    auto ident = to<CSSIdentValue>(value);
+    switch(ident->value()) {
+    case CSSValueID::None:
+        return Clear::None;
+    case CSSValueID::Left:
+        return Clear::Left;
+    case CSSValueID::Right:
+        return Clear::Right;
+    case CSSValueID::Both:
+        return Clear::Both;
+    default:
+        assert(false);
+    }
+}
+
 Overflow BoxStyle::convertOverflow(const CSSValue& value)
 {
     assert(value.isIdentValue());
@@ -1672,6 +1544,76 @@ Overflow BoxStyle::convertOverflow(const CSSValue& value)
         return Overflow::Scroll;
     case CSSValueID::Overlay:
         return Overflow::Overlay;
+    default:
+        assert(false);
+    }
+}
+
+Visibility BoxStyle::convertVisibility(const CSSValue& value)
+{
+    assert(value.isIdentValue());
+    auto ident = to<CSSIdentValue>(value);
+    switch(ident->value()) {
+    case CSSValueID::Visible:
+        return Visibility::Visible;
+    case CSSValueID::Hidden:
+        return Visibility::Hidden;
+    case CSSValueID::Collapse:
+        return Visibility::Collapse;
+    default:
+        assert(false);
+    }
+}
+
+BoxSizing BoxStyle::convertBoxSizing(const CSSValue& value)
+{
+    assert(value.isIdentValue());
+    auto ident = to<CSSIdentValue>(value);
+    switch(ident->value()) {
+    case CSSValueID::BorderBox:
+        return BoxSizing::BorderBox;
+    case CSSValueID::ContentBox:
+        return BoxSizing::ContentBox;
+    default:
+        assert(false);
+    }
+}
+
+WhiteSpace BoxStyle::convertWhiteSpace(const CSSValue& value)
+{
+    assert(value.isIdentValue());
+    auto ident = to<CSSIdentValue>(value);
+    switch(ident->value()) {
+    case CSSValueID::Normal:
+        return WhiteSpace::Normal;
+    case CSSValueID::Pre:
+        return WhiteSpace::Pre;
+    case CSSValueID::PreWrap:
+        return WhiteSpace::PreWrap;
+    case CSSValueID::PreLine:
+        return WhiteSpace::PreLine;
+    case CSSValueID::Nowrap:
+        return WhiteSpace::Nowrap;
+    case CSSValueID::BreakSpaces:
+        return WhiteSpace::BreakSpaces;
+    default:
+        assert(false);
+    }
+}
+
+TextAlign BoxStyle::convertTextAlign(const CSSValue& value)
+{
+    assert(value.isIdentValue());
+    auto ident = to<CSSIdentValue>(value);
+    switch(ident->value()) {
+    case CSSValueID::Left:
+        return TextAlign::Left;
+    case CSSValueID::Right:
+        return TextAlign::Right;
+    case CSSValueID::Center:
+        return TextAlign::Center;
+    case CSSValueID::Justify:
+        return TextAlign::Justify;
     default:
         assert(false);
     }
@@ -1725,6 +1667,36 @@ LineStyle BoxStyle::convertLineStyle(const CSSValue& value)
     }
 }
 
+FontStyle BoxStyle::convertFontStyle(const CSSValue& value)
+{
+    assert(value.isIdentValue());
+    auto ident = to<CSSIdentValue>(value);
+    switch(ident->value()) {
+    case CSSValueID::Normal:
+        return FontStyle::Normal;
+    case CSSValueID::Italic:
+        return FontStyle::Italic;
+    case CSSValueID::Oblique:
+        return FontStyle::Oblique;
+    default:
+        assert(false);
+    }
+}
+
+FontVariant BoxStyle::convertFontVariant(const CSSValue &value)
+{
+    assert(value.isIdentValue());
+    auto ident = to<CSSIdentValue>(value);
+    switch(ident->value()) {
+    case CSSValueID::Normal:
+        return FontVariant::Normal;
+    case CSSValueID::SmallCaps:
+        return FontVariant::SmallCaps;
+    default:
+        assert(false);
+    }
+}
+
 int BoxStyle::convertInteger(const CSSValue& value)
 {
     assert(value.isIntegerValue());
@@ -1752,7 +1724,13 @@ float BoxStyle::convertNumber(const CSSValue& value)
 void BoxStyle::inheritFrom(const BoxStyle& parentStyle)
 {
     m_fontFace = parentStyle.fontFace();
+    m_visibility = parentStyle.visibility();
+    m_textAlign = parentStyle.textAlign();
+    m_whiteSpace = parentStyle.whiteSpace();
+    m_fontStyle = parentStyle.fontStyle();
+    m_fontVariant = parentStyle.fontVariant();
     m_fontSize = parentStyle.fontSize();
+    m_fontWeight = parentStyle.fontWeight();
     m_currentColor = parentStyle.currentColor();
     for(auto& [id, value] : parentStyle.properties()) {
         switch(id) {

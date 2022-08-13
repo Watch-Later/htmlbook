@@ -254,10 +254,10 @@ public:
     void load(std::string_view content);
 
     /**
-     * @brief setUserStyleSheet
+     * @brief addUserStyleSheet
      * @param content
      */
-    void setUserStyleSheet(std::string_view content);
+    void addUserStyleSheet(std::string_view content);
 
     /**
      * @brief clearUserStyleSheet

@@ -1,5 +1,5 @@
-#ifndef CSSSTYLESHEET_H
-#define CSSSTYLESHEET_H
+#ifndef CSSRULE_H
+#define CSSRULE_H
 
 #include "globalstring.h"
 #include "pointer.h"
@@ -7,6 +7,7 @@
 #include <memory>
 #include <list>
 #include <map>
+#include <set>
 
 namespace htmlbook {
 
@@ -920,7 +921,6 @@ public:
     const std::string& value() const { return *m_value; }
     const CSSCompoundSelectorList& subSelectors() const { return *m_subSelectors; }
     bool isCaseSensitive() const { return m_attributeCaseType == AttributeCaseType::Sensitive; }
-
     bool matchnth(int count) const;
 
 private:
@@ -1001,10 +1001,12 @@ public:
 
     const std::string& href() const { return m_href; }
     Type type() const final { return Type::Import; }
+    const CSSRuleList& fetch(Document* document) const;
 
 private:
     CSSImportRule(std::string href) : m_href(std::move(href)) {}
     std::string m_href;
+    mutable CSSRuleList m_rules;
 };
 
 template<>
@@ -1112,12 +1114,12 @@ class Element;
 
 class CSSRuleData {
 public:
-    CSSRuleData(const CSSSelector& selector, const CSSPropertyList& properties, uint32_t specificity, uint32_t position)
-        : m_selector(&selector), m_properties(&properties), m_specificity(specificity), m_position(position)
+    CSSRuleData(const CSSStyleRule* rule, const CSSSelector& selector, uint32_t specificity, uint32_t position)
+        : m_rule(rule), m_selector(selector), m_specificity(specificity), m_position(position)
     {}
 
-    const CSSSelector& selector() const { return *m_selector; }
-    const CSSPropertyList& properties() const { return *m_properties; }
+    const CSSStyleRule* rule() const { return m_rule; }
+    const CSSSelector& selector() const { return m_selector; }
     const uint32_t& specificity() const { return m_specificity; }
     const uint32_t& position() const { return m_position; }
     bool match(const Element* element, PseudoType pseudoType) const;
@@ -1166,8 +1168,8 @@ private:
     static bool matchPseudoClassNthLastOfTypeSelector(const Element* element, const CSSSimpleSelector& selector);
 
 private:
-    const CSSSelector* m_selector;
-    const CSSPropertyList* m_properties;
+    const CSSStyleRule* m_rule;
+    const CSSSelector& m_selector;
     uint32_t m_specificity;
     uint32_t m_position;
 };
@@ -1192,29 +1194,45 @@ private:
 class CSSPageRuleData {
 public:
     CSSPageRuleData(const CSSPageRule* rule, const CSSPageSelector& selector, uint32_t specificity, uint32_t position)
-        : m_rule(rule), m_selector(&selector), m_specificity(specificity), m_position(position)
+        : m_rule(rule), m_selector(selector), m_specificity(specificity), m_position(position)
     {}
 
     const CSSPageRule* rule() const { return m_rule; }
-    const CSSPageSelector* selector() const { return m_selector; }
-    uint32_t specificity() const { return m_specificity; }
-    uint32_t position() const { return m_position; }
+    const CSSPageSelector& selector() const { return m_selector; }
+    const uint32_t& specificity() const { return m_specificity; }
+    const uint32_t& position() const { return m_position; }
     bool match(const GlobalString& pageName, size_t pageIndex) const;
 
 private:
     const CSSPageRule* m_rule;
-    const CSSPageSelector* m_selector;
+    const CSSPageSelector& m_selector;
     uint32_t m_specificity;
     uint32_t m_position;
 };
 
-using CSSPageRuleDataList = std::vector<CSSPageRuleData>;
+inline bool operator<(const CSSPageRuleData& a, const CSSPageRuleData& b) { return std::tie(a.specificity(), a.position()) < std::tie(b.specificity(), b.position()); }
+inline bool operator>(const CSSPageRuleData& a, const CSSPageRuleData& b) { return std::tie(a.specificity(), a.position()) > std::tie(b.specificity(), b.position()); }
 
-class CSSStyleSheet {
+using CSSPageRuleDataList = std::multiset<CSSPageRuleData, std::greater<CSSPageRuleData>>;
+
+class FontFace;
+
+class CSSFontFaceCache {
 public:
-    static std::unique_ptr<CSSStyleSheet> create(Document* document);
+    CSSFontFaceCache() = default;
+    RefPtr<FontFace> get(const std::string& family, bool italic, bool smallCaps, int weight) const;
+    void add(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
 
-    void parse(const std::string_view& content);
+private:
+    using FontFaceData = std::tuple<bool, bool, int, RefPtr<FontFace>>;
+    using FontFaceDataList = std::vector<FontFaceData>;
+    using FontFaceDataMap = std::map<std::string, FontFaceDataList>;
+    FontFaceDataMap m_fontFaceDataMap;
+};
+
+class CSSRuleCache {
+public:
+    static std::unique_ptr<CSSRuleCache> create(Document* document);
 
     const CSSRuleDataList* idRules(const GlobalString& name) const { return m_idRules.get(name); }
     const CSSRuleDataList* tagRules(const GlobalString& name) const { return m_tagRules.get(name); }
@@ -1227,18 +1245,19 @@ public:
     const CSSRuleDataList* firstLetterElementRules() const { return &m_firstLetterRules; }
     const CSSRuleDataList* firstLineElementRules() const { return &m_firstLineRules; }
     const CSSPageRuleDataList* pageRules() const { return &m_pageRules; }
-
-    void addRule(std::unique_ptr<CSSRule> rule);
+    RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight) const;
 
 private:
+    CSSRuleCache(Document* document);
+
+    void addRules(const CSSRuleList& rules);
     void addStyleRule(const CSSStyleRule* rule);
     void addPageRule(const CSSPageRule* rule);
     void addImportRule(const CSSImportRule* rule);
     void addFontFaceRule(const CSSFontFaceRule* rule);
 
-    CSSStyleSheet(Document* document) : m_document(document) {}
     Document* m_document;
-    CSSRuleList m_rules;
+    uint32_t m_ruleCount{0};
 
     CSSRuleDataMap m_idRules;
     CSSRuleDataMap m_classRules;
@@ -1251,8 +1270,9 @@ private:
     CSSRuleDataList m_firstLetterRules;
     CSSRuleDataList m_firstLineRules;
     CSSPageRuleDataList m_pageRules;
+    CSSFontFaceCache m_fontFaceCache;
 };
 
 } // namespace htmlbook
 
-#endif // CSSSTYLESHEET_H
+#endif // CSSRULE_H

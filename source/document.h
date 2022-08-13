@@ -2,7 +2,7 @@
 #define DOCUMENT_H
 
 #include "htmlbook.h"
-#include "cssstylesheet.h"
+#include "cssrule.h"
 #include "url.h"
 
 #include <cassert>
@@ -199,20 +199,6 @@ class ImageResource;
 class FontResource;
 class FontFace;
 
-class FontFaceCache {
-public:
-    FontFaceCache() = default;
-    RefPtr<FontFace> get(const std::string& family, bool italic, bool smallCaps, int weight) const;
-    void add(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
-    void clear();
-
-private:
-    using FontFaceData = std::tuple<bool, bool, int, RefPtr<FontFace>>;
-    using FontFaceDataList = std::vector<FontFaceData>;
-    using FontFaceDataMap = std::map<std::string, FontFaceDataList>;
-    FontFaceDataMap m_fontFaceDataMap;
-};
-
 class Document final : public ContainerNode {
 public:
     Document(const PageSize& pageSize);
@@ -228,15 +214,15 @@ public:
 
     void updateIdCache(const GlobalString& name, Element* element);
     void addAuthorStyleSheet(const std::string_view& content);
-    void setUserStyleSheet(const std::string_view& content);
+    void addUserStyleSheet(const std::string_view& content);
     void clearUserStyleSheet();
 
-    const CSSStyleSheet* authorStyleSheet() const { return m_authorStyleSheet.get(); }
-    const CSSStyleSheet* userStyleSheet() const { return m_userStyleSheet.get(); }
+    const CSSRuleList& authorRules() const { return m_authorRules; }
+    const CSSRuleList& userRules() const { return m_userRules; }
+    const CSSRuleCache* ruleCache();
 
     RefPtr<FontFace> fetchFont(const std::string& family, bool italic, bool smallCaps, int weight) const;
-    RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight) const;
-    void addFontFace(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
+    RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight);
 
     bool fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data) const;
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
@@ -249,11 +235,11 @@ private:
     PageSize m_pageSize;
     BookClient* m_client{nullptr};
     Url m_baseUrl;
-    FontFaceCache m_fontFaceCache;
+    CSSRuleList m_authorRules;
+    CSSRuleList m_userRules;
+    std::unique_ptr<CSSRuleCache> m_ruleCache;
     std::map<GlobalString, Element*> m_idCache;
     std::map<std::string, RefPtr<Resource>> m_resourceCache;
-    std::unique_ptr<CSSStyleSheet> m_authorStyleSheet;
-    std::unique_ptr<CSSStyleSheet> m_userStyleSheet;
     std::string m_title;
     std::string m_subject;
     std::string m_author;

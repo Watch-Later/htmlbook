@@ -1,4 +1,4 @@
-#include "cssstylesheet.h"
+#include "cssrule.h"
 #include "cssparser.h"
 #include "document.h"
 #include "resource.h"
@@ -604,6 +604,15 @@ std::unique_ptr<CSSImportRule> CSSImportRule::create(std::string href)
     return std::unique_ptr<CSSImportRule>(new CSSImportRule(std::move(href)));
 }
 
+const CSSRuleList& CSSImportRule::fetch(Document* document) const
+{
+    if(!m_rules.empty())
+        return m_rules;
+    if(auto textResource = document->fetchTextResource(m_href))
+        CSSParser::parseSheet(m_rules, textResource->text());
+    return m_rules;
+}
+
 std::unique_ptr<CSSFontFaceRule> CSSFontFaceRule::create(CSSPropertyList properties)
 {
     return std::unique_ptr<CSSFontFaceRule>(new CSSFontFaceRule(std::move(properties)));
@@ -621,8 +630,8 @@ std::unique_ptr<CSSPageRule> CSSPageRule::create(CSSPageSelectorList selectors, 
 
 bool CSSRuleData::match(const Element* element, PseudoType pseudoType) const
 {
-    auto it = m_selector->rbegin();
-    auto end = m_selector->rend();
+    auto it = m_selector.rbegin();
+    auto end = m_selector.rend();
     if(it == end)
         return false;
 
@@ -981,39 +990,64 @@ const CSSRuleDataList* CSSRuleDataMap::get(const GlobalString& name) const
     return &it->second;
 }
 
-std::unique_ptr<CSSStyleSheet> CSSStyleSheet::create(Document* document)
+RefPtr<FontFace> CSSFontFaceCache::get(const std::string& family, bool italic, bool smallCaps, int weight) const
 {
-    return std::unique_ptr<CSSStyleSheet>(new CSSStyleSheet(document));
+    return nullptr;
 }
 
-void CSSStyleSheet::parse(const std::string_view& content)
+void CSSFontFaceCache::add(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
 {
-    CSSParser::parseSheet(this, content);
+    auto& faces = m_fontFaceDataMap[family];
+    faces.emplace_back(italic, smallCaps, weight, std::move(face));
 }
 
-void CSSStyleSheet::addRule(std::unique_ptr<CSSRule> rule)
+std::unique_ptr<CSSRuleCache> CSSRuleCache::create(Document* document)
 {
-    switch(rule->type()) {
-    case CSSRule::Type::Style:
-        addStyleRule(to<CSSStyleRule>(*rule));
-        break;
-    case CSSRule::Type::Import:
-        addImportRule(to<CSSImportRule>(*rule));
-        break;
-    case CSSRule::Type::FontFace:
-        addFontFaceRule(to<CSSFontFaceRule>(*rule));
-        break;
-    case CSSRule::Type::Page:
-        addPageRule(to<CSSPageRule>(*rule));
-        break;
-    default:
-        assert(false);
+    return std::unique_ptr<CSSRuleCache>(new CSSRuleCache(document));
+}
+
+RefPtr<FontFace> CSSRuleCache::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight) const
+{
+    return m_fontFaceCache.get(family, italic, smallCaps, weight);
+}
+
+static const CSSRuleList& userAgentRules() {
+    static CSSRuleList userAgentRules;
+    return userAgentRules;
+}
+
+CSSRuleCache::CSSRuleCache(Document* document)
+    : m_document(document)
+{
+    addRules(userAgentRules());
+    addRules(document->authorRules());
+    addRules(document->userRules());
+}
+
+void CSSRuleCache::addRules(const CSSRuleList& rules)
+{
+    for(auto& rule : rules) {
+        m_ruleCount += 1;
+        switch(rule->type()) {
+        case CSSRule::Type::Style:
+            addStyleRule(to<CSSStyleRule>(*rule));
+            break;
+        case CSSRule::Type::Page:
+            addPageRule(to<CSSPageRule>(*rule));
+            break;
+        case CSSRule::Type::Import:
+            addImportRule(to<CSSImportRule>(*rule));
+            break;
+        case CSSRule::Type::FontFace:
+            addFontFaceRule(to<CSSFontFaceRule>(*rule));
+            break;
+        default:
+            assert(false);
+        }
     }
-
-    m_rules.push_back(std::move(rule));
 }
 
-void CSSStyleSheet::addStyleRule(const CSSStyleRule* rule)
+void CSSRuleCache::addStyleRule(const CSSStyleRule* rule)
 {
     for(auto& selector : rule->selectors()) {
         uint32_t specificity = 0;
@@ -1037,7 +1071,7 @@ void CSSStyleSheet::addStyleRule(const CSSStyleRule* rule)
             }
         }
 
-        CSSRuleData ruleData(selector, rule->properties(), specificity, m_rules.size());
+        CSSRuleData ruleData(rule, selector, specificity, m_ruleCount);
         switch(lastSimpleSelector->matchType()) {
         case CSSSimpleSelector::MatchType::Id:
             m_idRules.add(lastSimpleSelector->name(), ruleData);
@@ -1070,7 +1104,7 @@ void CSSStyleSheet::addStyleRule(const CSSStyleRule* rule)
     }
 }
 
-void CSSStyleSheet::addPageRule(const CSSPageRule* rule)
+void CSSRuleCache::addPageRule(const CSSPageRule* rule)
 {
     for(auto& selector : rule->selectors()) {
         uint32_t specificity = 0;
@@ -1092,22 +1126,19 @@ void CSSStyleSheet::addPageRule(const CSSPageRule* rule)
             }
         }
 
-        CSSPageRuleData ruleData(rule, selector, specificity, m_rules.size());
-        m_pageRules.push_back(ruleData);
+        CSSPageRuleData ruleData(rule, selector, specificity, m_ruleCount);
+        m_pageRules.insert(ruleData);
     }
 }
 
-void CSSStyleSheet::addImportRule(const CSSImportRule* rule)
+void CSSRuleCache::addImportRule(const CSSImportRule* rule)
 {
     if(m_document == nullptr)
         return;
-    auto textResource = m_document->fetchTextResource(rule->href());
-    if(textResource == nullptr)
-        return;
-    CSSParser::parseSheet(this, textResource->text());
+    addRules(rule->fetch(m_document));
 }
 
-void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
+void CSSRuleCache::addFontFaceRule(const CSSFontFaceRule* rule)
 {
     if(m_document == nullptr)
         return;
@@ -1223,7 +1254,7 @@ void CSSStyleSheet::addFontFaceRule(const CSSFontFaceRule* rule)
             continue;
         for(auto& value : to<CSSListValue>(*fontFamily)->values()) {
             auto family = to<CSSStringValue>(*value);
-            m_document->addFontFace(family->value(), italic, smallCaps, weight, face);
+            m_fontFaceCache.add(family->value(), italic, smallCaps, weight, face);
         }
     }
 }
