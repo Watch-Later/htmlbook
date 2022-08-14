@@ -65,14 +65,6 @@ RefPtr<FontFace> BoxStyle::fontFace() const
     return m_fontFace;
 }
 
-Color BoxStyle::color() const
-{
-    auto value = get(CSSPropertyID::Color);
-    if(value == nullptr)
-        return m_currentColor;
-    return convertColor(*value);
-}
-
 Length BoxStyle::left() const
 {
     auto value = get(CSSPropertyID::Left);
@@ -253,7 +245,7 @@ Color BoxStyle::borderLeftColor() const
 {
     auto value = get(CSSPropertyID::BorderLeftColor);
     if(value == nullptr)
-        return m_currentColor;
+        return m_color;
     return convertColor(*value);
 }
 
@@ -261,7 +253,7 @@ Color BoxStyle::borderRightColor() const
 {
     auto value = get(CSSPropertyID::BorderRightColor);
     if(value == nullptr)
-        return m_currentColor;
+        return m_color;
     return convertColor(*value);
 }
 
@@ -269,7 +261,7 @@ Color BoxStyle::borderTopColor() const
 {
     auto value = get(CSSPropertyID::BorderTopColor);
     if(value == nullptr)
-        return m_currentColor;
+        return m_color;
     return convertColor(*value);
 }
 
@@ -277,7 +269,7 @@ Color BoxStyle::borderBottomColor() const
 {
     auto value = get(CSSPropertyID::BorderBottomColor);
     if(value == nullptr)
-        return m_currentColor;
+        return m_color;
     return convertColor(*value);
 }
 
@@ -663,7 +655,7 @@ Color BoxStyle::textDecorationColor() const
 {
     auto value = get(CSSPropertyID::TextDecorationColor);
     if(value == nullptr)
-        return m_currentColor;
+        return m_color;
     return convertColor(*value);
 }
 
@@ -999,7 +991,7 @@ Color BoxStyle::outlineColor() const
 {
     auto value = get(CSSPropertyID::OutlineColor);
     if(value == nullptr)
-        return m_currentColor;
+        return m_color;
     return convertColor(*value);
 }
 
@@ -1023,7 +1015,7 @@ Color BoxStyle::columnRuleColor() const
 {
     auto value = get(CSSPropertyID::OutlineColor);
     if(value == nullptr)
-        return m_currentColor;
+        return m_color;
     return convertColor(*value);
 }
 
@@ -1119,29 +1111,7 @@ RefPtr<CSSValue> BoxStyle::get(CSSPropertyID id) const
 
 void BoxStyle::set(CSSPropertyID id, RefPtr<CSSValue> value)
 {
-    assert(!value->isInitialValue() && !value->isInheritValue());
     switch(id) {
-    case CSSPropertyID::Color:
-        m_currentColor = convertColor(*value);
-        break;
-    case CSSPropertyID::FontSize:
-        m_fontSize = convertFontSize(*value);
-        break;
-    case CSSPropertyID::FontStyle:
-        m_fontStyle = convertFontStyle(*value);
-        m_fontFace.clear();
-        break;
-    case CSSPropertyID::FontVariant:
-        m_fontVariant = convertFontVariant(*value);
-        m_fontFace.clear();
-        break;
-    case CSSPropertyID::FontWeight:
-        m_fontWeight = convertFontWeight(*value);
-        m_fontFace.clear();
-        break;
-    case CSSPropertyID::FontFamily:
-        m_fontFace.clear();
-        break;
     case CSSPropertyID::Display:
         m_display = convertDisplay(*value);
         break;
@@ -1172,11 +1142,93 @@ void BoxStyle::set(CSSPropertyID id, RefPtr<CSSValue> value)
     case CSSPropertyID::WhiteSpace:
         m_whiteSpace = convertWhiteSpace(*value);
         break;
+    case CSSPropertyID::Color:
+        m_color = convertColor(*value);
+        break;
+    case CSSPropertyID::FontSize:
+        m_fontSize = convertFontSize(*value);
+        break;
+    case CSSPropertyID::FontStyle:
+        m_fontStyle = convertFontStyle(*value);
+        m_fontFace.clear();
+        break;
+    case CSSPropertyID::FontVariant:
+        m_fontVariant = convertFontVariant(*value);
+        m_fontFace.clear();
+        break;
+    case CSSPropertyID::FontWeight:
+        m_fontWeight = convertFontWeight(*value);
+        m_fontFace.clear();
+        break;
+    case CSSPropertyID::FontFamily:
+        m_fontFace.clear();
+        break;
     default:
         break;
     }
 
     m_properties.insert_or_assign(id, std::move(value));
+}
+
+void BoxStyle::remove(CSSPropertyID id)
+{
+    switch(id) {
+    case CSSPropertyID::Display:
+        m_display = Display::Inline;
+        break;
+    case CSSPropertyID::Position:
+        m_position = Position::Static;
+        break;
+    case CSSPropertyID::Float:
+        m_floating = Float::None;
+        break;
+    case CSSPropertyID::Clear:
+        m_clear = Clear::None;
+        break;
+    case CSSPropertyID::OverflowX:
+        m_overflowX = Overflow::Visible;
+        break;
+    case CSSPropertyID::OverflowY:
+        m_overflowY = Overflow::Visible;
+        break;
+    case CSSPropertyID::Visibility:
+        m_visibility = Visibility::Visible;
+        break;
+    case CSSPropertyID::BoxSizing:
+        m_boxSizing = BoxSizing::ContentBox;
+        break;
+    case CSSPropertyID::TextAlign:
+        m_textAlign = TextAlign::Left;
+        break;
+    case CSSPropertyID::WhiteSpace:
+        m_whiteSpace = WhiteSpace::Normal;
+        break;
+    case CSSPropertyID::Color:
+        m_color = Color::Black;
+        break;
+    case CSSPropertyID::FontSize:
+        m_fontSize = 12.0;
+        break;
+    case CSSPropertyID::FontStyle:
+        m_fontStyle = FontStyle::Normal;
+        m_fontFace.clear();
+        break;
+    case CSSPropertyID::FontVariant:
+        m_fontVariant = FontVariant::Normal;
+        m_fontFace.clear();
+        break;
+    case CSSPropertyID::FontWeight:
+        m_fontWeight = 400;
+        m_fontFace.clear();
+        break;
+    case CSSPropertyID::FontFamily:
+        m_fontFace.clear();
+        break;
+    default:
+        break;
+    }
+
+    m_properties.erase(id);
 }
 
 float BoxStyle::emFontSize() const
@@ -1408,7 +1460,7 @@ Color BoxStyle::convertColor(const CSSValue& value) const
 {
     if(auto ident = to<CSSIdentValue>(value)) {
         assert(ident->value() == CSSValueID::CurrentColor);
-        return m_currentColor;
+        return m_color;
     }
 
     assert(value.isColorValue());
@@ -1727,19 +1779,22 @@ void BoxStyle::inheritFrom(const BoxStyle& parentStyle)
     m_visibility = parentStyle.visibility();
     m_textAlign = parentStyle.textAlign();
     m_whiteSpace = parentStyle.whiteSpace();
+    m_color = parentStyle.color();
+    m_fontSize = parentStyle.fontSize();
     m_fontStyle = parentStyle.fontStyle();
     m_fontVariant = parentStyle.fontVariant();
-    m_fontSize = parentStyle.fontSize();
     m_fontWeight = parentStyle.fontWeight();
-    m_currentColor = parentStyle.currentColor();
     for(auto& [id, value] : parentStyle.properties()) {
         switch(id) {
+        case CSSPropertyID::Visibility:
+        case CSSPropertyID::TextAlign:
+        case CSSPropertyID::WhiteSpace:
         case CSSPropertyID::Color:
         case CSSPropertyID::FontSize:
-        case CSSPropertyID::FontFamily:
         case CSSPropertyID::FontStyle:
         case CSSPropertyID::FontVariant:
         case CSSPropertyID::FontWeight:
+        case CSSPropertyID::FontFamily:
             m_properties.insert_or_assign(id, value);
             break;
         default:

@@ -437,7 +437,6 @@ public:
 
     Element* element() const { return m_element; }
     RefPtr<FontFace> fontFace() const;
-    const Color& currentColor() const { return m_currentColor; }
     const CSSPropertyMap& properties() const { return m_properties; }
 
     float fontSize() const { return m_fontSize; }
@@ -452,7 +451,7 @@ public:
     Overflow overflowX() const { return m_overflowX; }
     Overflow overflowY() const { return m_overflowY; }
     Visibility visibility() const { return m_visibility; }
-    Color color() const;
+    const Color& color() const { return m_color; }
 
     Length left() const;
     Length right() const;
@@ -562,6 +561,7 @@ public:
 
     RefPtr<CSSValue> get(CSSPropertyID id) const;
     void set(CSSPropertyID id, RefPtr<CSSValue> value);
+    void remove(CSSPropertyID id);
 
     float emFontSize() const;
     float exFontSize() const;
@@ -626,7 +626,7 @@ private:
     FontVariant m_fontVariant{FontVariant::Normal};
     float m_fontSize{12.0};
     int m_fontWeight{400};
-    Color m_currentColor{Color::Black};
+    Color m_color{Color::Black};
     CSSPropertyMap m_properties;
 };
 
