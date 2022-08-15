@@ -25,20 +25,20 @@ const LengthRect LengthRect::Auto(Length::Auto, Length::Auto, Length::Auto, Leng
 const LengthRect LengthRect::ZeroPercent(Length::ZeroPercent, Length::ZeroPercent, Length::ZeroPercent, Length::ZeroPercent);
 const LengthRect LengthRect::ZeroFixed(Length::ZeroFixed, Length::ZeroFixed, Length::ZeroFixed, Length::ZeroFixed);
 
-RefPtr<BoxStyle> BoxStyle::create(Element* element)
+RefPtr<BoxStyle> BoxStyle::create(Element* element, PseudoType pseudoType)
 {
-    return adoptPtr(new BoxStyle(element, Display::Inline));
+    return adoptPtr(new BoxStyle(element, pseudoType, Display::Inline));
 }
 
 RefPtr<BoxStyle> BoxStyle::create(const BoxStyle& parentStyle, Display display)
 {
-    auto newStyle = adoptPtr(new BoxStyle(parentStyle.element(), display));
+    auto newStyle = adoptPtr(new BoxStyle(parentStyle.element(), PseudoType::None, display));
     newStyle->inheritFrom(parentStyle);
     return newStyle;
 }
 
-BoxStyle::BoxStyle(Element* element, Display display)
-    : m_element(element), m_display(display)
+BoxStyle::BoxStyle(Element* element, PseudoType pseudoType, Display display)
+    : m_element(element), m_pseudoType(pseudoType), m_display(display)
 {
 }
 
