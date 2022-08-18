@@ -25,20 +25,20 @@ const LengthRect LengthRect::Auto(Length::Auto, Length::Auto, Length::Auto, Leng
 const LengthRect LengthRect::ZeroPercent(Length::ZeroPercent, Length::ZeroPercent, Length::ZeroPercent, Length::ZeroPercent);
 const LengthRect LengthRect::ZeroFixed(Length::ZeroFixed, Length::ZeroFixed, Length::ZeroFixed, Length::ZeroFixed);
 
-RefPtr<BoxStyle> BoxStyle::create(Element* element, PseudoType pseudoType)
+RefPtr<BoxStyle> BoxStyle::create(Document* document, PseudoType pseudoType)
 {
-    return adoptPtr(new BoxStyle(element, pseudoType, Display::Inline));
+    return adoptPtr(new BoxStyle(document, pseudoType, Display::Inline));
 }
 
 RefPtr<BoxStyle> BoxStyle::create(const BoxStyle& parentStyle, Display display)
 {
-    auto newStyle = adoptPtr(new BoxStyle(parentStyle.element(), PseudoType::None, display));
+    auto newStyle = adoptPtr(new BoxStyle(parentStyle.document(), PseudoType::None, display));
     newStyle->inheritFrom(parentStyle);
     return newStyle;
 }
 
-BoxStyle::BoxStyle(Element* element, PseudoType pseudoType, Display display)
-    : m_element(element), m_pseudoType(pseudoType), m_display(display)
+BoxStyle::BoxStyle(Document* document, PseudoType pseudoType, Display display)
+    : m_document(document), m_pseudoType(pseudoType), m_display(display)
 {
 }
 
@@ -46,14 +46,13 @@ RefPtr<FontFace> BoxStyle::fontFace() const
 {
     if(!m_fontFace.empty())
         return m_fontFace;
-    auto document = m_element->document();
     auto italic = (m_fontStyle == FontStyle::Italic || m_fontStyle == FontStyle::Oblique);
     auto smallCaps = (m_fontVariant == FontVariant::SmallCaps);
     auto fontFamily = get(CSSPropertyID::FontFamily);
     if(fontFamily && fontFamily->isListValue()) {
         for(auto& value : to<CSSListValue>(*fontFamily)->values()) {
             auto family = to<CSSStringValue>(*value);
-            m_fontFace = document->getFontFace(family->value(), italic, smallCaps, m_fontWeight);
+            m_fontFace = m_document->getFontFace(family->value(), italic, smallCaps, m_fontWeight);
             if(m_fontFace.empty())
                 continue;
             return m_fontFace;
@@ -61,7 +60,7 @@ RefPtr<FontFace> BoxStyle::fontFace() const
     }
 
     static const std::string family("sans-serif");
-    m_fontFace = document->getFontFace(family, italic, smallCaps, m_fontWeight);
+    m_fontFace = m_document->getFontFace(family, italic, smallCaps, m_fontWeight);
     return m_fontFace;
 }
 
@@ -1472,7 +1471,7 @@ RefPtr<Image> BoxStyle::convertImage(const CSSValue& value) const
 {
     assert(value.isImageValue());
     auto image = to<CSSImageValue>(value);
-    return image->fetch(m_element->document());
+    return image->fetch(m_document);
 }
 
 RefPtr<Image> BoxStyle::convertImageOrNone(const CSSValue& value) const

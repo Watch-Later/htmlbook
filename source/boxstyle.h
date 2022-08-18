@@ -426,19 +426,15 @@ private:
     Length m_value;
 };
 
-class Element;
-class Image;
-class FontFace;
-
 class BoxStyle : public RefCounted<BoxStyle> {
 public:
-    static RefPtr<BoxStyle> create(Element* element, PseudoType pseudoType);
+    static RefPtr<BoxStyle> create(Document* document, PseudoType pseudoType);
     static RefPtr<BoxStyle> create(const BoxStyle& parentStyle, Display display);
 
-    Element* element() const { return m_element; }
-    RefPtr<FontFace> fontFace() const;
+    Document* document() const { return m_document; }
     PseudoType pseudoType() const { return m_pseudoType; }
     const CSSPropertyMap& properties() const { return m_properties; }
+    RefPtr<FontFace> fontFace() const;
 
     float fontSize() const { return m_fontSize; }
     int fontWeight() const { return m_fontWeight; }
@@ -610,8 +606,9 @@ public:
     void inheritFrom(const BoxStyle& parentStyle);
 
 private:
-    BoxStyle(Element* element, PseudoType pseudoType, Display display);
-    Element* m_element;
+    BoxStyle(Document* document, PseudoType pseudoType, Display display);
+    Document* m_document;
+    CSSPropertyMap m_properties;
     mutable RefPtr<FontFace> m_fontFace;
     PseudoType m_pseudoType;
     Display m_display;
@@ -629,7 +626,6 @@ private:
     float m_fontSize{12.0};
     int m_fontWeight{400};
     Color m_color{Color::Black};
-    CSSPropertyMap m_properties;
 };
 
 } // namespace htmlbook
