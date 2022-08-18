@@ -226,7 +226,7 @@ public:
     int rowSpan() const { return m_rowSpan; }
 
     void setColSpan(int span) { m_colSpan = span; }
-    void setRowSpan(int span) { m_colSpan = span; }
+    void setRowSpan(int span) { m_rowSpan = span; }
 
 private:
     int m_colSpan{1};
