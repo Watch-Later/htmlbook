@@ -82,7 +82,7 @@ public:
 
     LineBoxList* lines() const final { return &m_lines; }
     const std::string& text() const { return m_text; }
-    void setText(std::string text);
+    void setText(std::string text) { m_text = std::move(text); }
 
 private:
     std::string m_text;
@@ -186,7 +186,7 @@ private:
     ListMarkerBox* m_listMarker{nullptr};
 };
 
-class ListMarkerBox : public BoxFrame {
+class ListMarkerBox final : public BoxFrame {
 public:
     ListMarkerBox(ListItemBox* item, RefPtr<BoxStyle> style);
 
@@ -202,7 +202,7 @@ private:
 
 class TableSectionBox;
 
-class TableBox : public BlockBox {
+class TableBox final : public BlockBox {
 public:
     TableBox(Node* node, RefPtr<BoxStyle> style);
 
@@ -218,7 +218,7 @@ private:
     TableSectionBox* m_foot;
 };
 
-class TableCellBox : public BlockBox {
+class TableCellBox final : public BlockBox {
 public:
     TableCellBox(Node* node, RefPtr<BoxStyle> style);
 
@@ -244,31 +244,31 @@ private:
     int m_span{1};
 };
 
-class TableColumnGroupBox : public TableColumnBox {
+class TableColumnGroupBox final : public TableColumnBox {
 public:
     TableColumnGroupBox(Node* node, RefPtr<BoxStyle> style);
 
-    BoxList* children() const { return &m_children; }
+    BoxList* children() const final { return &m_children; }
 
 private:
     mutable BoxList m_children;
 };
 
-class TableRowBox : public BoxFrame {
+class TableRowBox final : public BoxFrame {
 public:
     TableRowBox(Node* node, RefPtr<BoxStyle> style);
 
-    BoxList* children() const { return &m_children; }
+    BoxList* children() const final { return &m_children; }
 
 private:
     mutable BoxList m_children;
 };
 
-class TableSectionBox : public BoxFrame {
+class TableSectionBox final : public BoxFrame {
 public:
     TableSectionBox(Node* node, RefPtr<BoxStyle> style);
 
-    BoxList* children() const { return &m_children; }
+    BoxList* children() const final { return &m_children; }
 
 private:
     mutable BoxList m_children;
