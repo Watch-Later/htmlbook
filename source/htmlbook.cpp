@@ -72,6 +72,16 @@ Document* Book::document() const
     return m_document.get();
 }
 
+void Book::setResourceClient(ResourceClient *client)
+{
+    resourceLoader()->setClient(client);
+}
+
+ResourceClient* Book::resourceClient()
+{
+    return resourceLoader()->client();
+}
+
 bool Book::addFontData(const std::string& family, bool italic, bool smallCaps, int weight, std::vector<char> data)
 {
     auto face = FontFace::create(std::move(data));

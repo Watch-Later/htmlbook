@@ -1230,7 +1230,7 @@ void CSSRuleCache::addFontFaceRule(const CSSFontFaceRule* rule)
     auto fetch = [&](auto source) -> RefPtr<FontFace> {
         if(auto function = to<CSSFunctionValue>(*source->front())) {
             auto family = to<CSSStringValue>(*function->front());
-            return m_document->fetchFont(family->value(), italic, smallCaps, weight);
+            return resourceLoader()->loadFont(family->value(), italic, smallCaps, weight);
         }
 
         auto url = to<CSSUrlValue>(*source->front());

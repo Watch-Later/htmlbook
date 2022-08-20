@@ -221,10 +221,7 @@ public:
     const CSSRuleList& userRules() const { return m_userRules; }
     const CSSRuleCache* ruleCache();
 
-    RefPtr<FontFace> fetchFont(const std::string& family, bool italic, bool smallCaps, int weight) const;
     RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight);
-
-    bool fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data) const;
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
     RefPtr<ImageResource> fetchImageResource(const std::string_view& url);
     RefPtr<FontResource> fetchFontResource(const std::string_view& url);
@@ -233,7 +230,6 @@ private:
     template<typename ResourceType>
     RefPtr<ResourceType> fetchResource(const std::string_view& url);
     PageSize m_pageSize;
-    BookClient* m_client{nullptr};
     Url m_baseUrl;
     CSSRuleList m_authorRules;
     CSSRuleList m_userRules;

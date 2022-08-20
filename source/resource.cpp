@@ -1,6 +1,8 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #include "resource.h"
+#include "htmlbook.h"
+#include "url.h"
 
 namespace htmlbook {
 
@@ -187,6 +189,37 @@ FontCache* fontCache()
 {
     static FontCache cache;
     return &cache;
+}
+
+bool ResourceLoader::loadUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data) const
+{
+    if(url.protocolIs("data"))
+        return url.decodeData(mimeType, textEncoding, data);
+    if(m_client == nullptr)
+        return false;
+    return m_client->loadUrl(url.value(), mimeType, textEncoding, data);
+}
+
+RefPtr<FontFace> ResourceLoader::loadFont(const std::string& family, bool italic, bool smallCaps, int weight) const
+{
+    if(auto face = fontCache()->getFace(family, italic, smallCaps, weight))
+        return face;
+    if(m_client == nullptr)
+        return nullptr;
+    std::vector<char> data;
+    if(!m_client->loadFont(family, italic, smallCaps, weight, data))
+        return nullptr;
+    auto face = FontFace::create(std::move(data));
+    if(face == nullptr)
+        return nullptr;
+    fontCache()->addFace(family, italic, smallCaps, weight, face);
+    return face;
+}
+
+ResourceLoader* resourceLoader()
+{
+    static ResourceLoader loader;
+    return &loader;
 }
 
 } // namespace htmlbook

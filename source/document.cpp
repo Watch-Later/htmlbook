@@ -380,36 +380,11 @@ const CSSRuleCache* Document::ruleCache()
     return m_ruleCache.get();
 }
 
-RefPtr<FontFace> Document::fetchFont(const std::string& family, bool italic, bool smallCaps, int weight) const
-{
-    if(auto face = fontCache()->getFace(family, italic, smallCaps, weight))
-        return face;
-    if(m_client == nullptr)
-        return nullptr;
-    std::vector<char> data;
-    if(!m_client->loadFont(family, italic, smallCaps, weight, data))
-        return nullptr;
-    auto face = FontFace::create(std::move(data));
-    if(face == nullptr)
-        return nullptr;
-    fontCache()->addFace(family, italic, smallCaps, weight, face);
-    return face;
-}
-
 RefPtr<FontFace> Document::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight)
 {
     if(auto face = ruleCache()->getFontFace(family, italic, smallCaps, weight))
         return face;
-    return fetchFont(family, italic, smallCaps, weight);
-}
-
-bool Document::fetchUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data) const
-{
-    if(url.protocolIs("data"))
-        return url.decodeData(mimeType, textEncoding, data);
-    if(m_client == nullptr)
-        return false;
-    return m_client->loadUrl(url.value(), mimeType, textEncoding, data);
+    return resourceLoader()->loadFont(family, italic, smallCaps, weight);
 }
 
 RefPtr<TextResource> Document::fetchTextResource(const std::string_view& url)
@@ -439,7 +414,7 @@ RefPtr<ResourceType> Document::fetchResource(const std::string_view& url)
     std::string mimeType;
     std::string textEncoding;
     std::vector<char> data;
-    if(!fetchUrl(completeUrl, mimeType, textEncoding, data))
+    if(!resourceLoader()->loadUrl(completeUrl, mimeType, textEncoding, data))
         return nullptr;
     auto resource = ResourceType::create(mimeType, textEncoding, std::move(data));
     m_resourceCache.emplace(completeUrl.value(), resource);

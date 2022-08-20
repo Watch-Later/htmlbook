@@ -76,17 +76,17 @@ public:
     PageUnit unit{PageUnit::Pixels};
 };
 
-class HTMLBOOK_API BookClient {
+class HTMLBOOK_API ResourceClient {
 public:
     /**
-     * @brief BookClient
+     * @brief ResourceClient
      */
-    BookClient() = default;
+    ResourceClient() = default;
 
     /**
-     * @brief ~BookClient
+     * @brief ~ResourceClient
      */
-    virtual ~BookClient() = default;
+    virtual ~ResourceClient() = default;
 
     /**
      * @brief loadUrl
@@ -136,18 +136,6 @@ public:
      * @return
      */
     const PageSize& pageSize() const;
-
-    /**
-     * @brief setClient
-     * @param client
-     */
-    void setClient(BookClient* client);
-
-    /**
-     * @brief client
-     * @return
-     */
-    BookClient* client() const;
 
     /**
      * @brief setTitle
@@ -304,6 +292,18 @@ public:
      * @return
      */
     Document* document() const;
+
+    /**
+     * @brief setResourceClient
+     * @param client
+     */
+    static void setResourceClient(ResourceClient* client);
+
+    /**
+     * @brief resourceClient
+     * @return
+     */
+    static ResourceClient* resourceClient();
 
     /**
      * @brief addFontFile

@@ -76,9 +76,9 @@ private:
     LineBox* m_back{nullptr};
 };
 
-class TextBox : public Box {
+class InlineTextBox : public Box {
 public:
-    TextBox(Node* node, RefPtr<BoxStyle> style);
+    InlineTextBox(Node* node, RefPtr<BoxStyle> style);
 
     LineBoxList* lines() const final { return &m_lines; }
     const std::string& text() const { return m_text; }

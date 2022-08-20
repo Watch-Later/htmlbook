@@ -186,6 +186,26 @@ private:
 
 FontCache* fontCache();
 
+class ResourceClient;
+class Url;
+
+class ResourceLoader {
+public:
+    bool loadUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data) const;
+    RefPtr<FontFace> loadFont(const std::string& family, bool italic, bool smallCaps, int weight) const;
+
+    void setClient(ResourceClient* client) { m_client = client; }
+    ResourceClient* client() const { return m_client; }
+
+    friend ResourceLoader* resourceLoader();
+
+private:
+    ResourceLoader() = default;
+    ResourceClient* m_client{nullptr};
+};
+
+ResourceLoader* resourceLoader();
+
 } // namespace htmlbook
 
 #endif // RESOURCE_H
