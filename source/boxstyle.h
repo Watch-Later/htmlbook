@@ -559,6 +559,7 @@ public:
     RefPtr<CSSValue> get(CSSPropertyID id) const;
     void set(CSSPropertyID id, RefPtr<CSSValue> value);
     void remove(CSSPropertyID id);
+    bool has(CSSPropertyID id) const { return get(id); }
 
     float emFontSize() const;
     float exFontSize() const;

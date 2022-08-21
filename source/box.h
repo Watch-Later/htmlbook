@@ -18,9 +18,16 @@ class Box {
 public:
     Box(Node* node, RefPtr<BoxStyle> style);
 
-    virtual ~Box() = default;
+    virtual ~Box();
     virtual BoxList* children() const { return nullptr; }
     virtual LineBoxList* lines() const { return nullptr; }
+    virtual void beginBuildingChildern() {}
+    virtual void finishBuildingChildern() {}
+    virtual void addBox(Box* box, Box* nextBox = nullptr);
+    void removeBox(Box* box);
+
+    Box* firstBox() const;
+    Box* lastBox() const;
 
     Node* node() const { return m_node; }
     const RefPtr<BoxStyle>& style() const { return m_style; }
@@ -45,17 +52,75 @@ public:
     BoxList() = default;
     ~BoxList();
 
-    Box* front() const { return m_front; }
-    Box* back() const { return m_back; }
+    Box* firstBox() const { return m_firstBox; }
+    Box* lastBox() const { return m_lastBox; }
 
-    void add(Box* box);
-    void remove(Box* box);
+    void insert(Box* parent, Box* box, Box* nextBox);
+    void append(Box* parent, Box* box);
+    void remove(Box* parent, Box* box);
     void clear();
-    bool empty() const { return !m_front; }
+    bool empty() const { return !m_firstBox; }
 
 private:
-    Box* m_front{nullptr};
-    Box* m_back{nullptr};
+    Box* m_firstBox{nullptr};
+    Box* m_lastBox{nullptr};
+};
+
+class FlowLineBox;
+
+class LineBox {
+public:
+    LineBox(Box* box);
+    virtual ~LineBox();
+
+    Box* box() const { return m_box; }
+    FlowLineBox* parentLine() const { return m_parentLine; }
+    LineBox* nextOnLine() const { return m_nextOnLine; }
+    LineBox* prevOnLine() const { return m_prevOnLine; }
+    LineBox* nextOnBox() const { return m_nextOnBox; }
+    LineBox* prevOnBox() const { return m_prevOnBox; }
+
+    void setParentLine(FlowLineBox* line) { m_parentLine = line; }
+    void setNextOnLine(LineBox* line) { m_nextOnLine = line; }
+    void setPrevOnLine(LineBox* line) { m_prevOnLine = line; }
+    void setNextOnBox(LineBox* line) { m_nextOnBox = line; }
+    void setPrevOnBox(LineBox* line) { m_prevOnBox = line; }
+
+private:
+    Box* m_box;
+    FlowLineBox* m_parentLine{nullptr};
+    LineBox* m_nextOnLine{nullptr};
+    LineBox* m_prevOnLine{nullptr};
+    LineBox* m_nextOnBox{nullptr};
+    LineBox* m_prevOnBox{nullptr};
+};
+
+class TextLineBox : public LineBox {
+public:
+    TextLineBox(Box* box, int begin, int end);
+
+    int begin() const { return m_begin; }
+    int end() const { return m_end; }
+
+private:
+    int m_begin;
+    int m_end;
+};
+
+class FlowLineBox : public LineBox {
+public:
+    FlowLineBox(Box* box, int begin, int end);
+    virtual ~FlowLineBox();
+
+    LineBox* firstLine() const { return m_firstLine; }
+    LineBox* lastLine() const { return m_lastLine; }
+
+    void addLine(LineBox* line);
+    void removeLine(LineBox* line);
+
+private:
+    LineBox* m_firstLine{nullptr};
+    LineBox* m_lastLine{nullptr};
 };
 
 class LineBoxList {
@@ -63,17 +128,17 @@ public:
     LineBoxList() = default;
     ~LineBoxList();
 
-    LineBox* front() const { return m_front; }
-    LineBox* back() const { return m_back; }
+    LineBox* firstLine() const { return m_firstLine; }
+    LineBox* lastLine() const { return m_lastLine; }
 
-    void add(LineBox* line);
-    void remove(LineBox* line);
+    void add(Box* box, LineBox* line);
+    void remove(Box* box, LineBox* line);
     void clear();
-    bool empty() const { return !m_front; }
+    bool empty() const { return !m_firstLine; }
 
 private:
-    LineBox* m_front{nullptr};
-    LineBox* m_back{nullptr};
+    LineBox* m_firstLine{nullptr};
+    LineBox* m_lastLine{nullptr};
 };
 
 class InlineTextBox : public Box {

@@ -3,6 +3,7 @@
 #include "htmlelement.h"
 #include "cssparser.h"
 #include "resource.h"
+#include "box.h"
 
 namespace htmlbook {
 
@@ -15,7 +16,7 @@ Node::~Node()
 {
     if(m_parentNode)
         m_parentNode->removeChild(this);
-    assert(m_box == nullptr);
+    delete m_box;
 }
 
 void Node::reparent(ContainerNode* newParent)
@@ -27,6 +28,15 @@ void Node::reparent(ContainerNode* newParent)
 
 TextNode::TextNode(Document* document, std::string data)
     : Node(document), m_data(std::move(data))
+{
+}
+
+Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
+{
+    return nullptr;
+}
+
+void TextNode::build(Box* parent)
 {
 }
 
@@ -121,6 +131,17 @@ void ContainerNode::reparentChildren(ContainerNode* newParent)
 {
     while(auto child = firstChild()) {
         child->reparent(newParent);
+    }
+}
+
+void ContainerNode::build(Box* parent)
+{
+    if(parent->children() == nullptr)
+        return;
+    auto child = m_firstChild;
+    while(child) {
+        child->build(parent);
+        child = child->nextSibling();
     }
 }
 
@@ -305,6 +326,15 @@ Element* Element::nextElement() const
     return nullptr;
 }
 
+Box* Element::createBox(const RefPtr<BoxStyle>& style)
+{
+    return nullptr;
+}
+
+void Element::build(Box* parent)
+{
+}
+
 void Element::serialize(std::ostream& o) const
 {
     o << '<';
@@ -400,6 +430,15 @@ RefPtr<ImageResource> Document::fetchImageResource(const std::string_view& url)
 RefPtr<FontResource> Document::fetchFontResource(const std::string_view& url)
 {
     return fetchResource<FontResource>(url);
+}
+
+Box* Document::createBox(const RefPtr<BoxStyle> &style)
+{
+    return nullptr;
+}
+
+void Document::build(Box* parent)
+{
 }
 
 template<typename ResourceType>

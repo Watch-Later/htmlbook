@@ -12,6 +12,7 @@ namespace htmlbook {
 class ContainerNode;
 class Document;
 class Box;
+class BoxStyle;
 
 class Node {
 public:
@@ -32,13 +33,16 @@ public:
     ContainerNode* parentNode() const { return m_parentNode; }
     Node* nextSibling() const { return m_nextSibling; }
     Node* previousSibling() const { return m_previousSibling; }
-    Box* box() const { return m_box; }
 
     void setParentNode(ContainerNode* parentNode) { m_parentNode = parentNode; }
     void setNextSibling(Node* nextSibling) { m_nextSibling = nextSibling; }
     void setPreviousSibling(Node* previousSibling) { m_previousSibling = previousSibling; }
-    void setBox(Box* box) { m_box = box; }
 
+    void setBox(Box* box) { m_box = box; }
+    Box* box() const { return m_box; }
+
+    virtual Box* createBox(const RefPtr<BoxStyle>& style) = 0;
+    virtual void build(Box* parent) = 0;
     virtual void serialize(std::ostream& o) const = 0;
 
 private:
@@ -60,6 +64,8 @@ public:
     void appendData(const std::string& data) { m_data += data; }
     void clearData() { m_data.clear(); }
 
+    Box* createBox(const RefPtr<BoxStyle>& style) final;
+    void build(Box* parent) final;
     void serialize(std::ostream& o) const final;
 
 private:
@@ -92,6 +98,7 @@ public:
     void removeChild(Node* child);
     void reparentChildren(ContainerNode* newParent);
 
+    void build(Box* parent) override;
     void serialize(std::ostream& o) const override;
 
 private:
@@ -163,6 +170,8 @@ public:
     Element* previousElement() const;
     Element* nextElement() const;
 
+    Box* createBox(const RefPtr<BoxStyle>& style) override;
+    void build(Box* parent) override;
     void serialize(std::ostream& o) const override;
 
 private:
@@ -225,6 +234,9 @@ public:
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
     RefPtr<ImageResource> fetchImageResource(const std::string_view& url);
     RefPtr<FontResource> fetchFontResource(const std::string_view& url);
+
+    Box* createBox(const RefPtr<BoxStyle>& style) override;
+    void build(Box* parent) override;
 
 private:
     template<typename ResourceType>
