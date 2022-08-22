@@ -25,6 +25,20 @@ void Box::removeBox(Box* box)
         children()->remove(this, box);
 }
 
+Box* Box::firstBox() const
+{
+    if(children())
+        return children()->firstBox();
+    return nullptr;
+}
+
+Box* Box::lastBox() const
+{
+    if(children())
+        return children()->lastBox();
+    return nullptr;
+}
+
 BoxList::~BoxList()
 {
     auto box = m_firstBox;

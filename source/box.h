@@ -24,7 +24,7 @@ public:
     virtual void beginBuildingChildern() {}
     virtual void finishBuildingChildern() {}
     virtual void addBox(Box* box, Box* nextBox = nullptr);
-    void removeBox(Box* box);
+    virtual void removeBox(Box* box);
 
     Box* firstBox() const;
     Box* lastBox() const;
@@ -67,11 +67,12 @@ private:
 };
 
 class FlowLineBox;
+class RootLineBox;
 
 class LineBox {
 public:
     LineBox(Box* box);
-    virtual ~LineBox();
+    virtual ~LineBox() = default;
 
     Box* box() const { return m_box; }
     FlowLineBox* parentLine() const { return m_parentLine; }
@@ -85,6 +86,8 @@ public:
     void setPrevOnLine(LineBox* line) { m_prevOnLine = line; }
     void setNextOnBox(LineBox* line) { m_nextOnBox = line; }
     void setPrevOnBox(LineBox* line) { m_prevOnBox = line; }
+
+    RootLineBox* rootLine() const;
 
 private:
     Box* m_box;
@@ -109,7 +112,7 @@ private:
 
 class FlowLineBox : public LineBox {
 public:
-    FlowLineBox(Box* box, int begin, int end);
+    FlowLineBox(Box* box);
     virtual ~FlowLineBox();
 
     LineBox* firstLine() const { return m_firstLine; }
@@ -162,7 +165,6 @@ public:
     ~BoxModel() override;
 
     BoxLayer* layer() const { return m_layer; }
-    void setLayer(BoxLayer* layer) { m_layer = layer; }
 
 private:
     BoxLayer* m_layer;
@@ -199,7 +201,6 @@ public:
     BoxList* children() const final { return &m_children; }
     LineBoxList* lines() const final { return &m_lines; }
     const RefPtr<BoxStyle>& firstLineStyle() const { return m_firstLineStyle; }
-    void setFirstLineStyle(RefPtr<BoxStyle> style);
 
 private:
     mutable BoxList m_children;
@@ -229,6 +230,9 @@ class ImageBox : public ReplacedBox {
 public:
     ImageBox(Node* node, RefPtr<BoxStyle> style);
 
+    const RefPtr<Image>& image() const { return m_image; }
+    const std::string& alternativeText() const { return m_alternativeText; }
+
     void setImage(RefPtr<Image> image);
     void setAlternativeText(std::string text) { m_alternativeText = std::move(text); }
 
@@ -244,7 +248,6 @@ public:
     ListItemBox(Node* node, RefPtr<BoxStyle> style);
     ~ListItemBox();
 
-    void setListMarker(ListMarkerBox* listMarker) { m_listMarker = listMarker; }
     ListMarkerBox* listMarker() const { return m_listMarker; }
 
 private:
@@ -258,6 +261,9 @@ public:
     ListItemBox* listItem() const { return m_listItem; }
     const RefPtr<Image>& image() const { return m_image; }
     const std::string& text() const { return m_text; }
+
+    void setImage(RefPtr<Image> image);
+    void setText(std::string text) { m_text = std::move(text); }
 
 private:
     ListItemBox* m_listItem;
@@ -277,10 +283,10 @@ public:
     TableSectionBox* foot() const { return m_foot; }
 
 private:
-    BlockBox* m_caption;
-    TableSectionBox* m_head;
-    TableSectionBox* m_body;
-    TableSectionBox* m_foot;
+    BlockBox* m_caption{nullptr};
+    TableSectionBox* m_head{nullptr};
+    TableSectionBox* m_body{nullptr};
+    TableSectionBox* m_foot{nullptr};
 };
 
 class TableCellBox final : public BlockBox {
