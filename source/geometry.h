@@ -4,7 +4,7 @@ namespace htmlbook {
 
 class Point {
 public:
-	Point() = default;
+    Point() = default;
     Point(int x, int y) : x(x), y(y) {}
 
 public:
@@ -14,7 +14,7 @@ public:
 
 class Size {
 public:
-	Size() = default;
+    Size() = default;
     Size(int width, int height) : w(width), h(height) {}
 
 public:
@@ -74,7 +74,7 @@ float rad(float degrees);
 
 class Transform {
 public:
-	Transform() = default;
+    Transform() = default;
     Transform(float a, float b, float c, float d, float e, float f) : a(a), b(b), c(c), d(d), e(e), f(f) {}
 
     Transform inverted() const;
@@ -121,15 +121,15 @@ public:
 
     Path() = default;
 
-	void moveTo(float x, float y);
-	void lineTo(float x, float y);
-	void quadTo(float x1, float y1, float x2, float y2);
-	void cubicTo(float x1, float y1, float x2, float y2);
-	void close();
+    void moveTo(float x, float y);
+    void lineTo(float x, float y);
+    void quadTo(float x1, float y1, float x2, float y2);
+    void cubicTo(float x1, float y1, float x2, float y2);
+    void close();
 
-	void translate(float x, float y);
-	void scale(float x, float y);
-	void transform(const Transform& transform);
+    void translate(float x, float y);
+    void scale(float x, float y);
+    void transform(const Transform& transform);
 
     const CommandList& commands() const { return m_commands; }
     const PointList& points() const { return m_points; }

@@ -142,20 +142,6 @@ void BoxList::remove(Box* parent, Box* box)
     box->setNextBox(nullptr);
 }
 
-void BoxList::clear()
-{
-    auto box = m_firstBox;
-    m_firstBox = m_lastBox = nullptr;
-    while(box) {
-        auto nextBox = box->nextBox();
-        box->setParentBox(nullptr);
-        box->setPrevBox(nullptr);
-        box->setNextBox(nullptr);
-        delete box;
-        box = nextBox;
-    }
-}
-
 LineBox::LineBox(Box* box)
     : m_box(box)
 {
@@ -271,19 +257,6 @@ void LineBoxList::remove(Box* box, LineBox* line)
 
     line->setPrevOnBox(nullptr);
     line->setNextOnBox(nullptr);
-}
-
-void LineBoxList::clear()
-{
-    auto line = m_firstLine;
-    m_firstLine = m_lastLine = nullptr;
-    while(line) {
-        auto nextLine = line->nextOnBox();
-        line->setPrevOnBox(nullptr);
-        line->setNextOnBox(nullptr);
-        delete line;
-        line = nextLine;
-    }
 }
 
 } // namespace htmlbook

@@ -64,7 +64,6 @@ public:
     void insert(Box* parent, Box* box, Box* nextBox);
     void append(Box* parent, Box* box);
     void remove(Box* parent, Box* box);
-    void clear();
     bool empty() const { return !m_firstBox; }
 
 private:
@@ -155,7 +154,6 @@ public:
 
     void add(Box* box, LineBox* line);
     void remove(Box* box, LineBox* line);
-    void clear();
     bool empty() const { return !m_firstLine; }
 
 private:
@@ -184,6 +182,7 @@ public:
     ~BoxModel() override;
 
     BoxLayer* layer() const { return m_layer; }
+    void setLayer(BoxLayer* layer) { m_layer = layer; }
 
 private:
     BoxLayer* m_layer;
@@ -268,6 +267,7 @@ public:
     ~ListItemBox();
 
     ListMarkerBox* listMarker() const { return m_listMarker; }
+    void setListMarker(ListMarkerBox* marker) { m_listMarker = marker; }
 
 private:
     ListMarkerBox* m_listMarker{nullptr};
