@@ -26,8 +26,14 @@ public:
     virtual void addBox(Box* box, Box* nextBox = nullptr);
     virtual void removeBox(Box* box);
 
+    void addLine(LineBox* line);
+    void removeLine(LineBox* line);
+
     Box* firstBox() const;
     Box* lastBox() const;
+
+    LineBox* firstLine() const;
+    LineBox* lastLine() const;
 
     Node* node() const { return m_node; }
     const RefPtr<BoxStyle>& style() const { return m_style; }
@@ -72,7 +78,7 @@ class RootLineBox;
 class LineBox {
 public:
     LineBox(Box* box);
-    virtual ~LineBox() = default;
+    virtual ~LineBox();
 
     Box* box() const { return m_box; }
     FlowLineBox* parentLine() const { return m_parentLine; }
@@ -108,6 +114,19 @@ public:
 private:
     int m_begin;
     int m_end;
+};
+
+class BoxFrame;
+
+class PlaceHolderLineBox : public LineBox {
+public:
+    PlaceHolderLineBox(Box* box, BoxFrame* placeHolderBox);
+    ~PlaceHolderLineBox() override;
+
+    BoxFrame* placeHolderBox() const { return m_placeHolderBox; }
+
+private:
+    BoxFrame* m_placeHolderBox;
 };
 
 class FlowLineBox : public LineBox {

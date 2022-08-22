@@ -15,27 +15,53 @@ Box::~Box()
 
 void Box::addBox(Box* box, Box* nextBox)
 {
-    if(children())
-        children()->insert(this, box, nextBox);
+    if(auto children = this->children())
+        children->insert(this, box, nextBox);
 }
 
 void Box::removeBox(Box* box)
 {
-    if(children())
-        children()->remove(this, box);
+    if(auto children = this->children())
+        children->remove(this, box);
+}
+
+void Box::addLine(LineBox* line)
+{
+    if(auto lines = this->lines())
+        lines->add(this, line);
+}
+
+void Box::removeLine(LineBox* line)
+{
+    if(auto lines = this->lines())
+        lines->remove(this, line);
 }
 
 Box* Box::firstBox() const
 {
-    if(children())
-        return children()->firstBox();
+    if(auto children = this->children())
+        return children->firstBox();
     return nullptr;
 }
 
 Box* Box::lastBox() const
 {
-    if(children())
-        return children()->lastBox();
+    if(auto children = this->children())
+        return children->lastBox();
+    return nullptr;
+}
+
+LineBox* Box::firstLine() const
+{
+    if(auto lines = this->lines())
+        return lines->firstLine();
+    return nullptr;
+}
+
+LineBox* Box::lastLine() const
+{
+    if(auto lines = this->lines())
+        return lines->lastLine();
     return nullptr;
 }
 
@@ -128,6 +154,28 @@ void BoxList::clear()
         delete box;
         box = nextBox;
     }
+}
+
+LineBox::LineBox(Box* box)
+    : m_box(box)
+{
+    box->addLine(this);
+}
+
+LineBox::~LineBox()
+{
+    m_box->removeLine(this);
+}
+
+PlaceHolderLineBox::PlaceHolderLineBox(Box* box, BoxFrame* placeHolderBox)
+    : LineBox(box), m_placeHolderBox(placeHolderBox)
+{
+    placeHolderBox->setLine(this);
+}
+
+PlaceHolderLineBox::~PlaceHolderLineBox()
+{
+    m_placeHolderBox->setLine(nullptr);
 }
 
 FlowLineBox::~FlowLineBox()
