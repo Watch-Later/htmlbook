@@ -29,9 +29,7 @@ void Node::reparent(ContainerNode* newParent)
 
 RefPtr<BoxStyle> Node::style() const
 {
-    if(m_box == nullptr)
-        return nullptr;
-    return m_box->style();
+    return m_box ? m_box->style() : nullptr;
 }
 
 TextNode::TextNode(Document* document, std::string data)
@@ -349,7 +347,7 @@ void Element::build(Box* parent)
         return;
     parent->addBox(box);
     box->beginBuildingChildern();
-    ContainerNode::build(parent);
+    ContainerNode::build(box);
     box->finishBuildingChildern();
 }
 
