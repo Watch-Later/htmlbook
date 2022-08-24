@@ -3,6 +3,7 @@
 #include "htmlelement.h"
 #include "cssparser.h"
 #include "resource.h"
+#include "boxstyle.h"
 #include "box.h"
 
 namespace htmlbook {
@@ -24,6 +25,13 @@ void Node::reparent(ContainerNode* newParent)
     if(m_parentNode)
         m_parentNode->removeChild(this);
     newParent->appendChild(this);
+}
+
+RefPtr<BoxStyle> Node::style() const
+{
+    if(m_box == nullptr)
+        return nullptr;
+    return m_box->style();
 }
 
 TextNode::TextNode(Document* document, std::string data)
@@ -351,15 +359,14 @@ void Element::serialize(std::ostream& o) const
     if(firstChild() == nullptr) {
         o << '/';
         o << '>';
-        return;
+    } else {
+        o << '>';
+        ContainerNode::serialize(o);
+        o << '<';
+        o << '/';
+        o << m_tagName;
+        o << '>';
     }
-
-    o << '>';
-    ContainerNode::serialize(o);
-    o << '<';
-    o << '/';
-    o << m_tagName;
-    o << '>';
 }
 
 Document::Document(const PageSize& pageSize)
@@ -432,7 +439,29 @@ RefPtr<FontResource> Document::fetchFontResource(const std::string_view& url)
     return fetchResource<FontResource>(url);
 }
 
-Box* Document::createBox(const RefPtr<BoxStyle> &style)
+Element* Document::rootElement() const
+{
+    return nullptr;
+}
+
+RefPtr<BoxStyle> Document::rootStyle() const
+{
+    if(auto element = rootElement())
+        return element->style();
+    return style();
+}
+
+float Document::viewportWidth() const
+{
+    return 0.0;
+}
+
+float Document::viewportHeight() const
+{
+    return 0.0;
+}
+
+Box* Document::createBox(const RefPtr<BoxStyle>& style)
 {
     return nullptr;
 }

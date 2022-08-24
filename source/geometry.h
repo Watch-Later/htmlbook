@@ -1,3 +1,6 @@
+#ifndef GEOMETRY_H
+#define GEOMETRY_H
+
 #include <vector>
 
 namespace htmlbook {
@@ -26,9 +29,6 @@ class Rect {
 public:
     Rect() = default;
     Rect(int x, int y, int w, int h) : x(x), y(y), w(w), h(h) {}
-
-    Point location() const { return Point{x, y}; }
-    Size size() const { return Size{w, h}; }
 
 public:
     int x{0};
@@ -140,3 +140,5 @@ private:
 };
 
 } // htmlbook
+
+#endif // GEOMETRY_H

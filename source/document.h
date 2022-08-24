@@ -40,6 +40,7 @@ public:
 
     void setBox(Box* box) { m_box = box; }
     Box* box() const { return m_box; }
+    RefPtr<BoxStyle> style() const;
 
     virtual Box* createBox(const RefPtr<BoxStyle>& style) = 0;
     virtual void build(Box* parent) = 0;
@@ -234,6 +235,12 @@ public:
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
     RefPtr<ImageResource> fetchImageResource(const std::string_view& url);
     RefPtr<FontResource> fetchFontResource(const std::string_view& url);
+
+    Element* rootElement() const;
+    RefPtr<BoxStyle> rootStyle() const;
+
+    float viewportWidth() const;
+    float viewportHeight() const;
 
     Box* createBox(const RefPtr<BoxStyle>& style) override;
     void build(Box* parent) override;

@@ -561,10 +561,9 @@ public:
     void remove(CSSPropertyID id);
     bool has(CSSPropertyID id) const { return get(id); }
 
-    float emFontSize() const;
     float exFontSize() const;
-    float remFontSize() const;
     float chFontSize() const;
+    float remFontSize() const;
 
     float viewportWidth() const;
     float viewportHeight() const;

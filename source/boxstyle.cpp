@@ -1230,17 +1230,7 @@ void BoxStyle::remove(CSSPropertyID id)
     m_properties.erase(id);
 }
 
-float BoxStyle::emFontSize() const
-{
-    return 0.0;
-}
-
 float BoxStyle::exFontSize() const
-{
-    return 0.0;
-}
-
-float BoxStyle::remFontSize() const
 {
     return 0.0;
 }
@@ -1250,24 +1240,31 @@ float BoxStyle::chFontSize() const
     return 0.0;
 }
 
+float BoxStyle::remFontSize() const
+{
+    if(auto style = m_document->rootStyle())
+        return style->fontSize();
+    return 12.0;
+}
+
 float BoxStyle::viewportWidth() const
 {
-    return 0.0;
+    return m_document->viewportWidth();
 }
 
 float BoxStyle::viewportHeight() const
 {
-    return 0.0;
+    return m_document->viewportHeight();
 }
 
 float BoxStyle::viewportMin() const
 {
-    return 0.0;
+    return std::min(m_document->viewportWidth(), m_document->viewportHeight());
 }
 
 float BoxStyle::viewportMax() const
 {
-    return 0.0;
+    return std::max(m_document->viewportWidth(), m_document->viewportHeight());
 }
 
 float BoxStyle::convertLengthValue(const CSSValue& value) const
@@ -1290,7 +1287,7 @@ float BoxStyle::convertLengthValue(const CSSValue& value) const
     case CSSLengthValue::Unit::Picas:
         return length->value() * dpi / 6.0;
     case CSSLengthValue::Unit::Ems:
-        return length->value() * emFontSize();
+        return length->value() * fontSize();
     case CSSLengthValue::Unit::Exs:
         return length->value() * exFontSize();
     case CSSLengthValue::Unit::Rems:
