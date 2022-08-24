@@ -2,6 +2,7 @@
 #include "cssparser.h"
 #include "document.h"
 #include "resource.h"
+#include "boxstyle.h"
 
 namespace htmlbook {
 
@@ -1006,9 +1007,21 @@ std::unique_ptr<CSSRuleCache> CSSRuleCache::create(Document* document)
     return std::unique_ptr<CSSRuleCache>(new CSSRuleCache(document));
 }
 
+RefPtr<BoxStyle> CSSRuleCache::styleForElement(Element* element, const BoxStyle& parentStyle) const
+{
+    return nullptr;
+}
+
+RefPtr<BoxStyle> CSSRuleCache::pseudoStyleForElement(Element* element, PseudoType pseudoType, const BoxStyle& parentStyle) const
+{
+    return nullptr;
+}
+
 RefPtr<FontFace> CSSRuleCache::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight) const
 {
-    return m_fontFaceCache.get(family, italic, smallCaps, weight);
+    if(auto face = m_fontFaceCache.get(family, italic, smallCaps, weight))
+        return face;
+    return resourceLoader()->loadFont(family, italic, smallCaps, weight);
 }
 
 static const CSSRuleList& userAgentRules() {

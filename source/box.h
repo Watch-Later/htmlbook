@@ -16,7 +16,7 @@ class BoxStyle;
 
 class Box {
 public:
-    Box(Node* node, RefPtr<BoxStyle> style);
+    Box(Node* node, const RefPtr<BoxStyle>& style);
 
     virtual ~Box();
     virtual BoxList* children() const { return nullptr; }
@@ -163,7 +163,7 @@ private:
 
 class InlineTextBox : public Box {
 public:
-    InlineTextBox(Node* node, RefPtr<BoxStyle> style);
+    InlineTextBox(Node* node, const RefPtr<BoxStyle>& style);
 
     LineBoxList* lines() const final { return &m_lines; }
     const std::string& text() const { return m_text; }
@@ -178,7 +178,7 @@ class BoxLayer;
 
 class BoxModel : public Box {
 public:
-    BoxModel(Node* node, RefPtr<BoxStyle> style);
+    BoxModel(Node* node, const RefPtr<BoxStyle>& style);
     ~BoxModel() override;
 
     BoxLayer* layer() const { return m_layer; }
@@ -190,7 +190,7 @@ private:
 
 class BoxFrame : public BoxModel {
 public:
-    BoxFrame(Node* node, RefPtr<BoxStyle> style);
+    BoxFrame(Node* node, const RefPtr<BoxStyle>& style);
     ~BoxFrame() override;
 
     LineBox* line() const { return m_line; }
@@ -202,7 +202,7 @@ private:
 
 class InlineBox : public BoxModel {
 public:
-    InlineBox(Node* node, RefPtr<BoxStyle> style);
+    InlineBox(Node* node, const RefPtr<BoxStyle>& style);
 
     BoxList* children() const final { return &m_children; }
     LineBoxList* lines() const final { return &m_lines; }
@@ -214,7 +214,7 @@ private:
 
 class BlockBox : public BoxFrame {
 public:
-    BlockBox(Node* node, RefPtr<BoxStyle> style);
+    BlockBox(Node* node, const RefPtr<BoxStyle>& style);
 
     BoxList* children() const final { return &m_children; }
     LineBoxList* lines() const final { return &m_lines; }
@@ -228,12 +228,12 @@ private:
 
 class FlexibleBox : public BlockBox {
 public:
-    FlexibleBox(Node* node, RefPtr<BoxStyle> style);
+    FlexibleBox(Node* node, const RefPtr<BoxStyle>& style);
 };
 
 class ReplacedBox : public BoxFrame {
 public:
-    ReplacedBox(Node* node, RefPtr<BoxStyle> style);
+    ReplacedBox(Node* node, const RefPtr<BoxStyle>& style);
 
     const SizeF& intrinsicSize() const { return m_intrinsicSize; }
     void setIntrinsicSize(const SizeF& size) { m_intrinsicSize = size; }
@@ -246,7 +246,7 @@ class Image;
 
 class ImageBox : public ReplacedBox {
 public:
-    ImageBox(Node* node, RefPtr<BoxStyle> style);
+    ImageBox(Node* node, const RefPtr<BoxStyle>& style);
 
     const RefPtr<Image>& image() const { return m_image; }
     const std::string& alternativeText() const { return m_alternativeText; }
@@ -263,7 +263,7 @@ class ListMarkerBox;
 
 class ListItemBox final : public BlockBox {
 public:
-    ListItemBox(Node* node, RefPtr<BoxStyle> style);
+    ListItemBox(Node* node, const RefPtr<BoxStyle>& style);
     ~ListItemBox();
 
     ListMarkerBox* listMarker() const { return m_listMarker; }
@@ -275,7 +275,7 @@ private:
 
 class ListMarkerBox final : public BoxFrame {
 public:
-    ListMarkerBox(ListItemBox* item, RefPtr<BoxStyle> style);
+    ListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style);
 
     ListItemBox* listItem() const { return m_listItem; }
     const RefPtr<Image>& image() const { return m_image; }
@@ -294,7 +294,7 @@ class TableSectionBox;
 
 class TableBox final : public BlockBox {
 public:
-    TableBox(Node* node, RefPtr<BoxStyle> style);
+    TableBox(Node* node, const RefPtr<BoxStyle>& style);
 
     BlockBox* caption() const { return m_caption; }
     TableSectionBox* head() const { return m_head; }
@@ -310,7 +310,7 @@ private:
 
 class TableCellBox final : public BlockBox {
 public:
-    TableCellBox(Node* node, RefPtr<BoxStyle> style);
+    TableCellBox(Node* node, const RefPtr<BoxStyle>& style);
 
     int colSpan() const { return m_colSpan; }
     int rowSpan() const { return m_rowSpan; }
@@ -325,7 +325,7 @@ private:
 
 class TableColumnBox : public Box {
 public:
-    TableColumnBox(Node* node, RefPtr<BoxStyle> style);
+    TableColumnBox(Node* node, const RefPtr<BoxStyle>& style);
 
     int span() const { return m_span; }
     void setSpan(int span) { m_span = span; }
@@ -336,7 +336,7 @@ private:
 
 class TableColumnGroupBox final : public TableColumnBox {
 public:
-    TableColumnGroupBox(Node* node, RefPtr<BoxStyle> style);
+    TableColumnGroupBox(Node* node, const RefPtr<BoxStyle>& style);
 
     BoxList* children() const final { return &m_children; }
 
@@ -346,7 +346,7 @@ private:
 
 class TableRowBox final : public BoxFrame {
 public:
-    TableRowBox(Node* node, RefPtr<BoxStyle> style);
+    TableRowBox(Node* node, const RefPtr<BoxStyle>& style);
 
     BoxList* children() const final { return &m_children; }
 
@@ -356,7 +356,7 @@ private:
 
 class TableSectionBox final : public BoxFrame {
 public:
-    TableSectionBox(Node* node, RefPtr<BoxStyle> style);
+    TableSectionBox(Node* node, const RefPtr<BoxStyle>& style);
 
     BoxList* children() const final { return &m_children; }
 

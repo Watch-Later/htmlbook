@@ -87,7 +87,7 @@ void ContainerNode::appendChild(Node* child)
     m_lastChild = child;
 }
 
-void ContainerNode::insertBefore(Node* child, Node* nextChild)
+void ContainerNode::insertChild(Node* child, Node* nextChild)
 {
     if(nextChild == nullptr) {
         appendChild(child);
@@ -341,6 +341,16 @@ Box* Element::createBox(const RefPtr<BoxStyle>& style)
 
 void Element::build(Box* parent)
 {
+    auto style = document()->styleForElement(this, *parent->style());
+    if(style == nullptr || style->display() == Display::None)
+        return;
+    auto box = createBox(style);
+    if(box == nullptr)
+        return;
+    parent->addBox(box);
+    box->beginBuildingChildern();
+    ContainerNode::build(parent);
+    box->finishBuildingChildern();
 }
 
 void Element::serialize(std::ostream& o) const
@@ -417,11 +427,19 @@ const CSSRuleCache* Document::ruleCache()
     return m_ruleCache.get();
 }
 
+RefPtr<BoxStyle> Document::styleForElement(Element* element, const BoxStyle& parentStyle)
+{
+    return ruleCache()->styleForElement(element, parentStyle);
+}
+
+RefPtr<BoxStyle> Document::pseudoStyleForElement(Element* element, PseudoType pseudoType, const BoxStyle& parentStyle)
+{
+    return ruleCache()->styleForElement(element, parentStyle);
+}
+
 RefPtr<FontFace> Document::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight)
 {
-    if(auto face = ruleCache()->getFontFace(family, italic, smallCaps, weight))
-        return face;
-    return resourceLoader()->loadFont(family, italic, smallCaps, weight);
+    return ruleCache()->getFontFace(family, italic, smallCaps, weight);
 }
 
 RefPtr<TextResource> Document::fetchTextResource(const std::string_view& url)

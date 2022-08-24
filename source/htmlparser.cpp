@@ -738,7 +738,7 @@ void HTMLParser::insert(const InsertionLocation& location)
     if(location.nextChild == nullptr)
         location.parent->appendChild(location.child);
     else
-        location.parent->insertBefore(location.child, location.nextChild);
+        location.parent->insertChild(location.child, location.nextChild);
 
     if(!location.child->isContainerNode())
         return;

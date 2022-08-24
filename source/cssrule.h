@@ -1230,21 +1230,14 @@ private:
     FontFaceDataMap m_fontFaceDataMap;
 };
 
+class BoxStyle;
+
 class CSSRuleCache {
 public:
     static std::unique_ptr<CSSRuleCache> create(Document* document);
 
-    const CSSRuleDataList* idRules(const GlobalString& name) const { return m_idRules.get(name); }
-    const CSSRuleDataList* tagRules(const GlobalString& name) const { return m_tagRules.get(name); }
-    const CSSRuleDataList* classRules(const GlobalString& name) const { return m_classRules.get(name); }
-
-    const CSSRuleDataList* universeRules() const { return &m_universeRules; }
-    const CSSRuleDataList* beforeElementRules() const { return &m_beforeElementRules; }
-    const CSSRuleDataList* afterElementRules() const { return &m_afterElementRules; }
-    const CSSRuleDataList* markerElementRules() const { return &m_markerElementRules; }
-    const CSSRuleDataList* firstLetterElementRules() const { return &m_firstLetterRules; }
-    const CSSRuleDataList* firstLineElementRules() const { return &m_firstLineRules; }
-    const CSSPageRuleDataList* pageRules() const { return &m_pageRules; }
+    RefPtr<BoxStyle> styleForElement(Element* element, const BoxStyle& parentStyle) const;
+    RefPtr<BoxStyle> pseudoStyleForElement(Element* element, PseudoType pseudoType, const BoxStyle& parentStyle) const;
     RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight) const;
 
 private:

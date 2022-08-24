@@ -95,7 +95,7 @@ public:
     void setLastChild(Node* child) { m_lastChild = child; }
 
     void appendChild(Node* child);
-    void insertBefore(Node* child, Node* nextChild);
+    void insertChild(Node* child, Node* nextChild);
     void removeChild(Node* child);
     void reparentChildren(ContainerNode* newParent);
 
@@ -231,7 +231,10 @@ public:
     const CSSRuleList& userRules() const { return m_userRules; }
     const CSSRuleCache* ruleCache();
 
+    RefPtr<BoxStyle> styleForElement(Element* element, const BoxStyle& parentStyle);
+    RefPtr<BoxStyle> pseudoStyleForElement(Element* element, PseudoType pseudoType, const BoxStyle& parentStyle);
     RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight);
+
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
     RefPtr<ImageResource> fetchImageResource(const std::string_view& url);
     RefPtr<FontResource> fetchFontResource(const std::string_view& url);
