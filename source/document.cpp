@@ -484,6 +484,16 @@ Box* Document::createBox(const RefPtr<BoxStyle>& style)
 
 void Document::build(Box* parent)
 {
+    assert(parent == nullptr);
+    auto style = BoxStyle::create(this, PseudoType::None);
+    style->set(CSSPropertyID::Display, CSSIdentValue::create(CSSValueID::Block));
+    style->set(CSSPropertyID::Position, CSSIdentValue::create(CSSValueID::Absolute));
+    style->set(CSSPropertyID::ZIndex, CSSIntegerValue::create(0));
+
+    auto box = createBox(style);
+    box->beginBuildingChildern();
+    ContainerNode::build(box);
+    box->finishBuildingChildern();
 }
 
 template<typename ResourceType>

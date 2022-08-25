@@ -5,6 +5,8 @@
 #include "geometry.h"
 
 #include <string>
+#include <memory>
+#include <list>
 
 namespace htmlbook {
 
@@ -174,18 +176,34 @@ private:
     mutable LineBoxList m_lines;
 };
 
-class BoxLayer;
+class BoxModel;
+
+class BoxLayer {
+public:
+    static std::unique_ptr<BoxLayer> create(BoxModel* box, BoxLayer* parent);
+
+    int index() const { return m_index; }
+    BoxModel* box() const { return m_box; }
+    BoxLayer* parent() const { return m_parent; }
+
+private:
+    BoxLayer(BoxModel* box, BoxLayer* parent);
+    int m_index;
+    BoxModel* m_box;
+    BoxLayer* m_parent;
+    std::list<BoxLayer*> m_children;
+};
 
 class BoxModel : public Box {
 public:
     BoxModel(Node* node, const RefPtr<BoxStyle>& style);
     ~BoxModel() override;
 
-    BoxLayer* layer() const { return m_layer; }
-    void setLayer(BoxLayer* layer) { m_layer = layer; }
+    BoxLayer* layer() const { return m_layer.get(); }
+    void setLayer(std::unique_ptr<BoxLayer> layer) { m_layer = std::move(layer); }
 
 private:
-    BoxLayer* m_layer;
+    std::unique_ptr<BoxLayer> m_layer;
 };
 
 class BoxFrame : public BoxModel {

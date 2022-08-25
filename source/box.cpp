@@ -259,4 +259,20 @@ void LineBoxList::remove(Box* box, LineBox* line)
     line->setNextOnBox(nullptr);
 }
 
+std::unique_ptr<BoxLayer> BoxLayer::create(BoxModel *box, BoxLayer *parent)
+{
+    return std::unique_ptr<BoxLayer>(new BoxLayer(box, parent));
+}
+
+BoxLayer::BoxLayer(BoxModel* box, BoxLayer* parent)
+    : m_box(box), m_parent(parent)
+{
+    m_index = box->style()->zIndex().value_or(0);
+    if(parent == nullptr)
+        return;
+    auto compare = [](auto a, auto b) { return a->index() < b->index(); };
+    auto it = std::upper_bound(parent->m_children.begin(), parent->m_children.end(), this, compare);
+    parent->m_children.insert(it, this);
+}
+
 } // namespace htmlbook
