@@ -2,6 +2,7 @@
 #define GEOMETRY_H
 
 #include <vector>
+#include <cstdint>
 
 namespace htmlbook {
 

@@ -1,9 +1,15 @@
 #include "box.h"
 #include "document.h"
-#include "boxstyle.h"
 #include "resource.h"
 
 namespace htmlbook {
+
+Box::Box(Node* node, const RefPtr<BoxStyle>& style)
+    : m_node(node), m_style(style)
+{
+    if(node)
+        node->setBox(this);
+}
 
 Box::~Box()
 {
@@ -259,7 +265,7 @@ void LineBoxList::remove(Box* box, LineBox* line)
     line->setNextOnBox(nullptr);
 }
 
-std::unique_ptr<BoxLayer> BoxLayer::create(BoxModel *box, BoxLayer *parent)
+std::unique_ptr<BoxLayer> BoxLayer::create(BoxModel* box, BoxLayer* parent)
 {
     return std::unique_ptr<BoxLayer>(new BoxLayer(box, parent));
 }

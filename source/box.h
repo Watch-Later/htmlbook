@@ -1,12 +1,8 @@
 #ifndef BOX_H
 #define BOX_H
 
-#include "pointer.h"
 #include "geometry.h"
-
-#include <string>
-#include <memory>
-#include <list>
+#include "boxstyle.h"
 
 namespace htmlbook {
 
@@ -14,7 +10,6 @@ class Node;
 class LineBox;
 class LineBoxList;
 class BoxList;
-class BoxStyle;
 
 class Box {
 public:
@@ -119,10 +114,10 @@ private:
 
 class BoxFrame;
 
-class PlaceHolderLineBox : public LineBox {
+class PlaceHolderLineBox final : public LineBox {
 public:
     PlaceHolderLineBox(Box* box, BoxFrame* placeHolderBox);
-    ~PlaceHolderLineBox() override;
+    ~PlaceHolderLineBox() final;
 
     BoxFrame* placeHolderBox() const { return m_placeHolderBox; }
 
@@ -133,7 +128,7 @@ private:
 class FlowLineBox : public LineBox {
 public:
     FlowLineBox(Box* box);
-    virtual ~FlowLineBox();
+    ~FlowLineBox() override;
 
     LineBox* firstLine() const { return m_firstLine; }
     LineBox* lastLine() const { return m_lastLine; }
@@ -144,6 +139,11 @@ public:
 private:
     LineBox* m_firstLine{nullptr};
     LineBox* m_lastLine{nullptr};
+};
+
+class RootLineBox final : public FlowLineBox {
+public:
+    RootLineBox(Box* box);
 };
 
 class LineBoxList {
@@ -199,8 +199,8 @@ public:
     BoxModel(Node* node, const RefPtr<BoxStyle>& style);
     ~BoxModel() override;
 
-    BoxLayer* layer() const { return m_layer.get(); }
     void setLayer(std::unique_ptr<BoxLayer> layer) { m_layer = std::move(layer); }
+    BoxLayer* layer() const { return m_layer.get(); }
 
 private:
     std::unique_ptr<BoxLayer> m_layer;
@@ -282,7 +282,7 @@ class ListMarkerBox;
 class ListItemBox final : public BlockBox {
 public:
     ListItemBox(Node* node, const RefPtr<BoxStyle>& style);
-    ~ListItemBox();
+    ~ListItemBox() final;
 
     ListMarkerBox* listMarker() const { return m_listMarker; }
     void setListMarker(ListMarkerBox* marker) { m_listMarker = marker; }
@@ -308,22 +308,23 @@ private:
     std::string m_text;
 };
 
+class TableCaptionBox;
 class TableSectionBox;
 
 class TableBox final : public BlockBox {
 public:
     TableBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    BlockBox* caption() const { return m_caption; }
     TableSectionBox* head() const { return m_head; }
-    TableSectionBox* body() const { return m_body; }
     TableSectionBox* foot() const { return m_foot; }
+    const std::vector<TableCaptionBox*>& captions() const { return m_captions; }
+    const std::vector<TableSectionBox*>& sections() const { return m_sections; }
 
 private:
-    BlockBox* m_caption{nullptr};
     TableSectionBox* m_head{nullptr};
-    TableSectionBox* m_body{nullptr};
     TableSectionBox* m_foot{nullptr};
+    std::vector<TableSectionBox*> m_sections;
+    std::vector<TableCaptionBox*> m_captions;
 };
 
 class TableCellBox final : public BlockBox {
@@ -370,6 +371,13 @@ public:
 
 private:
     mutable BoxList m_children;
+};
+
+class TableCaptionBox final : public BlockBox {
+public:
+    TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    CaptionSide captionSide() const;
 };
 
 class TableSectionBox final : public BoxFrame {

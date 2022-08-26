@@ -81,8 +81,8 @@ struct is<TextNode> {
 class ContainerNode : public Node {
 public:
     ContainerNode(Document* document);
+    ~ContainerNode() override;
 
-    virtual ~ContainerNode();
     virtual void beginParsingChildern() {}
     virtual void finishParsingChildern() {}
 
