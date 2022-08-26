@@ -3,6 +3,8 @@
 
 #include "pointer.h"
 
+#include <string>
+
 namespace htmlbook {
 
 class Box;
@@ -15,6 +17,7 @@ public:
     virtual ~LineBox();
 
     virtual bool isTextLineBox() const { return false; }
+    virtual bool isEllipsisLineBox() const { return false; }
     virtual bool isPlaceHolderLineBox() const { return false; }
     virtual bool isFlowLineBox() const { return false; }
     virtual bool isRootLineBox() const { return false; }
@@ -77,6 +80,23 @@ private:
 template<>
 struct is<TextLineBox> {
     static bool check(const LineBox& line) { return line.isTextLineBox(); }
+};
+
+class EllipsisLineBox final : public LineBox {
+public:
+    EllipsisLineBox(Box* box, std::string text);
+
+    bool isEllipsisLineBox() const final { return true; }
+
+    const std::string& text() const { return m_text; }
+
+private:
+    std::string m_text;
+};
+
+template<>
+struct is<EllipsisLineBox> {
+    static bool check(const LineBox& line) { return line.isEllipsisLineBox(); }
 };
 
 class BoxFrame;
