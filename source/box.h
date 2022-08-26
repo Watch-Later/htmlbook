@@ -3,19 +3,36 @@
 
 #include "geometry.h"
 #include "boxstyle.h"
+#include "linebox.h"
 
 namespace htmlbook {
 
 class Node;
-class LineBox;
-class LineBoxList;
 class BoxList;
 
 class Box {
 public:
     Box(Node* node, const RefPtr<BoxStyle>& style);
-
     virtual ~Box();
+
+    virtual bool isTextBox() const { return false; }
+    virtual bool isBoxModel() const { return false; }
+    virtual bool isBoxFrame() const { return false; }
+    virtual bool isInlineBox() const { return false; }
+    virtual bool isBlockBox() const { return false; }
+    virtual bool isFlexibleBox() const { return false; }
+    virtual bool isReplacedBox() const { return false; }
+    virtual bool isImageBox() const { return false; }
+    virtual bool isListItemBox() const { return false; }
+    virtual bool isListMarkerBox() const { return false; }
+    virtual bool isTableBox() const { return false; }
+    virtual bool isTableCellBox() const { return false; }
+    virtual bool isTableColumnBox() const { return false; }
+    virtual bool isTableColumnGroupBox() const { return false; }
+    virtual bool isTableRowBox() const { return false; }
+    virtual bool isTableCaptionBox() const { return false; }
+    virtual bool isTableSectionBox() const { return false; }
+
     virtual BoxList* children() const { return nullptr; }
     virtual LineBoxList* lines() const { return nullptr; }
     virtual void beginBuildingChildern() {}
@@ -68,104 +85,11 @@ private:
     Box* m_lastBox{nullptr};
 };
 
-class FlowLineBox;
-class RootLineBox;
-
-class LineBox {
+class TextBox : public Box {
 public:
-    LineBox(Box* box);
-    virtual ~LineBox();
+    TextBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    Box* box() const { return m_box; }
-    FlowLineBox* parentLine() const { return m_parentLine; }
-    LineBox* nextOnLine() const { return m_nextOnLine; }
-    LineBox* prevOnLine() const { return m_prevOnLine; }
-    LineBox* nextOnBox() const { return m_nextOnBox; }
-    LineBox* prevOnBox() const { return m_prevOnBox; }
-
-    void setParentLine(FlowLineBox* line) { m_parentLine = line; }
-    void setNextOnLine(LineBox* line) { m_nextOnLine = line; }
-    void setPrevOnLine(LineBox* line) { m_prevOnLine = line; }
-    void setNextOnBox(LineBox* line) { m_nextOnBox = line; }
-    void setPrevOnBox(LineBox* line) { m_prevOnBox = line; }
-
-    RootLineBox* rootLine() const;
-
-private:
-    Box* m_box;
-    FlowLineBox* m_parentLine{nullptr};
-    LineBox* m_nextOnLine{nullptr};
-    LineBox* m_prevOnLine{nullptr};
-    LineBox* m_nextOnBox{nullptr};
-    LineBox* m_prevOnBox{nullptr};
-};
-
-class TextLineBox : public LineBox {
-public:
-    TextLineBox(Box* box, int begin, int end);
-
-    int begin() const { return m_begin; }
-    int end() const { return m_end; }
-
-private:
-    int m_begin;
-    int m_end;
-};
-
-class BoxFrame;
-
-class PlaceHolderLineBox final : public LineBox {
-public:
-    PlaceHolderLineBox(Box* box, BoxFrame* placeHolderBox);
-    ~PlaceHolderLineBox() final;
-
-    BoxFrame* placeHolderBox() const { return m_placeHolderBox; }
-
-private:
-    BoxFrame* m_placeHolderBox;
-};
-
-class FlowLineBox : public LineBox {
-public:
-    FlowLineBox(Box* box);
-    ~FlowLineBox() override;
-
-    LineBox* firstLine() const { return m_firstLine; }
-    LineBox* lastLine() const { return m_lastLine; }
-
-    void addLine(LineBox* line);
-    void removeLine(LineBox* line);
-
-private:
-    LineBox* m_firstLine{nullptr};
-    LineBox* m_lastLine{nullptr};
-};
-
-class RootLineBox final : public FlowLineBox {
-public:
-    RootLineBox(Box* box);
-};
-
-class LineBoxList {
-public:
-    LineBoxList() = default;
-    ~LineBoxList();
-
-    LineBox* firstLine() const { return m_firstLine; }
-    LineBox* lastLine() const { return m_lastLine; }
-
-    void add(Box* box, LineBox* line);
-    void remove(Box* box, LineBox* line);
-    bool empty() const { return !m_firstLine; }
-
-private:
-    LineBox* m_firstLine{nullptr};
-    LineBox* m_lastLine{nullptr};
-};
-
-class InlineTextBox : public Box {
-public:
-    InlineTextBox(Node* node, const RefPtr<BoxStyle>& style);
+    bool isTextBox() const final { return true; }
 
     LineBoxList* lines() const final { return &m_lines; }
     const std::string& text() const { return m_text; }
@@ -176,7 +100,320 @@ private:
     mutable LineBoxList m_lines;
 };
 
-class BoxModel;
+template<>
+struct is<TextBox> {
+    static bool check(const Box& box) { return box.isTextBox(); }
+};
+
+class BoxLayer;
+
+class BoxModel : public Box {
+public:
+    BoxModel(Node* node, const RefPtr<BoxStyle>& style);
+    ~BoxModel() override;
+
+    bool isBoxModel() const final { return false; }
+
+    void setLayer(std::unique_ptr<BoxLayer> layer) { m_layer = std::move(layer); }
+    BoxLayer* layer() const { return m_layer.get(); }
+
+private:
+    std::unique_ptr<BoxLayer> m_layer;
+};
+
+template<>
+struct is<BoxModel> {
+    static bool check(const Box& box) { return box.isBoxModel(); }
+};
+
+class BoxFrame : public BoxModel {
+public:
+    BoxFrame(Node* node, const RefPtr<BoxStyle>& style);
+    ~BoxFrame() override;
+
+    bool isBoxFrame() const final { return true; }
+
+    LineBox* line() const { return m_line; }
+    void setLine(LineBox* line) { m_line = line; }
+
+private:
+    LineBox* m_line{nullptr};
+};
+
+template<>
+struct is<BoxFrame> {
+    static bool check(const Box& box) { return box.isBoxFrame(); }
+};
+
+class InlineBox : public BoxModel {
+public:
+    InlineBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isInlineBox() const final { return true; }
+
+    BoxList* children() const final { return &m_children; }
+    LineBoxList* lines() const final { return &m_lines; }
+
+private:
+    mutable BoxList m_children;
+    mutable LineBoxList m_lines;
+};
+
+template<>
+struct is<InlineBox> {
+    static bool check(const Box& box) { return box.isInlineBox(); }
+};
+
+class BlockBox : public BoxFrame {
+public:
+    BlockBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isBlockBox() const final { return true; }
+
+    BoxList* children() const final { return &m_children; }
+    LineBoxList* lines() const final { return &m_lines; }
+    const RefPtr<BoxStyle>& firstLineStyle() const { return m_firstLineStyle; }
+
+private:
+    mutable BoxList m_children;
+    mutable LineBoxList m_lines;
+    RefPtr<BoxStyle> m_firstLineStyle;
+};
+
+template<>
+struct is<BlockBox> {
+    static bool check(const Box& box) { return box.isBlockBox(); }
+};
+
+class FlexibleBox : public BlockBox {
+public:
+    FlexibleBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isFlexibleBox() const final { return true; }
+};
+
+template<>
+struct is<FlexibleBox> {
+    static bool check(const Box& box) { return box.isFlexibleBox(); }
+};
+
+class ReplacedBox : public BoxFrame {
+public:
+    ReplacedBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isReplacedBox() const final { return true; }
+
+    const SizeF& intrinsicSize() const { return m_intrinsicSize; }
+    void setIntrinsicSize(const SizeF& size) { m_intrinsicSize = size; }
+
+private:
+    SizeF m_intrinsicSize;
+};
+
+template<>
+struct is<ReplacedBox> {
+    static bool check(const Box& box) { return box.isReplacedBox(); }
+};
+
+class Image;
+
+class ImageBox : public ReplacedBox {
+public:
+    ImageBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isImageBox() const final { return true; }
+
+    const RefPtr<Image>& image() const { return m_image; }
+    const std::string& alternativeText() const { return m_alternativeText; }
+
+    void setImage(RefPtr<Image> image);
+    void setAlternativeText(std::string text) { m_alternativeText = std::move(text); }
+
+private:
+    RefPtr<Image> m_image;
+    std::string m_alternativeText;
+};
+
+template<>
+struct is<ImageBox> {
+    static bool check(const Box& box) { return box.isImageBox(); }
+};
+
+class ListMarkerBox;
+
+class ListItemBox final : public BlockBox {
+public:
+    ListItemBox(Node* node, const RefPtr<BoxStyle>& style);
+    ~ListItemBox() final;
+
+    bool isListItemBox() const final { return true; }
+
+    ListMarkerBox* listMarker() const { return m_listMarker; }
+    void setListMarker(ListMarkerBox* marker) { m_listMarker = marker; }
+
+private:
+    ListMarkerBox* m_listMarker{nullptr};
+};
+
+template<>
+struct is<ListItemBox> {
+    static bool check(const Box& box) { return box.isListItemBox(); }
+};
+
+class ListMarkerBox final : public BoxFrame {
+public:
+    ListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style);
+
+    bool isListMarkerBox() const final { return true; }
+
+    ListItemBox* listItem() const { return m_listItem; }
+    const RefPtr<Image>& image() const { return m_image; }
+    const std::string& text() const { return m_text; }
+
+    void setImage(RefPtr<Image> image);
+    void setText(std::string text) { m_text = std::move(text); }
+
+private:
+    ListItemBox* m_listItem;
+    RefPtr<Image> m_image;
+    std::string m_text;
+};
+
+template<>
+struct is<ListMarkerBox> {
+    static bool check(const Box& box) { return box.isListMarkerBox(); }
+};
+
+class TableCaptionBox;
+class TableSectionBox;
+
+class TableBox final : public BlockBox {
+public:
+    TableBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isTableBox() const final { return true; }
+
+    TableSectionBox* head() const { return m_head; }
+    TableSectionBox* foot() const { return m_foot; }
+    const std::vector<TableCaptionBox*>& captions() const { return m_captions; }
+    const std::vector<TableSectionBox*>& sections() const { return m_sections; }
+
+private:
+    TableSectionBox* m_head{nullptr};
+    TableSectionBox* m_foot{nullptr};
+    std::vector<TableSectionBox*> m_sections;
+    std::vector<TableCaptionBox*> m_captions;
+};
+
+template<>
+struct is<TableBox> {
+    static bool check(const Box& box) { return box.isTableBox(); }
+};
+
+class TableCellBox final : public BlockBox {
+public:
+    TableCellBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isTableCellBox() const final { return true; }
+
+    int colSpan() const { return m_colSpan; }
+    int rowSpan() const { return m_rowSpan; }
+
+    void setColSpan(int span) { m_colSpan = span; }
+    void setRowSpan(int span) { m_rowSpan = span; }
+
+private:
+    int m_colSpan{1};
+    int m_rowSpan{1};
+};
+
+template<>
+struct is<TableCellBox> {
+    static bool check(const Box& box) { return box.isTableCellBox(); }
+};
+
+class TableColumnBox : public Box {
+public:
+    TableColumnBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isTableColumnBox() const final { return true; }
+
+    int span() const { return m_span; }
+    void setSpan(int span) { m_span = span; }
+
+private:
+    int m_span{1};
+};
+
+template<>
+struct is<TableColumnBox> {
+    static bool check(const Box& box) { return box.isTableColumnBox(); }
+};
+
+class TableColumnGroupBox final : public TableColumnBox {
+public:
+    TableColumnGroupBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isTableColumnGroupBox() const final { return true; }
+
+    BoxList* children() const final { return &m_children; }
+
+private:
+    mutable BoxList m_children;
+};
+
+template<>
+struct is<TableColumnGroupBox> {
+    static bool check(const Box& box) { return box.isTableColumnGroupBox(); }
+};
+
+class TableRowBox final : public BoxFrame {
+public:
+    TableRowBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isTableRowBox() const final { return true; }
+
+    BoxList* children() const final { return &m_children; }
+
+private:
+    mutable BoxList m_children;
+};
+
+template<>
+struct is<TableRowBox> {
+    static bool check(const Box& box) { return box.isTableRowBox(); }
+};
+
+class TableCaptionBox final : public BlockBox {
+public:
+    TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isTableCaptionBox() const final { return true; }
+
+    CaptionSide captionSide() const;
+};
+
+template<>
+struct is<TableCaptionBox> {
+    static bool check(const Box& box) { return box.isTableCaptionBox(); }
+};
+
+class TableSectionBox final : public BoxFrame {
+public:
+    TableSectionBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isTableSectionBox() const final { return true; }
+
+    BoxList* children() const final { return &m_children; }
+
+private:
+    mutable BoxList m_children;
+};
+
+template<>
+struct is<TableSectionBox> {
+    static bool check(const Box& box) { return box.isTableSectionBox(); }
+};
 
 class BoxLayer {
 public:
@@ -192,202 +429,6 @@ private:
     BoxModel* m_box;
     BoxLayer* m_parent;
     std::list<BoxLayer*> m_children;
-};
-
-class BoxModel : public Box {
-public:
-    BoxModel(Node* node, const RefPtr<BoxStyle>& style);
-    ~BoxModel() override;
-
-    void setLayer(std::unique_ptr<BoxLayer> layer) { m_layer = std::move(layer); }
-    BoxLayer* layer() const { return m_layer.get(); }
-
-private:
-    std::unique_ptr<BoxLayer> m_layer;
-};
-
-class BoxFrame : public BoxModel {
-public:
-    BoxFrame(Node* node, const RefPtr<BoxStyle>& style);
-    ~BoxFrame() override;
-
-    LineBox* line() const { return m_line; }
-    void setLine(LineBox* line) { m_line = line; }
-
-private:
-    LineBox* m_line{nullptr};
-};
-
-class InlineBox : public BoxModel {
-public:
-    InlineBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    BoxList* children() const final { return &m_children; }
-    LineBoxList* lines() const final { return &m_lines; }
-
-private:
-    mutable BoxList m_children;
-    mutable LineBoxList m_lines;
-};
-
-class BlockBox : public BoxFrame {
-public:
-    BlockBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    BoxList* children() const final { return &m_children; }
-    LineBoxList* lines() const final { return &m_lines; }
-    const RefPtr<BoxStyle>& firstLineStyle() const { return m_firstLineStyle; }
-
-private:
-    mutable BoxList m_children;
-    mutable LineBoxList m_lines;
-    RefPtr<BoxStyle> m_firstLineStyle;
-};
-
-class FlexibleBox : public BlockBox {
-public:
-    FlexibleBox(Node* node, const RefPtr<BoxStyle>& style);
-};
-
-class ReplacedBox : public BoxFrame {
-public:
-    ReplacedBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    const SizeF& intrinsicSize() const { return m_intrinsicSize; }
-    void setIntrinsicSize(const SizeF& size) { m_intrinsicSize = size; }
-
-private:
-    SizeF m_intrinsicSize;
-};
-
-class Image;
-
-class ImageBox : public ReplacedBox {
-public:
-    ImageBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    const RefPtr<Image>& image() const { return m_image; }
-    const std::string& alternativeText() const { return m_alternativeText; }
-
-    void setImage(RefPtr<Image> image);
-    void setAlternativeText(std::string text) { m_alternativeText = std::move(text); }
-
-private:
-    RefPtr<Image> m_image;
-    std::string m_alternativeText;
-};
-
-class ListMarkerBox;
-
-class ListItemBox final : public BlockBox {
-public:
-    ListItemBox(Node* node, const RefPtr<BoxStyle>& style);
-    ~ListItemBox() final;
-
-    ListMarkerBox* listMarker() const { return m_listMarker; }
-    void setListMarker(ListMarkerBox* marker) { m_listMarker = marker; }
-
-private:
-    ListMarkerBox* m_listMarker{nullptr};
-};
-
-class ListMarkerBox final : public BoxFrame {
-public:
-    ListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style);
-
-    ListItemBox* listItem() const { return m_listItem; }
-    const RefPtr<Image>& image() const { return m_image; }
-    const std::string& text() const { return m_text; }
-
-    void setImage(RefPtr<Image> image);
-    void setText(std::string text) { m_text = std::move(text); }
-
-private:
-    ListItemBox* m_listItem;
-    RefPtr<Image> m_image;
-    std::string m_text;
-};
-
-class TableCaptionBox;
-class TableSectionBox;
-
-class TableBox final : public BlockBox {
-public:
-    TableBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    TableSectionBox* head() const { return m_head; }
-    TableSectionBox* foot() const { return m_foot; }
-    const std::vector<TableCaptionBox*>& captions() const { return m_captions; }
-    const std::vector<TableSectionBox*>& sections() const { return m_sections; }
-
-private:
-    TableSectionBox* m_head{nullptr};
-    TableSectionBox* m_foot{nullptr};
-    std::vector<TableSectionBox*> m_sections;
-    std::vector<TableCaptionBox*> m_captions;
-};
-
-class TableCellBox final : public BlockBox {
-public:
-    TableCellBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    int colSpan() const { return m_colSpan; }
-    int rowSpan() const { return m_rowSpan; }
-
-    void setColSpan(int span) { m_colSpan = span; }
-    void setRowSpan(int span) { m_rowSpan = span; }
-
-private:
-    int m_colSpan{1};
-    int m_rowSpan{1};
-};
-
-class TableColumnBox : public Box {
-public:
-    TableColumnBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    int span() const { return m_span; }
-    void setSpan(int span) { m_span = span; }
-
-private:
-    int m_span{1};
-};
-
-class TableColumnGroupBox final : public TableColumnBox {
-public:
-    TableColumnGroupBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    BoxList* children() const final { return &m_children; }
-
-private:
-    mutable BoxList m_children;
-};
-
-class TableRowBox final : public BoxFrame {
-public:
-    TableRowBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    BoxList* children() const final { return &m_children; }
-
-private:
-    mutable BoxList m_children;
-};
-
-class TableCaptionBox final : public BlockBox {
-public:
-    TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    CaptionSide captionSide() const;
-};
-
-class TableSectionBox final : public BoxFrame {
-public:
-    TableSectionBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    BoxList* children() const final { return &m_children; }
-
-private:
-    mutable BoxList m_children;
 };
 
 } // namespace htmlbook
