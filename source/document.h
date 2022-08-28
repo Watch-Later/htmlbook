@@ -232,7 +232,7 @@ public:
     const CSSRuleCache* ruleCache();
 
     RefPtr<BoxStyle> styleForElement(Element* element, const BoxStyle& parentStyle);
-    RefPtr<BoxStyle> pseudoStyleForElement(Element* element, PseudoType pseudoType, const BoxStyle& parentStyle);
+    RefPtr<BoxStyle> pseudoStyleForElement(Element* element, const BoxStyle& parentStyle, PseudoType pseudoType);
     RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight);
 
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);

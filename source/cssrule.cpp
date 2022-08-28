@@ -1024,37 +1024,33 @@ static const CSSRuleList& userAgentRules() {
 }
 
 CSSRuleCache::CSSRuleCache(Document* document)
-    : m_document(document)
 {
-    addRules(userAgentRules());
-    addRules(document->authorRules());
-    addRules(document->userRules());
+    uint32_t position = 0;
+    addRules(document, position, userAgentRules());
+    addRules(document, position, document->authorRules());
+    addRules(document, position, document->userRules());
 }
 
-void CSSRuleCache::addRules(const CSSRuleList& rules)
+void CSSRuleCache::addRules(Document* document, uint32_t& position, const CSSRuleList& rules)
 {
-    for(auto& rule : rules) {
-        m_ruleCount += 1;
-        switch(rule->type()) {
-        case CSSRule::Type::Style:
-            addStyleRule(to<CSSStyleRule>(*rule));
-            break;
-        case CSSRule::Type::Page:
-            addPageRule(to<CSSPageRule>(*rule));
-            break;
-        case CSSRule::Type::Import:
-            addImportRule(to<CSSImportRule>(*rule));
-            break;
-        case CSSRule::Type::FontFace:
-            addFontFaceRule(to<CSSFontFaceRule>(*rule));
-            break;
-        default:
+    for(const auto& rule : rules) {
+        if(auto styleRule = to<CSSStyleRule>(*rule)) {
+            addStyleRule(document, position, styleRule);
+        } else if(auto pageRule = to<CSSPageRule>(*rule)) {
+            addPageRule(position, pageRule);
+        } else if(auto fontFaceRule = to<CSSFontFaceRule>(*rule)) {
+            addFontFaceRule(document, fontFaceRule);
+        } else if(auto importRule = to<CSSImportRule>(*rule)) {
+            addRules(document, position, importRule->fetch(document));
+        } else {
             assert(false);
         }
+
+        position += 1;
     }
 }
 
-void CSSRuleCache::addStyleRule(const CSSStyleRule* rule)
+void CSSRuleCache::addStyleRule(Document* document, uint32_t position, const CSSStyleRule* rule)
 {
     for(auto& selector : rule->selectors()) {
         uint32_t specificity = 0;
@@ -1078,7 +1074,7 @@ void CSSRuleCache::addStyleRule(const CSSStyleRule* rule)
             }
         }
 
-        CSSRuleData ruleData(rule, selector, specificity, m_ruleCount);
+        CSSRuleData ruleData(rule, selector, specificity, position);
         switch(lastSimpleSelector->matchType()) {
         case CSSSimpleSelector::MatchType::Id:
             m_idRules.add(lastSimpleSelector->name(), ruleData);
@@ -1111,7 +1107,7 @@ void CSSRuleCache::addStyleRule(const CSSStyleRule* rule)
     }
 }
 
-void CSSRuleCache::addPageRule(const CSSPageRule* rule)
+void CSSRuleCache::addPageRule(uint32_t position, const CSSPageRule* rule)
 {
     for(auto& selector : rule->selectors()) {
         uint32_t specificity = 0;
@@ -1133,22 +1129,13 @@ void CSSRuleCache::addPageRule(const CSSPageRule* rule)
             }
         }
 
-        CSSPageRuleData ruleData(rule, selector, specificity, m_ruleCount);
+        CSSPageRuleData ruleData(rule, selector, specificity, position);
         m_pageRules.insert(ruleData);
     }
 }
 
-void CSSRuleCache::addImportRule(const CSSImportRule* rule)
+void CSSRuleCache::addFontFaceRule(Document* document, const CSSFontFaceRule* rule)
 {
-    if(m_document == nullptr)
-        return;
-    addRules(rule->fetch(m_document));
-}
-
-void CSSRuleCache::addFontFaceRule(const CSSFontFaceRule* rule)
-{
-    if(m_document == nullptr)
-        return;
     RefPtr<CSSValue> fontFamily;
     RefPtr<CSSValue> fontStyle;
     RefPtr<CSSValue> fontVariant;
@@ -1249,7 +1236,7 @@ void CSSRuleCache::addFontFaceRule(const CSSFontFaceRule* rule)
             }
         }
 
-        auto fontResource = m_document->fetchFontResource(url->value());
+        auto fontResource = document->fetchFontResource(url->value());
         if(fontResource == nullptr)
             return nullptr;
         return fontResource->face();

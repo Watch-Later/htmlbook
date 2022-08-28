@@ -430,9 +430,9 @@ RefPtr<BoxStyle> Document::styleForElement(Element* element, const BoxStyle& par
     return ruleCache()->styleForElement(element, parentStyle);
 }
 
-RefPtr<BoxStyle> Document::pseudoStyleForElement(Element* element, PseudoType pseudoType, const BoxStyle& parentStyle)
+RefPtr<BoxStyle> Document::pseudoStyleForElement(Element* element, const BoxStyle& parentStyle, PseudoType pseudoType)
 {
-    return ruleCache()->styleForElement(element, parentStyle);
+    return ruleCache()->pseudoStyleForElement(element, parentStyle, pseudoType);
 }
 
 RefPtr<FontFace> Document::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight)

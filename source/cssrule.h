@@ -1260,14 +1260,10 @@ public:
 private:
     CSSRuleCache(Document* document);
 
-    void addRules(const CSSRuleList& rules);
-    void addStyleRule(const CSSStyleRule* rule);
-    void addPageRule(const CSSPageRule* rule);
-    void addImportRule(const CSSImportRule* rule);
-    void addFontFaceRule(const CSSFontFaceRule* rule);
-
-    Document* m_document;
-    uint32_t m_ruleCount{0};
+    void addRules(Document* document, uint32_t& position, const CSSRuleList& rules);
+    void addStyleRule(Document* document, uint32_t position, const CSSStyleRule* rule);
+    void addPageRule(uint32_t position, const CSSPageRule* rule);
+    void addFontFaceRule(Document* document, const CSSFontFaceRule* rule);
 
     CSSRuleDataMap<GlobalString> m_idRules;
     CSSRuleDataMap<GlobalString> m_classRules;
