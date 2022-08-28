@@ -14,8 +14,8 @@ class RootLineBox;
 class LineBox {
 public:
     LineBox(Box* box);
-    virtual ~LineBox();
 
+    virtual ~LineBox();
     virtual bool isTextLineBox() const { return false; }
     virtual bool isEllipsisLineBox() const { return false; }
     virtual bool isPlaceHolderLineBox() const { return false; }

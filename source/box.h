@@ -13,8 +13,8 @@ class BoxList;
 class Box {
 public:
     Box(Node* node, const RefPtr<BoxStyle>& style);
-    virtual ~Box();
 
+    virtual ~Box();
     virtual bool isTextBox() const { return false; }
     virtual bool isBoxModel() const { return false; }
     virtual bool isBoxFrame() const { return false; }

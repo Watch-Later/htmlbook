@@ -631,8 +631,8 @@ std::unique_ptr<CSSPageRule> CSSPageRule::create(CSSPageSelectorList selectors, 
 
 bool CSSRuleData::match(const Element* element, PseudoType pseudoType) const
 {
-    auto it = m_selector.rbegin();
-    auto end = m_selector.rend();
+    auto it = m_selector->rbegin();
+    auto end = m_selector->rend();
     if(it == end)
         return false;
 
@@ -977,20 +977,6 @@ bool CSSRuleData::matchPseudoClassNthLastOfTypeSelector(const Element* element, 
     return selector.matchnth(count);
 }
 
-void CSSRuleDataMap::add(const GlobalString& name, const CSSRuleData& data)
-{
-    auto& rules = m_ruleDataMap[name];
-    rules.push_back(data);
-}
-
-const CSSRuleDataList* CSSRuleDataMap::get(const GlobalString& name) const
-{
-    auto it = m_ruleDataMap.find(name);
-    if(it == m_ruleDataMap.end())
-        return nullptr;
-    return &it->second;
-}
-
 RefPtr<FontFace> CSSFontFaceCache::get(const std::string& family, bool italic, bool smallCaps, int weight) const
 {
     return nullptr;
@@ -1009,12 +995,20 @@ std::unique_ptr<CSSRuleCache> CSSRuleCache::create(Document* document)
 
 RefPtr<BoxStyle> CSSRuleCache::styleForElement(Element* element, const BoxStyle& parentStyle) const
 {
-    return nullptr;
+    CSSStyleBuilder builder(element, parentStyle, PseudoType::None);
+    builder.add(m_idRules.get(element->id()));
+    for(auto& className : element->classNames())
+        builder.add(m_classRules.get(className));
+    builder.add(m_tagRules.get(element->tagName()));
+    builder.add(&m_universeRules);
+    return builder.build();
 }
 
-RefPtr<BoxStyle> CSSRuleCache::pseudoStyleForElement(Element* element, PseudoType pseudoType, const BoxStyle& parentStyle) const
+RefPtr<BoxStyle> CSSRuleCache::pseudoStyleForElement(Element* element, const BoxStyle& parentStyle, PseudoType pseudoType) const
 {
-    return nullptr;
+    CSSStyleBuilder builder(element, parentStyle, pseudoType);
+    builder.add(m_pseudoRules.get(pseudoType));
+    return builder.build();
 }
 
 RefPtr<FontFace> CSSRuleCache::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight) const
@@ -1096,19 +1090,19 @@ void CSSRuleCache::addStyleRule(const CSSStyleRule* rule)
             m_tagRules.add(lastSimpleSelector->name(), ruleData);
             break;
         case CSSSimpleSelector::MatchType::PseudoElementBefore:
-            m_beforeElementRules.push_back(ruleData);
+            m_pseudoRules.add(PseudoType::Before, ruleData);
             break;
         case CSSSimpleSelector::MatchType::PseudoElementAfter:
-            m_afterElementRules.push_back(ruleData);
+            m_pseudoRules.add(PseudoType::After, ruleData);
             break;
         case CSSSimpleSelector::MatchType::PseudoElementMarker:
-            m_markerElementRules.push_back(ruleData);
+            m_pseudoRules.add(PseudoType::Marker, ruleData);
             break;
         case CSSSimpleSelector::MatchType::PseudoElementFirstLetter:
-            m_firstLetterRules.push_back(ruleData);
+            m_pseudoRules.add(PseudoType::FirstLetter, ruleData);
             break;
         case CSSSimpleSelector::MatchType::PseudoElementFirstLine:
-            m_firstLineRules.push_back(ruleData);
+            m_pseudoRules.add(PseudoType::FirstLine, ruleData);
             break;
         default:
             m_universeRules.push_back(ruleData);
@@ -1270,6 +1264,66 @@ void CSSRuleCache::addFontFaceRule(const CSSFontFaceRule* rule)
             m_fontFaceCache.add(family->value(), italic, smallCaps, weight, face);
         }
     }
+}
+
+void CSSStyleBuilder::add(const CSSRuleDataList* rules)
+{
+    if(rules == nullptr)
+        return;
+    for(auto& rule : *rules) {
+        if(!rule.match(m_element, m_pseudoType))
+            continue;
+        m_rules.push_back(rule);
+    }
+}
+
+void CSSStyleBuilder::add(const CSSPropertyList& properties)
+{
+    for(auto& property : properties) {
+        auto it = std::find_if(m_properties.begin(), m_properties.end(), [&](auto& item) { return property.id() == item.id(); });
+        if(it == m_properties.end()) {
+            m_properties.push_back(property);
+            continue;
+        }
+
+        if(it->important() && !property.important())
+            continue;
+        *it = property;
+    }
+}
+
+RefPtr<BoxStyle> CSSStyleBuilder::build()
+{
+    std::sort(m_rules.begin(), m_rules.end());
+    for(auto& rule : m_rules)
+        add(rule.properties());
+    if(m_pseudoType == PseudoType::None) {
+        add(m_element->inlineStyle());
+        add(m_element->presentationAttributeStyle());
+    }
+
+    if(m_properties.empty()) {
+        if(m_pseudoType == PseudoType::None)
+            return BoxStyle::create(m_parentStyle, Display::Inline);
+        return nullptr;
+    }
+
+    auto newStyle = BoxStyle::create(m_element->document(), m_pseudoType);
+    newStyle->inheritFrom(m_parentStyle);
+    for(auto& property : m_properties) {
+        auto id = property.id();
+        auto value = property.value();
+        if(value->isInitialValue()) {
+            newStyle->remove(id);
+            continue;
+        }
+
+        if(value->isInheritValue() && !(value = m_parentStyle.get(id)))
+            continue;
+        newStyle->set(id, std::move(value));
+    }
+
+    return newStyle;
 }
 
 } // namespace htmlbook

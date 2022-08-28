@@ -1115,11 +1115,12 @@ class Element;
 class CSSRuleData {
 public:
     CSSRuleData(const CSSStyleRule* rule, const CSSSelector& selector, uint32_t specificity, uint32_t position)
-        : m_rule(rule), m_selector(selector), m_specificity(specificity), m_position(position)
+        : m_rule(rule), m_selector(&selector), m_specificity(specificity), m_position(position)
     {}
 
     const CSSStyleRule* rule() const { return m_rule; }
-    const CSSSelector& selector() const { return m_selector; }
+    const CSSSelector* selector() const { return m_selector; }
+    const CSSPropertyList& properties() const { return m_rule->properties(); }
     const uint32_t& specificity() const { return m_specificity; }
     const uint32_t& position() const { return m_position; }
     bool match(const Element* element, PseudoType pseudoType) const;
@@ -1169,7 +1170,7 @@ private:
 
 private:
     const CSSStyleRule* m_rule;
-    const CSSSelector& m_selector;
+    const CSSSelector* m_selector;
     uint32_t m_specificity;
     uint32_t m_position;
 };
@@ -1179,33 +1180,49 @@ inline bool operator>(const CSSRuleData& a, const CSSRuleData& b) { return std::
 
 using CSSRuleDataList = std::vector<CSSRuleData>;
 
+template<typename T>
 class CSSRuleDataMap {
 public:
     CSSRuleDataMap() = default;
 
-    void add(const GlobalString& name, const CSSRuleData& data);
-    const CSSRuleDataList* get(const GlobalString& name) const;
+    void add(const T& name, const CSSRuleData& data);
+    const CSSRuleDataList* get(const T& name) const;
 
 private:
-    using RuleDataMap = std::map<GlobalString, CSSRuleDataList>;
-    RuleDataMap m_ruleDataMap;
+    std::map<T, CSSRuleDataList> m_ruleDataMap;
 };
+
+template<typename T>
+void CSSRuleDataMap<T>::add(const T& name, const CSSRuleData& data)
+{
+    auto& rules = m_ruleDataMap[name];
+    rules.push_back(data);
+}
+
+template<typename T>
+const CSSRuleDataList* CSSRuleDataMap<T>::get(const T& name) const
+{
+    auto it = m_ruleDataMap.find(name);
+    if(it == m_ruleDataMap.end())
+        return nullptr;
+    return &it->second;
+}
 
 class CSSPageRuleData {
 public:
     CSSPageRuleData(const CSSPageRule* rule, const CSSPageSelector& selector, uint32_t specificity, uint32_t position)
-        : m_rule(rule), m_selector(selector), m_specificity(specificity), m_position(position)
+        : m_rule(rule), m_selector(&selector), m_specificity(specificity), m_position(position)
     {}
 
     const CSSPageRule* rule() const { return m_rule; }
-    const CSSPageSelector& selector() const { return m_selector; }
+    const CSSPageSelector* selector() const { return m_selector; }
     const uint32_t& specificity() const { return m_specificity; }
     const uint32_t& position() const { return m_position; }
     bool match(const GlobalString& pageName, size_t pageIndex) const;
 
 private:
     const CSSPageRule* m_rule;
-    const CSSPageSelector& m_selector;
+    const CSSPageSelector* m_selector;
     uint32_t m_specificity;
     uint32_t m_position;
 };
@@ -1237,7 +1254,7 @@ public:
     static std::unique_ptr<CSSRuleCache> create(Document* document);
 
     RefPtr<BoxStyle> styleForElement(Element* element, const BoxStyle& parentStyle) const;
-    RefPtr<BoxStyle> pseudoStyleForElement(Element* element, PseudoType pseudoType, const BoxStyle& parentStyle) const;
+    RefPtr<BoxStyle> pseudoStyleForElement(Element* element, const BoxStyle& parentStyle, PseudoType pseudoType) const;
     RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight) const;
 
 private:
@@ -1252,18 +1269,33 @@ private:
     Document* m_document;
     uint32_t m_ruleCount{0};
 
-    CSSRuleDataMap m_idRules;
-    CSSRuleDataMap m_classRules;
-    CSSRuleDataMap m_tagRules;
+    CSSRuleDataMap<GlobalString> m_idRules;
+    CSSRuleDataMap<GlobalString> m_classRules;
+    CSSRuleDataMap<GlobalString> m_tagRules;
+    CSSRuleDataMap<PseudoType> m_pseudoRules;
 
     CSSRuleDataList m_universeRules;
-    CSSRuleDataList m_beforeElementRules;
-    CSSRuleDataList m_afterElementRules;
-    CSSRuleDataList m_markerElementRules;
-    CSSRuleDataList m_firstLetterRules;
-    CSSRuleDataList m_firstLineRules;
     CSSPageRuleDataList m_pageRules;
     CSSFontFaceCache m_fontFaceCache;
+};
+
+class CSSStyleBuilder {
+public:
+    CSSStyleBuilder(Element* element, const BoxStyle& parentStyle, PseudoType pseudoType)
+        : m_pseudoType(pseudoType), m_element(element), m_parentStyle(parentStyle)
+    {}
+
+    void add(const CSSRuleDataList* rules);
+    void add(const CSSPropertyList& properties);
+
+    RefPtr<BoxStyle> build();
+
+private:
+    PseudoType m_pseudoType;
+    Element* m_element;
+    const BoxStyle& m_parentStyle;
+    CSSPropertyList m_properties;
+    CSSRuleDataList m_rules;
 };
 
 } // namespace htmlbook
