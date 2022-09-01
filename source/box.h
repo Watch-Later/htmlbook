@@ -114,11 +114,56 @@ public:
 
     bool isBoxModel() const final { return false; }
 
-    void setLayer(std::unique_ptr<BoxLayer> layer) { m_layer = std::move(layer); }
     BoxLayer* layer() const { return m_layer.get(); }
+    void setLayer(std::unique_ptr<BoxLayer> layer) { m_layer = std::move(layer); }
+
+    float marginTop() const { return m_marginTop; }
+    float marginBottom() const { return m_marginBottom; }
+    float marginLeft() const { return m_marginLeft; }
+    float marginRight() const { return m_marginRight; }
+
+    float borderTop() const { return m_borderTop; }
+    float borderBottom() const { return m_borderBottom; }
+    float borderLeft() const { return m_borderLeft; }
+    float borderRight() const { return m_borderRight; }
+
+    float paddingTop() const { return m_paddingTop; }
+    float paddingBottom() const { return m_paddingBottom; }
+    float paddingLeft() const { return m_paddingLeft; }
+    float paddingRight() const { return m_paddingRight; }
+
+    void setMarginTop(float value) { m_marginTop = value; }
+    void setMarginBottom(float value) { m_marginBottom = value; }
+    void setMarginLeft(float value) { m_marginLeft = value; }
+    void setMarginRight(float value) { m_marginRight = value; }
+
+    void setBorderTop(float value) { m_borderTop = value; }
+    void setBorderBottom(float value) { m_borderBottom = value; }
+    void setBorderLeft(float value) { m_borderLeft = value; }
+    void setBorderRight(float value) { m_borderRight = value; }
+
+    void setPaddingTop(float value) { m_paddingTop = value; }
+    void setPaddingBottom(float value) { m_paddingBottom = value; }
+    void setPaddingLeft(float value) { m_paddingLeft = value; }
+    void setPaddingRight(float value) { m_paddingRight = value; }
 
 private:
     std::unique_ptr<BoxLayer> m_layer;
+
+    float m_marginTop{0};
+    float m_marginBottom{0};
+    float m_marginLeft{0};
+    float m_marginRight{0};
+
+    float m_borderTop{0};
+    float m_borderBottom{0};
+    float m_borderLeft{0};
+    float m_borderRight{0};
+
+    float m_paddingTop{0};
+    float m_paddingBottom{0};
+    float m_paddingLeft{0};
+    float m_paddingRight{0};
 };
 
 template<>
@@ -136,8 +181,25 @@ public:
     LineBox* line() const { return m_line; }
     void setLine(LineBox* line) { m_line = line; }
 
+    float x() const { return m_x; }
+    float y() const { return m_y; }
+    float width() const { return m_width; }
+    float height() const { return m_height; }
+
+    void setX(float x) { m_x = x; }
+    void setY(float y) { m_y = y; }
+    void setWidth(float width) { m_width = width; }
+    void setHeight(float height) { m_height = height; }
+
+    void move(float dx, float dy) { m_x += dx; m_y += dy; }
+
 private:
     LineBox* m_line{nullptr};
+
+    float m_x{0};
+    float m_y{0};
+    float m_width{0};
+    float m_height{0};
 };
 
 template<>

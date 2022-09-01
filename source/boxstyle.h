@@ -461,14 +461,15 @@ public:
     Length maxWidth() const;
     Length maxHeight() const;
 
-    Length paddingLeft() const;
-    Length paddingRight() const;
-    Length paddingTop() const;
-    Length paddingBottom() const;
     Length marginLeft() const;
     Length marginRight() const;
     Length marginTop() const;
     Length marginBottom() const;
+
+    Length paddingLeft() const;
+    Length paddingRight() const;
+    Length paddingTop() const;
+    Length paddingBottom() const;
 
     LineStyle borderLeftStyle() const;
     LineStyle borderRightStyle() const;

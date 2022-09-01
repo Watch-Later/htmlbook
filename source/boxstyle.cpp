@@ -144,38 +144,6 @@ Length BoxStyle::maxHeight() const
     return convertLengthOrPercentOrNone(*value);
 }
 
-Length BoxStyle::paddingLeft() const
-{
-    auto value = get(CSSPropertyID::PaddingLeft);
-    if(value == nullptr)
-        return Length::ZeroFixed;
-    return convertLengthOrPercent(*value);
-}
-
-Length BoxStyle::paddingRight() const
-{
-    auto value = get(CSSPropertyID::PaddingRight);
-    if(value == nullptr)
-        return Length::ZeroFixed;
-    return convertLengthOrPercent(*value);
-}
-
-Length BoxStyle::paddingTop() const
-{
-    auto value = get(CSSPropertyID::PaddingTop);
-    if(value == nullptr)
-        return Length::ZeroFixed;
-    return convertLengthOrPercent(*value);
-}
-
-Length BoxStyle::paddingBottom() const
-{
-    auto value = get(CSSPropertyID::PaddingBottom);
-    if(value == nullptr)
-        return Length::ZeroFixed;
-    return convertLengthOrPercent(*value);
-}
-
 Length BoxStyle::marginLeft() const
 {
     auto value = get(CSSPropertyID::MarginLeft);
@@ -206,6 +174,38 @@ Length BoxStyle::marginBottom() const
     if(value == nullptr)
         return Length::ZeroFixed;
     return convertLengthOrPercentOrAuto(*value);
+}
+
+Length BoxStyle::paddingLeft() const
+{
+    auto value = get(CSSPropertyID::PaddingLeft);
+    if(value == nullptr)
+        return Length::ZeroFixed;
+    return convertLengthOrPercent(*value);
+}
+
+Length BoxStyle::paddingRight() const
+{
+    auto value = get(CSSPropertyID::PaddingRight);
+    if(value == nullptr)
+        return Length::ZeroFixed;
+    return convertLengthOrPercent(*value);
+}
+
+Length BoxStyle::paddingTop() const
+{
+    auto value = get(CSSPropertyID::PaddingTop);
+    if(value == nullptr)
+        return Length::ZeroFixed;
+    return convertLengthOrPercent(*value);
+}
+
+Length BoxStyle::paddingBottom() const
+{
+    auto value = get(CSSPropertyID::PaddingBottom);
+    if(value == nullptr)
+        return Length::ZeroFixed;
+    return convertLengthOrPercent(*value);
 }
 
 LineStyle BoxStyle::borderLeftStyle() const

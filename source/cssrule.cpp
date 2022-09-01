@@ -1035,7 +1035,7 @@ void CSSRuleCache::addRules(Document* document, uint32_t& position, const CSSRul
 {
     for(const auto& rule : rules) {
         if(auto styleRule = to<CSSStyleRule>(*rule)) {
-            addStyleRule(document, position, styleRule);
+            addStyleRule(position, styleRule);
         } else if(auto pageRule = to<CSSPageRule>(*rule)) {
             addPageRule(position, pageRule);
         } else if(auto fontFaceRule = to<CSSFontFaceRule>(*rule)) {
@@ -1050,7 +1050,7 @@ void CSSRuleCache::addRules(Document* document, uint32_t& position, const CSSRul
     }
 }
 
-void CSSRuleCache::addStyleRule(Document* document, uint32_t position, const CSSStyleRule* rule)
+void CSSRuleCache::addStyleRule(uint32_t position, const CSSStyleRule* rule)
 {
     for(auto& selector : rule->selectors()) {
         uint32_t specificity = 0;

@@ -510,7 +510,7 @@ public:
     bool isCounterValue() const final { return true; }
 
 private:
-    CSSCounterValue( CSSValueID listStyle, const GlobalString& identifier, std::string seperator)
+    CSSCounterValue(CSSValueID listStyle, const GlobalString& identifier, std::string seperator)
         : m_listStyle(listStyle), m_identifier(identifier), m_seperator(std::move(seperator))
     {}
 
@@ -1261,7 +1261,7 @@ private:
     CSSRuleCache(Document* document);
 
     void addRules(Document* document, uint32_t& position, const CSSRuleList& rules);
-    void addStyleRule(Document* document, uint32_t position, const CSSStyleRule* rule);
+    void addStyleRule(uint32_t position, const CSSStyleRule* rule);
     void addPageRule(uint32_t position, const CSSPageRule* rule);
     void addFontFaceRule(Document* document, const CSSFontFaceRule* rule);
 
