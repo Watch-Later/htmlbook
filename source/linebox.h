@@ -37,6 +37,16 @@ public:
 
     RootLineBox* rootLine() const;
 
+    float x() const { return m_x; }
+    float y() const { return m_y; }
+    float width() const { return m_width; }
+    float height() const { return m_height; }
+
+    void setX(float x) { m_x = x; }
+    void setY(float y) { m_y = y; }
+    void setWidth(float width) { m_width = width; }
+    void setHeight(float height) { m_height = height; }
+
 private:
     Box* m_box;
     FlowLineBox* m_parentLine{nullptr};
@@ -44,6 +54,11 @@ private:
     LineBox* m_prevOnLine{nullptr};
     LineBox* m_nextOnBox{nullptr};
     LineBox* m_prevOnBox{nullptr};
+
+    float m_x{0};
+    float m_y{0};
+    float m_width{0};
+    float m_height{0};
 };
 
 class LineBoxList {
