@@ -45,6 +45,8 @@ public:
     Element* headElement() const { return m_headElement; }
     Element* bodyElement() const { return m_bodyElement; }
 
+    template<bool isMarker(const Element*)>
+    bool inScopeTemplate(const GlobalString& tagName) const;
     bool inScope(const Element* element) const;
     bool inScope(const GlobalString& tagName) const;
     bool inButtonScope(const GlobalString& tagName) const;
@@ -125,8 +127,8 @@ private:
     void append(Node* child, bool selfClosing);
 
     bool shouldFosterParent() const;
+    void findFosterLocation(InsertionLocation& location) const;
     void fosterParent(Node* child);
-    void findFosterLocation(InsertionLocation& location);
 
     void adoptionAgencyAlgorithm(HTMLToken& token);
     void reconstructActiveFormattingElements();
@@ -166,7 +168,7 @@ private:
         InCell,
         InSelect,
         InSelectInTable,
-        inForeignContent,
+        InForeignContent,
         AfterBody,
         InFrameset,
         AfterFrameset,
@@ -196,7 +198,7 @@ private:
     void handleInCellMode(HTMLToken& token);
     void handleInSelectMode(HTMLToken& token);
     void handleInSelectInTableMode(HTMLToken& token);
-    void handleinForeignContentMode(HTMLToken& token);
+    void handleInForeignContentMode(HTMLToken& token);
     void handleAfterBodyMode(HTMLToken& token);
     void handleInFramesetMode(HTMLToken& token);
     void handleAfterFramesetMode(HTMLToken& token);
