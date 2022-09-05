@@ -176,9 +176,10 @@ private:
         AfterAfterFrameset
     };
 
-    void resetInsertionMode();
     void setInsertionMode(InsertionMode mode) { m_insertionMode = mode; }
     InsertionMode insertionMode() const { return m_insertionMode; }
+
+    void resetInsertionMode();
     InsertionMode currentInsertionMode(HTMLToken& token) const;
 
     void handleInitialMode(HTMLToken& token);

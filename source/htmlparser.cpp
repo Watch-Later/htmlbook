@@ -401,10 +401,8 @@ void HTMLElementStack::generateImpliedEndTags()
 
 void HTMLElementStack::generateImpliedEndTagsExcept(const GlobalString& tagName)
 {
-    while(isImpliedEndTag(top()->tagName())
-        && top()->tagName() != tagName) {
+    while(top()->tagName() != tagName && isImpliedEndTag(top()->tagName()))
         pop();
-    }
 }
 
 void HTMLElementStack::remove(Element* element)
@@ -1115,62 +1113,62 @@ void HTMLParser::resetInsertionMode()
             for(int j = i; j > 0; --j) {
                 auto ancestor = m_openElements.at(j - 1);
                 if(ancestor->tagName() == tableTag) {
-                    setInsertionMode(InsertionMode::InSelectInTable);
+                    m_insertionMode = InsertionMode::InSelectInTable;
                     return;
                 }
             }
 
-            setInsertionMode(InsertionMode::InSelect);
+            m_insertionMode = InsertionMode::InSelect;
             return;
         }
 
         if(element->tagName() == tdTag
             || element->tagName() == thTag) {
-            setInsertionMode(InsertionMode::InCell);
+            m_insertionMode = InsertionMode::InCell;
             return;
         }
 
-        if(element->tagName() == trTag){
-            setInsertionMode(InsertionMode::InRow);
+        if(element->tagName() == trTag) {
+            m_insertionMode = InsertionMode::InRow;
             return;
         }
 
         if(element->tagName() == tbodyTag
             || element->tagName() == theadTag
             || element->tagName() == tfootTag) {
-            setInsertionMode(InsertionMode::InTableBody);
+            m_insertionMode = InsertionMode::InTableBody;
             return;
         }
 
         if(element->tagName() == captionTag) {
-            setInsertionMode(InsertionMode::InCaption);
+            m_insertionMode = InsertionMode::InCaption;
             return;
         }
 
         if(element->tagName() == colgroupTag) {
-            setInsertionMode(InsertionMode::InColumnGroup);
+            m_insertionMode = InsertionMode::InColumnGroup;
             return;
         }
 
         if(element->tagName() == tableTag) {
-            setInsertionMode(InsertionMode::InTable);
+            m_insertionMode = InsertionMode::InTable;
             return;
         }
 
         if(element->tagName() == headTag
             || element->tagName() == bodyTag) {
-            setInsertionMode(InsertionMode::InBody);
+            m_insertionMode = InsertionMode::InBody;
             return;
         }
 
         if(element->tagName() == framesetTag) {
-            setInsertionMode(InsertionMode::InFrameset);
+            m_insertionMode = InsertionMode::InFrameset;
             return;
         }
 
         if(element->tagName() == htmlTag) {
             assert(m_head != nullptr);
-            setInsertionMode(InsertionMode::AfterHead);
+            m_insertionMode = InsertionMode::AfterHead;
             return;
         }
     }
@@ -1233,7 +1231,7 @@ void HTMLParser::handleBeforeHTMLMode(HTMLToken& token)
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
             insertHTMLHtmlElement(token);
-            setInsertionMode(InsertionMode::BeforeHead);
+            m_insertionMode = InsertionMode::BeforeHead;
             return;
         }
     } else if(token.type() == HTMLToken::Type::EndTag) {
@@ -1262,7 +1260,7 @@ void HTMLParser::handleBeforeHeadMode(HTMLToken& token)
 
         if(token.tagName() == headTag) {
             insertHeadElement(token);
-            setInsertionMode(InsertionMode::InHead);
+            m_insertionMode = InsertionMode::InHead;
             return;
         }
     } else if(token.type() == HTMLToken::Type::EndTag) {
@@ -1306,7 +1304,7 @@ void HTMLParser::handleInHeadMode(HTMLToken& token)
 
         if(token.tagName() == noscriptTag) {
             insertHTMLElement(token);
-            setInsertionMode(InsertionMode::InHeadNoscript);
+            m_insertionMode = InsertionMode::InHeadNoscript;
             return;
         }
 
@@ -1404,13 +1402,13 @@ void HTMLParser::handleAfterHeadMode(HTMLToken& token)
         if(token.tagName() == bodyTag) {
             m_framesetOk = false;
             insertHTMLBodyElement(token);
-            setInsertionMode(InsertionMode::InBody);
+            m_insertionMode = InsertionMode::InBody;
             return;
         }
 
         if(token.tagName() == framesetTag) {
             insertHTMLElement(token);
-            setInsertionMode(InsertionMode::InFrameset);
+            m_insertionMode = InsertionMode::InFrameset;
             return;
         }
 
@@ -1499,7 +1497,7 @@ void HTMLParser::handleInBodyMode(HTMLToken& token)
                 return;
             m_openElements.removeHTMLBodyElement();
             insertHTMLElement(token);
-            setInsertionMode(InsertionMode::InFrameset);
+            m_insertionMode = InsertionMode::InFrameset;
             return;
         }
 
@@ -1694,7 +1692,7 @@ void HTMLParser::handleInBodyMode(HTMLToken& token)
                 handleFakeEndTagToken(pTag);
             insertHTMLElement(token);
             m_framesetOk = false;
-            setInsertionMode(InsertionMode::InTable);
+            m_insertionMode = InsertionMode::InTable;
             return;
         }
 
@@ -1746,7 +1744,7 @@ void HTMLParser::handleInBodyMode(HTMLToken& token)
             m_originalInsertionMode = m_insertionMode;
             m_skipLeadingNewline = true;
             m_framesetOk = false;
-            setInsertionMode(InsertionMode::Text);
+            m_insertionMode = InsertionMode::Text;
             return;
         }
 
@@ -1781,9 +1779,9 @@ void HTMLParser::handleInBodyMode(HTMLToken& token)
                 || m_insertionMode == InsertionMode::InTableBody
                 || m_insertionMode == InsertionMode::InRow
                 || m_insertionMode == InsertionMode::InCell) {
-                setInsertionMode(InsertionMode::InSelectInTable);
+                m_insertionMode = InsertionMode::InSelectInTable;
             } else {
-                setInsertionMode(InsertionMode::InSelect);
+                m_insertionMode = InsertionMode::InSelect;
             }
 
             return;
@@ -1855,7 +1853,7 @@ void HTMLParser::handleInBodyMode(HTMLToken& token)
                 return;
             }
 
-            setInsertionMode(InsertionMode::AfterBody);
+            m_insertionMode = InsertionMode::AfterBody;
             return;
         }
 
@@ -2078,14 +2076,14 @@ void HTMLParser::handleInTableMode(HTMLToken& token)
             m_openElements.popUntilTableScopeMarker();
             m_activeFormattingElements.appendMarker();
             insertHTMLElement(token);
-            setInsertionMode(InsertionMode::InCaption);
+            m_insertionMode = InsertionMode::InCaption;
             return;
         }
 
         if(token.tagName() == colgroupTag) {
             m_openElements.popUntilTableScopeMarker();
             insertHTMLElement(token);
-            setInsertionMode(InsertionMode::InColumnGroup);
+            m_insertionMode = InsertionMode::InColumnGroup;
             return;
         }
 
@@ -2100,7 +2098,7 @@ void HTMLParser::handleInTableMode(HTMLToken& token)
             || token.tagName() == theadTag) {
             m_openElements.popUntilTableScopeMarker();
             insertHTMLElement(token);
-            setInsertionMode(InsertionMode::InTableBody);
+            m_insertionMode = InsertionMode::InTableBody;
             return;
         }
 
@@ -2223,7 +2221,7 @@ void HTMLParser::handleInCaptionMode(HTMLToken& token)
             m_openElements.generateImpliedEndTags();
             m_openElements.popUntilPopped(captionTag);
             m_activeFormattingElements.clearToLastMarker();
-            setInsertionMode(InsertionMode::InTable);
+            m_insertionMode = InsertionMode::InTable;
             return;
         }
 
@@ -2267,7 +2265,7 @@ void HTMLParser::handleInColumnGroupMode(HTMLToken& token)
     } else if(token.type() == HTMLToken::Type::EndTag) {
         if(token.tagName() == colgroupTag) {
             m_openElements.pop();
-            setInsertionMode(InsertionMode::InTable);
+            m_insertionMode = InsertionMode::InTable;
             return;
         }
 
@@ -2294,7 +2292,7 @@ void HTMLParser::handleInTableBodyMode(HTMLToken& token)
         if(token.tagName() == trTag) {
             m_openElements.popUntilTableBodyScopeMarker();
             insertHTMLElement(token);
-            setInsertionMode(InsertionMode::InRow);
+            m_insertionMode = InsertionMode::InRow;
             return;
         }
 
@@ -2329,7 +2327,7 @@ void HTMLParser::handleInTableBodyMode(HTMLToken& token)
 
             m_openElements.popUntilTableBodyScopeMarker();
             m_openElements.pop();
-            setInsertionMode(InsertionMode::InTable);
+            m_insertionMode = InsertionMode::InTable;
             return;
         }
 
@@ -2364,7 +2362,7 @@ void HTMLParser::handleInRowMode(HTMLToken& token)
             || token.tagName() == thTag) {
             m_openElements.popUntilTableRowScopeMarker();
             insertHTMLElement(token);
-            setInsertionMode(InsertionMode::InCell);
+            m_insertionMode = InsertionMode::InCell;
             m_activeFormattingElements.appendMarker();
             return;
         }
@@ -2385,7 +2383,7 @@ void HTMLParser::handleInRowMode(HTMLToken& token)
             assert(m_openElements.inTableScope(trTag));
             m_openElements.popUntilTableRowScopeMarker();
             m_openElements.pop();
-            setInsertionMode(InsertionMode::InTableBody);
+            m_insertionMode = InsertionMode::InTableBody;
             return;
         }
 
@@ -2453,7 +2451,7 @@ void HTMLParser::handleInCellMode(HTMLToken& token)
                 handleErrorToken(token);
             m_openElements.popUntilPopped(token.tagName());
             m_activeFormattingElements.clearToLastMarker();
-            setInsertionMode(InsertionMode::InRow);
+            m_insertionMode = InsertionMode::InRow;
             return;
         }
 
@@ -2718,7 +2716,7 @@ void HTMLParser::handleAfterBodyMode(HTMLToken& token)
         }
     } else if(token.type() == HTMLToken::Type::EndTag) {
         if(token.tagName() == htmlTag) {
-            setInsertionMode(InsertionMode::AfterAfterBody);
+            m_insertionMode = InsertionMode::AfterAfterBody;
             return;
         }
     } else if(token.type() == HTMLToken::Type::SpaceCharacter) {
@@ -2731,7 +2729,7 @@ void HTMLParser::handleAfterBodyMode(HTMLToken& token)
     }
 
     handleErrorToken(token);
-    setInsertionMode(InsertionMode::InBody);
+    m_insertionMode = InsertionMode::InBody;
     handleInBodyMode(token);
 }
 
@@ -2762,7 +2760,7 @@ void HTMLParser::handleInFramesetMode(HTMLToken& token)
             assert(currentElement()->tagName() != htmlTag);
             m_openElements.pop();
             if(currentElement()->tagName() != framesetTag)
-                setInsertionMode(InsertionMode::AfterFrameset);
+                m_insertionMode = InsertionMode::AfterFrameset;
             return;
         }
     } else if(token.type() == HTMLToken::Type::SpaceCharacter) {
@@ -2793,7 +2791,7 @@ void HTMLParser::handleAfterFramesetMode(HTMLToken& token)
         }
     } else if(token.type() == HTMLToken::Type::EndTag) {
         if(token.tagName() == htmlTag) {
-            setInsertionMode(InsertionMode::AfterAfterFrameset);
+            m_insertionMode = InsertionMode::AfterAfterFrameset;
             return;
         }
     } else if(token.type() == HTMLToken::Type::SpaceCharacter) {
@@ -2826,7 +2824,7 @@ void HTMLParser::handleAfterAfterBodyMode(HTMLToken& token)
     }
 
     handleErrorToken(token);
-    setInsertionMode(InsertionMode::InBody);
+    m_insertionMode = InsertionMode::InBody;
     handleInBodyMode(token);
 }
 
@@ -2902,7 +2900,7 @@ void HTMLParser::flushPendingTableCharacters()
     }
 
     insertTextNode(m_pendingTableCharacters);
-    setInsertionMode(m_originalInsertionMode);
+    m_insertionMode = m_originalInsertionMode;
 }
 
 void HTMLParser::handleErrorToken(HTMLToken& token)
@@ -2914,7 +2912,7 @@ void HTMLParser::handleRCDataToken(HTMLToken& token)
     insertHTMLElement(token);
     m_tokenizer.setState(HTMLTokenizer::State::RCDATA);
     m_originalInsertionMode = m_insertionMode;
-    setInsertionMode(InsertionMode::Text);
+    m_insertionMode = InsertionMode::Text;
 }
 
 void HTMLParser::handleRawTextToken(HTMLToken& token)
@@ -2922,7 +2920,7 @@ void HTMLParser::handleRawTextToken(HTMLToken& token)
     insertHTMLElement(token);
     m_tokenizer.setState(HTMLTokenizer::State::RAWTEXT);
     m_originalInsertionMode = m_insertionMode;
-    setInsertionMode(InsertionMode::Text);
+    m_insertionMode = InsertionMode::Text;
 }
 
 void HTMLParser::handleScriptDataToken(HTMLToken& token)
@@ -2930,14 +2928,14 @@ void HTMLParser::handleScriptDataToken(HTMLToken& token)
     insertHTMLElement(token);
     m_tokenizer.setState(HTMLTokenizer::State::ScriptData);
     m_originalInsertionMode = m_insertionMode;
-    setInsertionMode(InsertionMode::Text);
+    m_insertionMode = InsertionMode::Text;
 }
 
 void HTMLParser::handleDoctypeToken(HTMLToken& token)
 {
     if(m_insertionMode == InsertionMode::Initial) {
         insertDoctype(token);
-        setInsertionMode(InsertionMode::BeforeHTML);
+        m_insertionMode = InsertionMode::BeforeHTML;
         return;
     }
 
