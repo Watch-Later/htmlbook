@@ -39,6 +39,7 @@ public:
     virtual void finishBuildingChildern() {}
     virtual void addBox(Box* box, Box* nextBox = nullptr);
     virtual void removeBox(Box* box);
+    virtual void computePreferredWidths(float& minWidth, float& maxWidth) const;
 
     void addLine(LineBox* line);
     void removeLine(LineBox* line);
@@ -59,12 +60,23 @@ public:
     void setPrevBox(Box* box) { m_prevBox = box; }
     void setNextBox(Box* box) { m_nextBox = box; }
 
+    bool isAnonymous() const { return m_anonymous; }
+    bool isReplaced() const { return m_replaced; }
+    bool isInline() const { return m_inline; }
+
+    void setAnonymous(bool value) { m_anonymous = value; }
+    void setReplaced(bool value) { m_replaced = value; }
+    void setInline(bool value) { m_inline = value; }
+
 private:
     Node* m_node;
     RefPtr<BoxStyle> m_style;
     Box* m_parentBox{nullptr};
     Box* m_prevBox{nullptr};
     Box* m_nextBox{nullptr};
+    bool m_anonymous{false};
+    bool m_replaced{false};
+    bool m_inline{false};
 };
 
 class BoxList {
@@ -110,7 +122,6 @@ class BoxLayer;
 class BoxModel : public Box {
 public:
     BoxModel(Node* node, const RefPtr<BoxStyle>& style);
-    ~BoxModel() override;
 
     bool isBoxModel() const final { return false; }
 
@@ -174,7 +185,6 @@ struct is<BoxModel> {
 class BoxFrame : public BoxModel {
 public:
     BoxFrame(Node* node, const RefPtr<BoxStyle>& style);
-    ~BoxFrame() override;
 
     bool isBoxFrame() const final { return true; }
 
@@ -215,10 +225,13 @@ public:
 
     BoxList* children() const final { return &m_children; }
     LineBoxList* lines() const final { return &m_lines; }
+    Box* continuation() const { return m_continuation; }
+    void setContinuation(Box* continuation) { m_continuation = continuation; }
 
 private:
     mutable BoxList m_children;
     mutable LineBoxList m_lines;
+    Box* m_continuation{nullptr};
 };
 
 template<>
@@ -235,11 +248,18 @@ public:
     BoxList* children() const final { return &m_children; }
     LineBoxList* lines() const final { return &m_lines; }
     const RefPtr<BoxStyle>& firstLineStyle() const { return m_firstLineStyle; }
+    Box* continuation() const { return m_continuation; }
+    void setContinuation(Box* continuation) { m_continuation = continuation; }
+
+    bool isChildrenInline() const { return m_childrenInline; }
+    void setChildrenInline(bool value) { m_childrenInline = value; }
 
 private:
     mutable BoxList m_children;
     mutable LineBoxList m_lines;
     RefPtr<BoxStyle> m_firstLineStyle;
+    Box* m_continuation{nullptr};
+    bool m_childrenInline{true};
 };
 
 template<>
@@ -306,7 +326,6 @@ class ListMarkerBox;
 class ListItemBox final : public BlockBox {
 public:
     ListItemBox(Node* node, const RefPtr<BoxStyle>& style);
-    ~ListItemBox() final;
 
     bool isListItemBox() const final { return true; }
 
@@ -325,6 +344,7 @@ struct is<ListItemBox> {
 class ListMarkerBox final : public BoxFrame {
 public:
     ListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style);
+    ~ListMarkerBox() final;
 
     bool isListMarkerBox() const final { return true; }
 

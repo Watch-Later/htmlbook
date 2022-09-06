@@ -31,6 +31,12 @@ void Box::removeBox(Box* box)
         children->remove(this, box);
 }
 
+void Box::computePreferredWidths(float& minWidth, float& maxWidth) const
+{
+    minWidth = 0;
+    maxWidth = 0;
+}
+
 void Box::addLine(LineBox* line)
 {
     if(auto lines = this->lines())
@@ -162,6 +168,100 @@ BoxLayer::BoxLayer(BoxModel* box, BoxLayer* parent)
     auto compare = [](auto a, auto b) { return a->index() < b->index(); };
     auto it = std::upper_bound(parent->m_children.begin(), parent->m_children.end(), this, compare);
     parent->m_children.insert(it, this);
+}
+
+TextBox::TextBox(Node* node, const RefPtr<BoxStyle>& style)
+    : Box(node, style)
+{
+}
+
+BoxModel::BoxModel(Node* node, const RefPtr<BoxStyle>& style)
+    : Box(node, style)
+{
+}
+
+BoxFrame::BoxFrame(Node* node, const RefPtr<BoxStyle>& style)
+    : BoxModel(node, style)
+{
+}
+
+InlineBox::InlineBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BoxModel(node, style)
+{
+}
+
+BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BoxFrame(node, style)
+{
+    setInline(false);
+}
+
+FlexibleBox::FlexibleBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BlockBox(node, style)
+{
+    setChildrenInline(false);
+}
+
+ReplacedBox::ReplacedBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BoxFrame(node, style)
+{
+    setReplaced(true);
+}
+
+ImageBox::ImageBox(Node* node, const RefPtr<BoxStyle>& style)
+    : ReplacedBox(node, style)
+{
+}
+
+ListItemBox::ListItemBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BlockBox(node, style)
+{
+}
+
+ListMarkerBox::ListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style)
+    : BoxFrame(nullptr, style)
+{
+    item->setListMarker(this);
+}
+
+ListMarkerBox::~ListMarkerBox()
+{
+    m_listItem->setListMarker(nullptr);
+}
+
+TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BlockBox(node, style)
+{
+}
+
+TableCellBox::TableCellBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BlockBox(node, style)
+{
+}
+
+TableColumnBox::TableColumnBox(Node* node, const RefPtr<BoxStyle>& style)
+    : Box(node, style)
+{
+}
+
+TableColumnGroupBox::TableColumnGroupBox(Node* node, const RefPtr<BoxStyle>& style)
+    : TableColumnBox(node, style)
+{
+}
+
+TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BoxFrame(node, style)
+{
+}
+
+TableCaptionBox::TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BlockBox(node, style)
+{
+}
+
+TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BoxFrame(node, style)
+{
 }
 
 } // namespace htmlbook
