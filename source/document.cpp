@@ -342,37 +342,7 @@ Element* Element::nextElement() const
 
 Box* Element::createBox(const RefPtr<BoxStyle>& style)
 {
-    switch(style->display()) {
-    case Display::Inline:
-        return new InlineBox(this, style);
-    case Display::Block:
-    case Display::InlineBlock:
-        return new BlockBox(this, style);
-    case Display::Flex:
-    case Display::InlineFlex:
-        return new FlexibleBox(this, style);
-    case Display::Table:
-    case Display::InlineTable:
-        return new TableBox(this, style);
-    case Display::ListItem:
-        return new ListItemBox(this, style);
-    case Display::TableCell:
-        return new TableCellBox(this, style);
-    case Display::TableColumn:
-        return new TableColumnBox(this, style);
-    case Display::TableColumnGroup:
-        return new TableColumnGroupBox(this, style);
-    case Display::TableRow:
-        return new TableRowBox(this, style);
-    case Display::TableRowGroup:
-    case Display::TableHeaderGroup:
-    case Display::TableFooterGroup:
-        return new TableSectionBox(this, style);
-    case Display::TableCaption:
-        return new TableCaptionBox(this, style);
-    default:
-        assert(false);
-    }
+    return Box::create(this, style);
 }
 
 void Element::build(Box* parent)

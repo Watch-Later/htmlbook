@@ -9,6 +9,8 @@ namespace htmlbook {
 
 class Node;
 class BoxList;
+class BlockBox;
+class TableBox;
 
 class Box {
 public:
@@ -37,7 +39,7 @@ public:
     virtual LineBoxList* lines() const { return nullptr; }
     virtual void beginBuildingChildern() {}
     virtual void finishBuildingChildern() {}
-    virtual void addBox(Box* box, Box* nextBox = nullptr);
+    virtual void addBox(Box* box);
     virtual void removeBox(Box* box);
     virtual void computePreferredWidths(float& minWidth, float& maxWidth) const;
 
@@ -60,13 +62,21 @@ public:
     void setPrevBox(Box* box) { m_prevBox = box; }
     void setNextBox(Box* box) { m_nextBox = box; }
 
+    static Box* create(Node* node, const RefPtr<BoxStyle>& style);
+    static Box* createAnonymous(const BoxStyle& parentStyle, Display display);
+
     bool isAnonymous() const { return m_anonymous; }
     bool isReplaced() const { return m_replaced; }
     bool isInline() const { return m_inline; }
+    bool isFloating() const { return m_floating; }
+    bool isPositioned() const { return m_positioned; }
+    bool isFloatingOrPositioned() const { return m_floating || m_positioned; }
 
     void setAnonymous(bool value) { m_anonymous = value; }
     void setReplaced(bool value) { m_replaced = value; }
     void setInline(bool value) { m_inline = value; }
+    void setFloating(bool value) { m_floating = value; }
+    void setPositioned(bool value) { m_positioned = value; }
 
 private:
     Node* m_node;
@@ -76,7 +86,9 @@ private:
     Box* m_nextBox{nullptr};
     bool m_anonymous{false};
     bool m_replaced{false};
-    bool m_inline{false};
+    bool m_inline{true};
+    bool m_floating{false};
+    bool m_positioned{false};
 };
 
 class BoxList {
@@ -95,6 +107,24 @@ public:
 private:
     Box* m_firstBox{nullptr};
     Box* m_lastBox{nullptr};
+};
+
+class BoxModel;
+
+class BoxLayer {
+public:
+    static std::unique_ptr<BoxLayer> create(BoxModel* box, BoxLayer* parent);
+
+    int index() const { return m_index; }
+    BoxModel* box() const { return m_box; }
+    BoxLayer* parent() const { return m_parent; }
+
+private:
+    BoxLayer(BoxModel* box, BoxLayer* parent);
+    int m_index;
+    BoxModel* m_box;
+    BoxLayer* m_parent;
+    std::list<BoxLayer*> m_children;
 };
 
 class TextBox : public Box {
@@ -116,8 +146,6 @@ template<>
 struct is<TextBox> {
     static bool check(const Box& box) { return box.isTextBox(); }
 };
-
-class BoxLayer;
 
 class BoxModel : public Box {
 public:
@@ -253,6 +281,8 @@ public:
 
     bool isChildrenInline() const { return m_childrenInline; }
     void setChildrenInline(bool value) { m_childrenInline = value; }
+
+    void addBox(Box* box) override;
 
 private:
     mutable BoxList m_children;
@@ -495,22 +525,6 @@ private:
 template<>
 struct is<TableSectionBox> {
     static bool check(const Box& box) { return box.isTableSectionBox(); }
-};
-
-class BoxLayer {
-public:
-    static std::unique_ptr<BoxLayer> create(BoxModel* box, BoxLayer* parent);
-
-    int index() const { return m_index; }
-    BoxModel* box() const { return m_box; }
-    BoxLayer* parent() const { return m_parent; }
-
-private:
-    BoxLayer(BoxModel* box, BoxLayer* parent);
-    int m_index;
-    BoxModel* m_box;
-    BoxLayer* m_parent;
-    std::list<BoxLayer*> m_children;
 };
 
 } // namespace htmlbook

@@ -19,10 +19,37 @@ Box::~Box()
         m_node->setBox(nullptr);
 }
 
-void Box::addBox(Box* box, Box* nextBox)
+void Box::addBox(Box* box)
 {
-    if(auto children = this->children())
-        children->insert(this, box, nextBox);
+    auto children = this->children();
+    if(children == nullptr)
+        return;
+    auto requirestable = [this](auto box) {
+        if(box->isTableCaptionBox() || box->isTableSectionBox())
+            return !isTableBox();
+        if(box->isTableColumnBox())
+            return !isTableBox()  && !isTableColumnGroupBox();
+        if(box->isTableRowBox())
+            return !isTableSectionBox();
+        if(box->isTableCellBox())
+            return !isTableRowBox();
+        return false;
+    };
+
+    if(!requirestable(box)) {
+        children->append(this, box);
+        return;
+    }
+
+    auto lastChild = children->lastBox();
+    if(lastChild && lastChild->isAnonymous() && lastChild->isTableBox()) {
+        lastChild->addBox(box);
+        return;
+    }
+
+    auto newTable = createAnonymous(*box->style(), Display::Table);
+    children->append(this, newTable);
+    newTable->addBox(box);
 }
 
 void Box::removeBox(Box* box)
@@ -75,6 +102,48 @@ LineBox* Box::lastLine() const
     if(auto lines = this->lines())
         return lines->lastLine();
     return nullptr;
+}
+
+Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
+{
+    switch(style->display()) {
+    case Display::Inline:
+        return new InlineBox(node, style);
+    case Display::Block:
+    case Display::InlineBlock:
+        return new BlockBox(node, style);
+    case Display::Flex:
+    case Display::InlineFlex:
+        return new FlexibleBox(node, style);
+    case Display::Table:
+    case Display::InlineTable:
+        return new TableBox(node, style);
+    case Display::ListItem:
+        return new ListItemBox(node, style);
+    case Display::TableCell:
+        return new TableCellBox(node, style);
+    case Display::TableColumn:
+        return new TableColumnBox(node, style);
+    case Display::TableColumnGroup:
+        return new TableColumnGroupBox(node, style);
+    case Display::TableRow:
+        return new TableRowBox(node, style);
+    case Display::TableRowGroup:
+    case Display::TableHeaderGroup:
+    case Display::TableFooterGroup:
+        return new TableSectionBox(node, style);
+    case Display::TableCaption:
+        return new TableCaptionBox(node, style);
+    default:
+        assert(false);
+    }
+}
+
+Box* Box::createAnonymous(const BoxStyle& parentStyle, Display display)
+{
+    auto box = create(nullptr, BoxStyle::create(parentStyle, display));
+    box->setAnonymous(true);
+    return box;
 }
 
 BoxList::~BoxList()
@@ -193,7 +262,47 @@ InlineBox::InlineBox(Node* node, const RefPtr<BoxStyle>& style)
 BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
     : BoxFrame(node, style)
 {
-    setInline(false);
+}
+
+void BlockBox::addBox(Box* box)
+{
+    if(m_childrenInline && !box->isInline() && !box->isFloatingOrPositioned()) {
+        m_childrenInline = false;
+        auto newBlock = createAnonymous(*style(), Display::Block);
+        auto children = newBlock->children();
+        if(auto child = m_children.firstBox()) {
+            assert(box->isInline() || box->isFloatingOrPositioned());
+            m_children.remove(this, child);
+            children->append(newBlock, child);
+        }
+
+        m_children.append(this, newBlock);
+    } else if(!m_childrenInline && (box->isInline() || box->isFloatingOrPositioned())) {
+        auto lastChild = m_children.lastBox();
+        if(lastChild && lastChild->isAnonymous() && lastChild->isBlockBox()) {
+            lastChild->addBox(box);
+            return;
+        }
+
+        if(box->isInline()) {
+            auto newBlock = createAnonymous(*style(), Display::Block);
+            m_children.append(this, newBlock);
+
+            auto children = newBlock->children();
+            auto child = newBlock->prevBox();
+            while(child && child->isFloatingOrPositioned()) {
+                auto prevBox = child->prevBox();
+                m_children.remove(this, child);
+                children->insert(newBlock, child, newBlock->firstBox());
+                child = prevBox;
+            }
+
+            newBlock->addBox(box);
+            return;
+        }
+    }
+
+    BoxFrame::addBox(box);
 }
 
 FlexibleBox::FlexibleBox(Node* node, const RefPtr<BoxStyle>& style)
