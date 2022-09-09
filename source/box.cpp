@@ -297,23 +297,19 @@ InlineBox::InlineBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void InlineBox::addBox(Box* box)
 {
-    if(m_continuation == nullptr)
-        return addChildWithoutContinuation(box);
-    addChildWithContinuation(box);
-}
+    if(m_continuation) {
+        m_continuation->addBox(box);
+        return;
+    }
 
-void InlineBox::addChildWithContinuation(Box* box)
-{
-}
-
-void InlineBox::addChildWithoutContinuation(Box* box)
-{
     if(box->isInline() || box->isFloatingOrPositioned()) {
         BoxModel::addBox(box);
         return;
     }
 
     auto newBlock = createAnonymousBlock(*box->style());
+    newBlock->addBox(box);
+
     auto continuation = this->continuation();
     setContinuation(newBlock);
 
@@ -346,7 +342,7 @@ void InlineBox::addChildWithoutContinuation(Box* box)
     Box* currentParent = parentBox();
     Box* currentChild = this;
     auto currentClone = clone;
-    while(currentParent && currentParent != preBlock) {
+    while(currentParent != preBlock) {
         auto parent = to<InlineBox>(currentParent);
         auto clone = new InlineBox(nullptr, parent->style());
         clone->children()->append(clone, currentClone);
@@ -363,7 +359,6 @@ void InlineBox::addChildWithoutContinuation(Box* box)
 
     postBlock->children()->append(postBlock, currentClone);
     preBlock->moveChildrenTo(postBlock, currentChild->nextBox());
-    newBlock->addBox(box);
 }
 
 BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
@@ -373,6 +368,11 @@ BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void BlockBox::addBox(Box* box)
 {
+    if(m_continuation) {
+        m_continuation->addBox(box);
+        return;
+    }
+
     if(isChildrenInline() && !box->isInline() && !box->isFloatingOrPositioned()) {
         setChildrenInline(false);
         auto newBlock = createAnonymousBlock(*style());

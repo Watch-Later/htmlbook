@@ -266,8 +266,6 @@ public:
     void setContinuation(Box* continuation) { m_continuation = continuation; }
 
     void addBox(Box* box) override;
-    void addChildWithContinuation(Box* box);
-    void addChildWithoutContinuation(Box* box);
 
 private:
     mutable BoxList m_children;
