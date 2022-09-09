@@ -308,8 +308,6 @@ void InlineBox::addBox(Box* box)
     }
 
     auto newBlock = createAnonymousBlock(*box->style());
-    newBlock->addBox(box);
-
     auto continuation = this->continuation();
     setContinuation(newBlock);
 
@@ -337,7 +335,6 @@ void InlineBox::addBox(Box* box)
 
     auto clone = new InlineBox(nullptr, style());
     clone->setContinuation(continuation);
-    newBlock->setContinuation(clone);
 
     Box* currentParent = parentBox();
     Box* currentChild = this;
@@ -359,6 +356,9 @@ void InlineBox::addBox(Box* box)
 
     postBlock->children()->append(postBlock, currentClone);
     preBlock->moveChildrenTo(postBlock, currentChild->nextBox());
+
+    newBlock->addBox(box);
+    newBlock->setContinuation(clone);
 }
 
 BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
