@@ -141,9 +141,45 @@ Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
 
 Box* Box::createAnonymous(const BoxStyle& parentStyle, Display display)
 {
-    auto box = create(nullptr, BoxStyle::create(parentStyle, display));
-    box->setAnonymous(true);
-    return box;
+    auto newBox = create(nullptr, BoxStyle::create(parentStyle, display));
+    newBox->setAnonymous(true);
+    return newBox;
+}
+
+BlockBox* Box::createAnonymousBlock(const BoxStyle& parentStyle)
+{
+    auto newBlock = new BlockBox(nullptr, BoxStyle::create(parentStyle, Display::Block));
+    newBlock->setAnonymous(true);
+    return newBlock;
+}
+
+BlockBox* Box::containingBlock() const
+{
+    return nullptr;
+}
+
+void Box::moveChildrenTo(Box* to, Box* begin, Box* end)
+{
+    auto fromChildren = children();
+    auto toChildren = to->children();
+    assert(fromChildren && toChildren);
+    auto child = begin;
+    while(child && child != end) {
+        auto nextChild = child->nextBox();
+        fromChildren->remove(this, child);
+        toChildren->append(to, child);
+        child = nextChild;
+    }
+}
+
+void Box::moveChildrenTo(Box* to, Box* begin)
+{
+    moveChildrenTo(to, begin, nullptr);
+}
+
+void Box::moveChildrenTo(Box* to)
+{
+    moveChildrenTo(to, firstBox(), nullptr);
 }
 
 BoxList::~BoxList()
@@ -259,6 +295,77 @@ InlineBox::InlineBox(Node* node, const RefPtr<BoxStyle>& style)
 {
 }
 
+void InlineBox::addBox(Box* box)
+{
+    if(m_continuation == nullptr)
+        return addChildWithoutContinuation(box);
+    addChildWithContinuation(box);
+}
+
+void InlineBox::addChildWithContinuation(Box* box)
+{
+}
+
+void InlineBox::addChildWithoutContinuation(Box* box)
+{
+    if(box->isInline() || box->isFloatingOrPositioned()) {
+        BoxModel::addBox(box);
+        return;
+    }
+
+    auto newBlock = createAnonymousBlock(*box->style());
+    auto continuation = this->continuation();
+    setContinuation(newBlock);
+
+    BlockBox* preBlock = nullptr;
+    BlockBox* postBlock = nullptr;
+    auto block = containingBlock();
+    if(block->isAnonymous()) {
+        preBlock = block;
+        postBlock = createAnonymousBlock(*block->style());
+        block = block->containingBlock();
+
+        auto children = block->children();
+        children->insert(block, postBlock, preBlock->nextBox());
+        children->insert(block, newBlock, preBlock->nextBox());
+    } else {
+        preBlock = createAnonymousBlock(*block->style());
+        postBlock = createAnonymousBlock(*block->style());
+        block->moveChildrenTo(preBlock);
+
+        auto children = block->children();
+        children->append(block, preBlock);
+        children->append(block, newBlock);
+        children->append(block, postBlock);
+    }
+
+    auto clone = new InlineBox(nullptr, style());
+    clone->setContinuation(continuation);
+    newBlock->setContinuation(clone);
+
+    Box* currentParent = parentBox();
+    Box* currentChild = this;
+    auto currentClone = clone;
+    while(currentParent && currentParent != preBlock) {
+        auto parent = to<InlineBox>(currentParent);
+        auto clone = new InlineBox(nullptr, parent->style());
+        clone->children()->append(clone, currentClone);
+
+        auto continuation = parent->continuation();
+        parent->setContinuation(clone);
+        clone->setContinuation(continuation);
+
+        currentParent->moveChildrenTo(clone, currentChild->nextBox());
+        currentParent = currentParent->parentBox();
+        currentChild = currentParent;
+        currentClone = clone;
+    }
+
+    postBlock->children()->append(postBlock, currentClone);
+    preBlock->moveChildrenTo(postBlock, currentChild->nextBox());
+    newBlock->addBox(box);
+}
+
 BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
     : BoxFrame(node, style)
 {
@@ -266,18 +373,12 @@ BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void BlockBox::addBox(Box* box)
 {
-    if(m_childrenInline && !box->isInline() && !box->isFloatingOrPositioned()) {
-        m_childrenInline = false;
-        auto newBlock = createAnonymous(*style(), Display::Block);
-        auto children = newBlock->children();
-        if(auto child = m_children.firstBox()) {
-            assert(box->isInline() || box->isFloatingOrPositioned());
-            m_children.remove(this, child);
-            children->append(newBlock, child);
-        }
-
+    if(isChildrenInline() && !box->isInline() && !box->isFloatingOrPositioned()) {
+        setChildrenInline(false);
+        auto newBlock = createAnonymousBlock(*style());
+        moveChildrenTo(newBlock);
         m_children.append(this, newBlock);
-    } else if(!m_childrenInline && (box->isInline() || box->isFloatingOrPositioned())) {
+    } else if(!isChildrenInline() && (box->isInline() || box->isFloatingOrPositioned())) {
         auto lastChild = m_children.lastBox();
         if(lastChild && lastChild->isAnonymous() && lastChild->isBlockBox()) {
             lastChild->addBox(box);
@@ -285,7 +386,7 @@ void BlockBox::addBox(Box* box)
         }
 
         if(box->isInline()) {
-            auto newBlock = createAnonymous(*style(), Display::Block);
+            auto newBlock = createAnonymousBlock(*style());
             m_children.append(this, newBlock);
 
             auto children = newBlock->children();
@@ -293,7 +394,7 @@ void BlockBox::addBox(Box* box)
             while(child && child->isFloatingOrPositioned()) {
                 auto prevBox = child->prevBox();
                 m_children.remove(this, child);
-                children->insert(newBlock, child, newBlock->firstBox());
+                children->insert(newBlock, child, children->firstBox());
                 child = prevBox;
             }
 

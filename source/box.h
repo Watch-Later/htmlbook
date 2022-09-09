@@ -10,7 +10,6 @@ namespace htmlbook {
 class Node;
 class BoxList;
 class BlockBox;
-class TableBox;
 
 class Box {
 public:
@@ -64,6 +63,13 @@ public:
 
     static Box* create(Node* node, const RefPtr<BoxStyle>& style);
     static Box* createAnonymous(const BoxStyle& parentStyle, Display display);
+    static BlockBox* createAnonymousBlock(const BoxStyle& parentStyle);
+
+    BlockBox* containingBlock() const;
+
+    void moveChildrenTo(Box* to, Box* begin, Box* end);
+    void moveChildrenTo(Box* to, Box* begin);
+    void moveChildrenTo(Box* to);
 
     bool isAnonymous() const { return m_anonymous; }
     bool isReplaced() const { return m_replaced; }
@@ -71,12 +77,14 @@ public:
     bool isFloating() const { return m_floating; }
     bool isPositioned() const { return m_positioned; }
     bool isFloatingOrPositioned() const { return m_floating || m_positioned; }
+    bool isChildrenInline() const { return m_childrenInline; }
 
     void setAnonymous(bool value) { m_anonymous = value; }
     void setReplaced(bool value) { m_replaced = value; }
     void setInline(bool value) { m_inline = value; }
     void setFloating(bool value) { m_floating = value; }
     void setPositioned(bool value) { m_positioned = value; }
+    void setChildrenInline(bool value) { m_childrenInline = value; }
 
 private:
     Node* m_node;
@@ -89,6 +97,7 @@ private:
     bool m_inline{true};
     bool m_floating{false};
     bool m_positioned{false};
+    bool m_childrenInline{true};
 };
 
 class BoxList {
@@ -256,6 +265,10 @@ public:
     Box* continuation() const { return m_continuation; }
     void setContinuation(Box* continuation) { m_continuation = continuation; }
 
+    void addBox(Box* box) override;
+    void addChildWithContinuation(Box* box);
+    void addChildWithoutContinuation(Box* box);
+
 private:
     mutable BoxList m_children;
     mutable LineBoxList m_lines;
@@ -279,9 +292,6 @@ public:
     Box* continuation() const { return m_continuation; }
     void setContinuation(Box* continuation) { m_continuation = continuation; }
 
-    bool isChildrenInline() const { return m_childrenInline; }
-    void setChildrenInline(bool value) { m_childrenInline = value; }
-
     void addBox(Box* box) override;
 
 private:
@@ -289,7 +299,6 @@ private:
     mutable LineBoxList m_lines;
     RefPtr<BoxStyle> m_firstLineStyle;
     Box* m_continuation{nullptr};
-    bool m_childrenInline{true};
 };
 
 template<>
