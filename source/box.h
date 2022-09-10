@@ -39,7 +39,6 @@ public:
     virtual void beginBuildingChildern() {}
     virtual void finishBuildingChildern() {}
     virtual void addBox(Box* box);
-    virtual void removeBox(Box* box);
     virtual void computePreferredWidths(float& minWidth, float& maxWidth) const;
 
     void addLine(LineBox* line);
@@ -66,6 +65,10 @@ public:
     static BlockBox* createAnonymousBlock(const BoxStyle& parentStyle);
 
     BlockBox* containingBlock() const;
+
+    void insertChild(Box* box, Box* nextBox);
+    void appendChild(Box* box);
+    void removeChild(Box* box);
 
     void moveChildrenTo(Box* to, Box* begin, Box* end);
     void moveChildrenTo(Box* to, Box* begin);
@@ -509,7 +512,10 @@ public:
 
     bool isTableCaptionBox() const final { return true; }
 
-    CaptionSide captionSide() const;
+    CaptionSide captionSide() const { return m_captionSide; }
+
+private:
+    CaptionSide m_captionSide;
 };
 
 template<>

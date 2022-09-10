@@ -1,6 +1,7 @@
 #include "box.h"
 #include "document.h"
 #include "resource.h"
+#include <iostream>
 
 namespace htmlbook {
 
@@ -14,7 +15,7 @@ Box::Box(Node* node, const RefPtr<BoxStyle>& style)
 Box::~Box()
 {
     if(m_parentBox)
-        m_parentBox->removeBox(this);
+        m_parentBox->removeChild(this);
     if(m_node)
         m_node->setBox(nullptr);
 }
@@ -50,12 +51,6 @@ void Box::addBox(Box* box)
     auto newTable = createAnonymous(*box->style(), Display::Table);
     children->append(this, newTable);
     newTable->addBox(box);
-}
-
-void Box::removeBox(Box* box)
-{
-    if(auto children = this->children())
-        children->remove(this, box);
 }
 
 void Box::computePreferredWidths(float& minWidth, float& maxWidth) const
@@ -155,7 +150,28 @@ BlockBox* Box::createAnonymousBlock(const BoxStyle& parentStyle)
 
 BlockBox* Box::containingBlock() const
 {
-    return nullptr;
+    auto parent = parentBox();
+    while(parent && parent->isInline())
+        parent = parent->parentBox();
+    return to<BlockBox>(parent);
+}
+
+void Box::insertChild(Box* box, Box* nextBox)
+{
+    if(auto children = this->children())
+        children->insert(this, box, nextBox);
+}
+
+void Box::appendChild(Box* box)
+{
+    if(auto children = this->children())
+        children->append(this, box);
+}
+
+void Box::removeChild(Box* box)
+{
+    if(auto children = this->children())
+        children->remove(this, box);
 }
 
 void Box::moveChildrenTo(Box* to, Box* begin, Box* end)
@@ -278,6 +294,7 @@ BoxLayer::BoxLayer(BoxModel* box, BoxLayer* parent)
 TextBox::TextBox(Node* node, const RefPtr<BoxStyle>& style)
     : Box(node, style)
 {
+    setInline(true);
 }
 
 BoxModel::BoxModel(Node* node, const RefPtr<BoxStyle>& style)
@@ -293,6 +310,7 @@ BoxFrame::BoxFrame(Node* node, const RefPtr<BoxStyle>& style)
 InlineBox::InlineBox(Node* node, const RefPtr<BoxStyle>& style)
     : BoxModel(node, style)
 {
+    setInline(true);
 }
 
 void InlineBox::addBox(Box* box)
@@ -308,9 +326,6 @@ void InlineBox::addBox(Box* box)
     }
 
     auto newBlock = createAnonymousBlock(*box->style());
-    auto continuation = this->continuation();
-    setContinuation(newBlock);
-
     BlockBox* preBlock = nullptr;
     BlockBox* postBlock = nullptr;
     auto block = containingBlock();
@@ -334,36 +349,36 @@ void InlineBox::addBox(Box* box)
     }
 
     auto clone = new InlineBox(nullptr, style());
-    clone->setContinuation(continuation);
-
     Box* currentParent = parentBox();
     Box* currentChild = this;
     auto currentClone = clone;
     while(currentParent != preBlock) {
         auto parent = to<InlineBox>(currentParent);
         auto clone = new InlineBox(nullptr, parent->style());
-        clone->children()->append(clone, currentClone);
+        clone->appendChild(currentClone);
 
         auto continuation = parent->continuation();
         parent->setContinuation(clone);
         clone->setContinuation(continuation);
 
         currentParent->moveChildrenTo(clone, currentChild->nextBox());
-        currentParent = currentParent->parentBox();
         currentChild = currentParent;
         currentClone = clone;
+        currentParent = currentParent->parentBox();
     }
 
-    postBlock->children()->append(postBlock, currentClone);
+    postBlock->appendChild(currentClone);
     preBlock->moveChildrenTo(postBlock, currentChild->nextBox());
 
     newBlock->addBox(box);
     newBlock->setContinuation(clone);
+    setContinuation(newBlock);
 }
 
 BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
     : BoxFrame(node, style)
 {
+    setInline(false);
 }
 
 void BlockBox::addBox(Box* box)
@@ -374,10 +389,13 @@ void BlockBox::addBox(Box* box)
     }
 
     if(isChildrenInline() && !box->isInline() && !box->isFloatingOrPositioned()) {
+        if(!m_children.empty()) {
+            auto newBlock = createAnonymousBlock(*style());
+            moveChildrenTo(newBlock);
+            m_children.append(this, newBlock);
+        }
+
         setChildrenInline(false);
-        auto newBlock = createAnonymousBlock(*style());
-        moveChildrenTo(newBlock);
-        m_children.append(this, newBlock);
     } else if(!isChildrenInline() && (box->isInline() || box->isFloatingOrPositioned())) {
         auto lastChild = m_children.lastBox();
         if(lastChild && lastChild->isAnonymous() && lastChild->isBlockBox()) {
@@ -465,7 +483,7 @@ TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
 }
 
 TableCaptionBox::TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BlockBox(node, style)
+    : BlockBox(node, style), m_captionSide(style->captionSide())
 {
 }
 
