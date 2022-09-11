@@ -34,15 +34,24 @@ public:
     virtual bool isTableCaptionBox() const { return false; }
     virtual bool isTableSectionBox() const { return false; }
 
+    virtual void computePreferredWidths(float& minWidth, float& maxWidth) const;
+
     virtual BoxList* children() const { return nullptr; }
     virtual LineBoxList* lines() const { return nullptr; }
     virtual void beginBuildingChildern() {}
     virtual void finishBuildingChildern() {}
     virtual void addBox(Box* box);
-    virtual void computePreferredWidths(float& minWidth, float& maxWidth) const;
 
     void addLine(LineBox* line);
     void removeLine(LineBox* line);
+
+    void insertChild(Box* box, Box* nextBox);
+    void appendChild(Box* box);
+    void removeChild(Box* box);
+
+    void moveChildrenTo(Box* to, Box* begin, Box* end);
+    void moveChildrenTo(Box* to, Box* begin);
+    void moveChildrenTo(Box* to);
 
     Box* firstBox() const;
     Box* lastBox() const;
@@ -65,14 +74,6 @@ public:
     static BlockBox* createAnonymousBlock(const BoxStyle& parentStyle);
 
     BlockBox* containingBlock() const;
-
-    void insertChild(Box* box, Box* nextBox);
-    void appendChild(Box* box);
-    void removeChild(Box* box);
-
-    void moveChildrenTo(Box* to, Box* begin, Box* end);
-    void moveChildrenTo(Box* to, Box* begin);
-    void moveChildrenTo(Box* to);
 
     bool isAnonymous() const { return m_anonymous; }
     bool isReplaced() const { return m_replaced; }

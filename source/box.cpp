@@ -19,11 +19,16 @@ Box::~Box()
         m_node->setBox(nullptr);
 }
 
+void Box::computePreferredWidths(float& minWidth, float& maxWidth) const
+{
+    minWidth = 0;
+    maxWidth = 0;
+}
+
 void Box::addBox(Box* box)
 {
     auto children = this->children();
-    if(children == nullptr)
-        return;
+    assert(children != nullptr);
     switch(box->display()) {
     case Display::TableCaption:
     case Display::TableCell:
@@ -50,22 +55,63 @@ void Box::addBox(Box* box)
     newTable->addBox(box);
 }
 
-void Box::computePreferredWidths(float& minWidth, float& maxWidth) const
-{
-    minWidth = 0;
-    maxWidth = 0;
-}
-
 void Box::addLine(LineBox* line)
 {
-    if(auto lines = this->lines())
-        lines->add(this, line);
+    auto lines = this->lines();
+    assert(lines != nullptr);
+    lines->add(this, line);
 }
 
 void Box::removeLine(LineBox* line)
 {
-    if(auto lines = this->lines())
-        lines->remove(this, line);
+    auto lines = this->lines();
+    assert(lines != nullptr);
+    lines->remove(this, line);
+}
+
+void Box::insertChild(Box* box, Box* nextBox)
+{
+    auto children = this->children();
+    assert(children != nullptr);
+    children->insert(this, box, nextBox);
+}
+
+void Box::appendChild(Box* box)
+{
+    auto children = this->children();
+    assert(children != nullptr);
+    children->append(this, box);
+}
+
+void Box::removeChild(Box* box)
+{
+    auto children = this->children();
+    assert(children != nullptr);
+    children->remove(this, box);
+}
+
+void Box::moveChildrenTo(Box* to, Box* begin, Box* end)
+{
+    auto fromChildren = children();
+    auto toChildren = to->children();
+    assert(fromChildren && toChildren);
+    auto child = begin;
+    while(child && child != end) {
+        auto nextChild = child->nextBox();
+        fromChildren->remove(this, child);
+        toChildren->append(to, child);
+        child = nextChild;
+    }
+}
+
+void Box::moveChildrenTo(Box* to, Box* begin)
+{
+    moveChildrenTo(to, begin, nullptr);
+}
+
+void Box::moveChildrenTo(Box* to)
+{
+    moveChildrenTo(to, firstBox(), nullptr);
 }
 
 Box* Box::firstBox() const
@@ -151,48 +197,6 @@ BlockBox* Box::containingBlock() const
     while(parent && parent->isInline())
         parent = parent->parentBox();
     return to<BlockBox>(parent);
-}
-
-void Box::insertChild(Box* box, Box* nextBox)
-{
-    if(auto children = this->children())
-        children->insert(this, box, nextBox);
-}
-
-void Box::appendChild(Box* box)
-{
-    if(auto children = this->children())
-        children->append(this, box);
-}
-
-void Box::removeChild(Box* box)
-{
-    if(auto children = this->children())
-        children->remove(this, box);
-}
-
-void Box::moveChildrenTo(Box* to, Box* begin, Box* end)
-{
-    auto fromChildren = children();
-    auto toChildren = to->children();
-    assert(fromChildren && toChildren);
-    auto child = begin;
-    while(child && child != end) {
-        auto nextChild = child->nextBox();
-        fromChildren->remove(this, child);
-        toChildren->append(to, child);
-        child = nextChild;
-    }
-}
-
-void Box::moveChildrenTo(Box* to, Box* begin)
-{
-    moveChildrenTo(to, begin, nullptr);
-}
-
-void Box::moveChildrenTo(Box* to)
-{
-    moveChildrenTo(to, firstBox(), nullptr);
 }
 
 BoxList::~BoxList()
