@@ -1,7 +1,6 @@
 #include "box.h"
 #include "document.h"
 #include "resource.h"
-#include <iostream>
 
 namespace htmlbook {
 
@@ -25,19 +24,17 @@ void Box::addBox(Box* box)
     auto children = this->children();
     if(children == nullptr)
         return;
-    auto requirestable = [this](auto box) {
-        if(box->isTableCaptionBox() || box->isTableSectionBox())
-            return !isTableBox();
-        if(box->isTableColumnBox())
-            return !isTableBox()  && !isTableColumnGroupBox();
-        if(box->isTableRowBox())
-            return !isTableSectionBox();
-        if(box->isTableCellBox())
-            return !isTableRowBox();
-        return false;
-    };
-
-    if(!requirestable(box)) {
+    switch(box->display()) {
+    case Display::TableCaption:
+    case Display::TableCell:
+    case Display::TableColumn:
+    case Display::TableColumnGroup:
+    case Display::TableFooterGroup:
+    case Display::TableHeaderGroup:
+    case Display::TableRow:
+    case Display::TableRowGroup:
+        break;
+    default:
         children->append(this, box);
         return;
     }
@@ -335,8 +332,9 @@ void InlineBox::addBox(Box* box)
         block = block->containingBlock();
 
         auto children = block->children();
-        children->insert(block, postBlock, preBlock->nextBox());
-        children->insert(block, newBlock, preBlock->nextBox());
+        assert(children->lastBox() == preBlock);
+        children->append(block, newBlock);
+        children->append(block, postBlock);
     } else {
         preBlock = createAnonymousBlock(*block->style());
         postBlock = createAnonymousBlock(*block->style());
@@ -354,22 +352,19 @@ void InlineBox::addBox(Box* box)
     auto currentClone = clone;
     while(currentParent != preBlock) {
         auto parent = to<InlineBox>(currentParent);
+        assert(parent->continuation() == nullptr);
         auto clone = new InlineBox(nullptr, parent->style());
         clone->appendChild(currentClone);
-
-        auto continuation = parent->continuation();
         parent->setContinuation(clone);
-        clone->setContinuation(continuation);
 
-        currentParent->moveChildrenTo(clone, currentChild->nextBox());
+        assert(currentChild->nextBox() == nullptr);
         currentChild = currentParent;
         currentClone = clone;
         currentParent = currentParent->parentBox();
     }
 
+    assert(currentChild->nextBox() == nullptr);
     postBlock->appendChild(currentClone);
-    preBlock->moveChildrenTo(postBlock, currentChild->nextBox());
-
     newBlock->addBox(box);
     newBlock->setContinuation(clone);
     setContinuation(newBlock);
@@ -462,6 +457,80 @@ TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
 {
 }
 
+void TableBox::addBox(Box* box)
+{
+    auto children = this->children();
+    switch(box->display()) {
+    case Display::TableCaption:
+    case Display::TableColumn:
+    case Display::TableColumnGroup:
+    case Display::TableFooterGroup:
+    case Display::TableHeaderGroup:
+    case Display::TableRowGroup:
+        children->append(this, box);
+        return;
+    default:
+        break;
+    }
+
+    auto lastChild = children->lastBox();
+    if(lastChild && lastChild->isAnonymous() && lastChild->isTableSectionBox()) {
+        lastChild->addBox(box);
+        return;
+    }
+
+    auto newSection = createAnonymous(*box->style(), Display::TableRowGroup);
+    children->append(this, newSection);
+    newSection->addBox(box);
+}
+
+TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BoxFrame(node, style)
+{
+}
+
+void TableSectionBox::addBox(Box* box)
+{
+    auto children = this->children();
+    if(box->isTableRowBox()) {
+        children->append(this, box);
+        return;
+    }
+
+    auto lastChild = children->lastBox();
+    if(lastChild && lastChild->isAnonymous() && lastChild->isTableRowBox()) {
+        lastChild->addBox(box);
+        return;
+    }
+
+    auto newRow = createAnonymous(*box->style(), Display::TableRow);
+    children->append(this, newRow);
+    newRow->addBox(box);
+}
+
+TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BoxFrame(node, style)
+{
+}
+
+void TableRowBox::addBox(Box* box)
+{
+    if(box->isTableCellBox()) {
+        m_children.append(this, box);
+        return;
+    }
+
+    auto lastChild = m_children.lastBox();
+    if(lastChild && lastChild->isAnonymous() && lastChild->isTableCellBox()) {
+        lastChild->addBox(box);
+        return;
+    }
+
+    auto newCell = createAnonymous(*box->style(), Display::TableCell);
+    m_children.append(this, newCell);
+    newCell->addBox(box);
+}
+
 TableCellBox::TableCellBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
 {
@@ -477,18 +546,18 @@ TableColumnGroupBox::TableColumnGroupBox(Node* node, const RefPtr<BoxStyle>& sty
 {
 }
 
-TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BoxFrame(node, style)
+void TableColumnGroupBox::addBox(Box* box)
 {
+    if(box->display() == Display::TableColumn) {
+        m_children.append(this, box);
+        return;
+    }
+
+    TableColumnBox::addBox(box);
 }
 
 TableCaptionBox::TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style), m_captionSide(style->captionSide())
-{
-}
-
-TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BoxFrame(node, style)
 {
 }
 

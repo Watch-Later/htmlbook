@@ -89,6 +89,9 @@ public:
     void setPositioned(bool value) { m_positioned = value; }
     void setChildrenInline(bool value) { m_childrenInline = value; }
 
+    Display display() const { return m_style->display(); }
+    Position position() const { return m_style->position(); }
+
 private:
     Node* m_node;
     RefPtr<BoxStyle> m_style;
@@ -420,6 +423,8 @@ public:
     const std::vector<TableCaptionBox*>& captions() const { return m_captions; }
     const std::vector<TableSectionBox*>& sections() const { return m_sections; }
 
+    void addBox(Box* box) final;
+
 private:
     TableSectionBox* m_head{nullptr};
     TableSectionBox* m_foot{nullptr};
@@ -430,6 +435,44 @@ private:
 template<>
 struct is<TableBox> {
     static bool check(const Box& box) { return box.isTableBox(); }
+};
+
+class TableSectionBox final : public BoxFrame {
+public:
+    TableSectionBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isTableSectionBox() const final { return true; }
+
+    BoxList* children() const final { return &m_children; }
+
+    void addBox(Box* box) final;
+
+private:
+    mutable BoxList m_children;
+};
+
+template<>
+struct is<TableSectionBox> {
+    static bool check(const Box& box) { return box.isTableSectionBox(); }
+};
+
+class TableRowBox final : public BoxFrame {
+public:
+    TableRowBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isTableRowBox() const final { return true; }
+
+    BoxList* children() const final { return &m_children; }
+
+    void addBox(Box* box) final;
+
+private:
+    mutable BoxList m_children;
+};
+
+template<>
+struct is<TableRowBox> {
+    static bool check(const Box& box) { return box.isTableRowBox(); }
 };
 
 class TableCellBox final : public BlockBox {
@@ -480,6 +523,8 @@ public:
 
     BoxList* children() const final { return &m_children; }
 
+    void addBox(Box* box) final;
+
 private:
     mutable BoxList m_children;
 };
@@ -487,23 +532,6 @@ private:
 template<>
 struct is<TableColumnGroupBox> {
     static bool check(const Box& box) { return box.isTableColumnGroupBox(); }
-};
-
-class TableRowBox final : public BoxFrame {
-public:
-    TableRowBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    bool isTableRowBox() const final { return true; }
-
-    BoxList* children() const final { return &m_children; }
-
-private:
-    mutable BoxList m_children;
-};
-
-template<>
-struct is<TableRowBox> {
-    static bool check(const Box& box) { return box.isTableRowBox(); }
 };
 
 class TableCaptionBox final : public BlockBox {
@@ -521,23 +549,6 @@ private:
 template<>
 struct is<TableCaptionBox> {
     static bool check(const Box& box) { return box.isTableCaptionBox(); }
-};
-
-class TableSectionBox final : public BoxFrame {
-public:
-    TableSectionBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    bool isTableSectionBox() const final { return true; }
-
-    BoxList* children() const final { return &m_children; }
-
-private:
-    mutable BoxList m_children;
-};
-
-template<>
-struct is<TableSectionBox> {
-    static bool check(const Box& box) { return box.isTableSectionBox(); }
 };
 
 } // namespace htmlbook
