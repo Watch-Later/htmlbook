@@ -882,29 +882,20 @@ FlexWrap BoxStyle::flexWrap() const
     }
 }
 
+AlignContent BoxStyle::justifyContent() const
+{
+    auto value = get(CSSPropertyID::JustifyContent);
+    if(value == nullptr)
+        return AlignContent::FlexStart;
+    return convertAlignContent(*value);
+}
+
 AlignContent BoxStyle::alignContent() const
 {
     auto value = get(CSSPropertyID::AlignContent);
     if(value == nullptr)
         return AlignContent::Stretch;
-    assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(*value);
-    switch(ident->value()) {
-    case CSSValueID::FlexStart:
-        return AlignContent::FlexStart;
-    case CSSValueID::FlexEnd:
-        return AlignContent::FlexEnd;
-    case CSSValueID::Center:
-        return AlignContent::Center;
-    case CSSValueID::Stretch:
-        return AlignContent::Stretch;
-    case CSSValueID::SpaceBetween:
-        return AlignContent::SpaceBetween;
-    case CSSValueID::SpaceAround:
-        return AlignContent::SpaceAround;
-    default:
-        assert(false);
-    }
+    return convertAlignContent(*value);
 }
 
 AlignItems BoxStyle::alignItems() const
@@ -950,29 +941,6 @@ AlignSelf BoxStyle::alignSelf() const
         return AlignSelf::Stretch;
     case CSSValueID::Baseline:
         return AlignSelf::Baseline;
-    default:
-        assert(false);
-    }
-}
-
-JustifyContent BoxStyle::justifyContent() const
-{
-    auto value = get(CSSPropertyID::JustifyContent);
-    if(value == nullptr)
-        return JustifyContent::FlexStart;
-    assert(value->isIdentValue());
-    auto ident = to<CSSIdentValue>(*value);
-    switch(ident->value()) {
-    case CSSValueID::FlexStart:
-        return JustifyContent::FlexStart;
-    case CSSValueID::FlexEnd:
-        return JustifyContent::FlexEnd;
-    case CSSValueID::Center:
-        return JustifyContent::Center;
-    case CSSValueID::Stretch:
-        return JustifyContent::SpaceBetween;
-    case CSSValueID::Baseline:
-        return JustifyContent::SpaceAround;
     default:
         assert(false);
     }
@@ -1740,6 +1708,30 @@ FontVariant BoxStyle::convertFontVariant(const CSSValue &value)
         return FontVariant::Normal;
     case CSSValueID::SmallCaps:
         return FontVariant::SmallCaps;
+    default:
+        assert(false);
+    }
+}
+
+AlignContent BoxStyle::convertAlignContent(const CSSValue& value)
+{
+    assert(value.isIdentValue());
+    auto ident = to<CSSIdentValue>(value);
+    switch(ident->value()) {
+    case CSSValueID::FlexStart:
+        return AlignContent::FlexStart;
+    case CSSValueID::FlexEnd:
+        return AlignContent::FlexEnd;
+    case CSSValueID::Center:
+        return AlignContent::Center;
+    case CSSValueID::SpaceBetween:
+        return AlignContent::SpaceBetween;
+    case CSSValueID::SpaceAround:
+        return AlignContent::SpaceAround;
+    case CSSValueID::SpaceEvenly:
+        return AlignContent::SpaceEvenly;
+    case CSSValueID::Stretch:
+        return AlignContent::Stretch;
     default:
         assert(false);
     }

@@ -202,9 +202,7 @@ enum class TableLayout : uint8_t {
 
 enum class CaptionSide : uint8_t {
     Top,
-    Bottom,
-    Left,
-    Right
+    Bottom
 };
 
 enum class EmptyCells : uint8_t {
@@ -239,9 +237,10 @@ enum class AlignContent : uint8_t {
     FlexStart,
     FlexEnd,
     Center,
-    Stretch,
     SpaceBetween,
-    SpaceAround
+    SpaceAround,
+    SpaceEvenly,
+    Stretch
 };
 
 enum class AlignItems : uint8_t {
@@ -259,14 +258,6 @@ enum class AlignSelf : uint8_t {
     Center,
     Stretch,
     Baseline
-};
-
-enum class JustifyContent : uint8_t {
-    FlexStart,
-    FlexEnd,
-    Center,
-    SpaceBetween,
-    SpaceAround
 };
 
 enum class ColumnSpan : uint8_t {
@@ -536,10 +527,10 @@ public:
     int order() const;
     FlexDirection flexDirection() const;
     FlexWrap flexWrap() const;
+    AlignContent justifyContent() const;
     AlignContent alignContent() const;
     AlignItems alignItems() const;
     AlignSelf alignSelf() const;
-    JustifyContent justifyContent() const;
 
     float outlineOffset() const;
     Color outlineColor() const;
@@ -600,6 +591,7 @@ public:
     static LineStyle convertLineStyle(const CSSValue& value);
     static FontStyle convertFontStyle(const CSSValue& value);
     static FontVariant convertFontVariant(const CSSValue& value);
+    static AlignContent convertAlignContent(const CSSValue& value);
     static int convertInteger(const CSSValue& value);
     static std::optional<int> convertIntegerOrAuto(const CSSValue& value);
     static float convertNumber(const CSSValue& value);

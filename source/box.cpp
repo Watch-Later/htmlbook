@@ -27,32 +27,7 @@ void Box::computePreferredWidths(float& minWidth, float& maxWidth) const
 
 void Box::addBox(Box* box)
 {
-    auto children = this->children();
-    assert(children != nullptr);
-    switch(box->display()) {
-    case Display::TableCaption:
-    case Display::TableCell:
-    case Display::TableColumn:
-    case Display::TableColumnGroup:
-    case Display::TableFooterGroup:
-    case Display::TableHeaderGroup:
-    case Display::TableRow:
-    case Display::TableRowGroup:
-        break;
-    default:
-        children->append(this, box);
-        return;
-    }
-
-    auto lastChild = children->lastBox();
-    if(lastChild && lastChild->isAnonymous() && lastChild->isTableBox()) {
-        lastChild->addBox(box);
-        return;
-    }
-
-    auto newTable = createAnonymous(*box->style(), Display::Table);
-    children->append(this, newTable);
-    newTable->addBox(box);
+    appendChild(box);
 }
 
 void Box::addLine(LineBox* line)
@@ -194,7 +169,7 @@ BlockBox* Box::createAnonymousBlock(const BoxStyle& parentStyle)
 BlockBox* Box::containingBlock() const
 {
     auto parent = parentBox();
-    while(parent && parent->isInline())
+    while(parent && parent->isInline() && !parent->isReplaced())
         parent = parent->parentBox();
     return to<BlockBox>(parent);
 }
@@ -301,6 +276,36 @@ TextBox::TextBox(Node* node, const RefPtr<BoxStyle>& style)
 BoxModel::BoxModel(Node* node, const RefPtr<BoxStyle>& style)
     : Box(node, style)
 {
+}
+
+void BoxModel::addBox(Box* box)
+{
+    auto children = this->children();
+    assert(children != nullptr);
+    switch(box->display()) {
+    case Display::TableCaption:
+    case Display::TableCell:
+    case Display::TableColumn:
+    case Display::TableColumnGroup:
+    case Display::TableFooterGroup:
+    case Display::TableHeaderGroup:
+    case Display::TableRow:
+    case Display::TableRowGroup:
+        break;
+    default:
+        children->append(this, box);
+        return;
+    }
+
+    auto lastChild = children->lastBox();
+    if(lastChild && lastChild->isAnonymous() && lastChild->isTableBox()) {
+        lastChild->addBox(box);
+        return;
+    }
+
+    auto newTable = createAnonymous(*box->style(), Display::Table);
+    children->append(this, newTable);
+    newTable->addBox(box);
 }
 
 BoxFrame::BoxFrame(Node* node, const RefPtr<BoxStyle>& style)
@@ -463,7 +468,6 @@ TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableBox::addBox(Box* box)
 {
-    auto children = this->children();
     switch(box->display()) {
     case Display::TableCaption:
     case Display::TableColumn:
@@ -471,20 +475,20 @@ void TableBox::addBox(Box* box)
     case Display::TableFooterGroup:
     case Display::TableHeaderGroup:
     case Display::TableRowGroup:
-        children->append(this, box);
+        m_children.append(this, box);
         return;
     default:
         break;
     }
 
-    auto lastChild = children->lastBox();
+    auto lastChild = m_children.lastBox();
     if(lastChild && lastChild->isAnonymous() && lastChild->isTableSectionBox()) {
         lastChild->addBox(box);
         return;
     }
 
     auto newSection = createAnonymous(*box->style(), Display::TableRowGroup);
-    children->append(this, newSection);
+    m_children.append(this, newSection);
     newSection->addBox(box);
 }
 
@@ -495,20 +499,19 @@ TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableSectionBox::addBox(Box* box)
 {
-    auto children = this->children();
     if(box->isTableRowBox()) {
-        children->append(this, box);
+        m_children.append(this, box);
         return;
     }
 
-    auto lastChild = children->lastBox();
+    auto lastChild = m_children.lastBox();
     if(lastChild && lastChild->isAnonymous() && lastChild->isTableRowBox()) {
         lastChild->addBox(box);
         return;
     }
 
     auto newRow = createAnonymous(*box->style(), Display::TableRow);
-    children->append(this, newRow);
+    m_children.append(this, newRow);
     newRow->addBox(box);
 }
 
@@ -552,12 +555,7 @@ TableColumnGroupBox::TableColumnGroupBox(Node* node, const RefPtr<BoxStyle>& sty
 
 void TableColumnGroupBox::addBox(Box* box)
 {
-    if(box->display() == Display::TableColumn) {
-        m_children.append(this, box);
-        return;
-    }
-
-    TableColumnBox::addBox(box);
+    m_children.append(this, box);
 }
 
 TableCaptionBox::TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style)

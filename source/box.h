@@ -202,6 +202,8 @@ public:
     void setPaddingLeft(float value) { m_paddingLeft = value; }
     void setPaddingRight(float value) { m_paddingRight = value; }
 
+    void addBox(Box* box) override;
+
 private:
     std::unique_ptr<BoxLayer> m_layer;
 
@@ -299,9 +301,11 @@ public:
 
     void addBox(Box* box) override;
 
-private:
+protected:
     mutable BoxList m_children;
     mutable LineBoxList m_lines;
+
+private:
     RefPtr<BoxStyle> m_firstLineStyle;
     Box* m_continuation{nullptr};
 };

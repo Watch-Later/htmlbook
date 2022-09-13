@@ -48,7 +48,8 @@ Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
 
 void TextNode::build(Box* parent)
 {
-    auto box = createBox(parent->style());
+    auto style = BoxStyle::create(*parent->style(), Display::Inline);
+    auto box = createBox(style);
     if(box == nullptr)
         return;
     parent->addBox(box);

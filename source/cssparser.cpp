@@ -2776,14 +2776,16 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
         return consumeIdent(input, table);
     }
 
-    case CSSPropertyID::AlignContent: {
+    case CSSPropertyID::AlignContent:
+    case CSSPropertyID::JustifyContent: {
         static const idententry_t table[] = {
             {"flex-start", CSSValueID::FlexStart},
             {"flex-end", CSSValueID::FlexEnd},
             {"center", CSSValueID::Center},
-            {"stretch", CSSValueID::Stretch},
             {"space-between", CSSValueID::SpaceBetween},
-            {"space-around", CSSValueID::SpaceAround}
+            {"space-around", CSSValueID::SpaceAround},
+            {"space-evenly", CSSValueID::SpaceEvenly},
+            {"stretch", CSSValueID::Stretch}
         };
 
         return consumeIdent(input, table);
@@ -2809,18 +2811,6 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"center", CSSValueID::Center},
             {"stretch", CSSValueID::Stretch},
             {"baseline", CSSValueID::Baseline}
-        };
-
-        return consumeIdent(input, table);
-    }
-
-    case CSSPropertyID::JustifyContent: {
-        static const idententry_t table[] = {
-            {"flex-start", CSSValueID::FlexStart},
-            {"flex-end", CSSValueID::FlexEnd},
-            {"center", CSSValueID::Center},
-            {"space-between", CSSValueID::SpaceBetween},
-            {"space-around", CSSValueID::SpaceAround}
         };
 
         return consumeIdent(input, table);

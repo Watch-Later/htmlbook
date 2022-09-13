@@ -230,6 +230,7 @@ enum class CSSValueID {
     Solid,
     SpaceAround,
     SpaceBetween,
+    SpaceEvenly,
     Square,
     Start,
     Static,
