@@ -9,6 +9,7 @@ namespace htmlbook {
 
 class Node;
 class BoxList;
+class BoxLayer;
 class BlockBox;
 
 class Box {
@@ -38,8 +39,7 @@ public:
 
     virtual BoxList* children() const { return nullptr; }
     virtual LineBoxList* lines() const { return nullptr; }
-    virtual void beginBuildingChildern() {}
-    virtual void finishBuildingChildern() {}
+    virtual void build(BoxLayer* parent) {}
     virtual void addBox(Box* box);
 
     void addLine(LineBox* line);

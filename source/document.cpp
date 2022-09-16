@@ -347,9 +347,7 @@ void Element::build(Counters& counters, Box* parent)
     if(box == nullptr)
         return;
     parent->addBox(box);
-    box->beginBuildingChildern();
     ContainerNode::build(counters, box);
-    box->finishBuildingChildern();
 }
 
 void Element::serialize(std::ostream& o) const
@@ -492,9 +490,8 @@ void Document::build(Counters& counters, Box* parent)
     style->set(CSSPropertyID::ZIndex, CSSIntegerValue::create(0));
 
     auto box = createBox(style);
-    box->beginBuildingChildern();
     ContainerNode::build(counters, box);
-    box->finishBuildingChildern();
+    box->build(nullptr);
 }
 
 template<typename ResourceType>
