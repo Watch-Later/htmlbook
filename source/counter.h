@@ -28,8 +28,8 @@ public:
     void increaseQuoteDepth() { ++m_quoteDepth; }
     void decreaseQuoteDepth() { --m_quoteDepth; }
 
-    int value(const GlobalString& name, int value) const;
-    std::vector<int> values(const GlobalString& name, int value) const;
+    int value(const GlobalString& name) const;
+    std::vector<int> values(const GlobalString& name) const;
     size_t quoteDepth() const { return m_quoteDepth; }
 
 private:

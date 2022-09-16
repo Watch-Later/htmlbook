@@ -2884,10 +2884,9 @@ bool CSSParser::consumeBackground(CSSTokenStream& input, CSSPropertyList& proper
         if(position == nullptr && (position = consumeBackgroundPosition(input))) {
             if(input->type() == CSSToken::Type::Delim && input->delim() == '/') {
                 input.consumeIncludingWhitespace();
-                auto value = consumeBackgroundSize(input);
-                if(value == nullptr)
-                    return false;
-                size = value;
+                if(size = consumeBackgroundSize(input))
+                    continue;
+                return false;
             }
 
             continue;

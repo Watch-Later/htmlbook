@@ -63,7 +63,7 @@ void Counters::update(const BoxStyle& style)
     }
 }
 
-int Counters::value(const GlobalString& name, int value) const
+int Counters::value(const GlobalString& name) const
 {
     auto counter = find(name);
     if(counter == nullptr)
@@ -71,7 +71,7 @@ int Counters::value(const GlobalString& name, int value) const
     return counter->at(name);
 }
 
-std::vector<int> Counters::values(const GlobalString& name, int value) const
+std::vector<int> Counters::values(const GlobalString& name) const
 {
     std::vector<int> values;
     for(auto& counter : m_counters) {
