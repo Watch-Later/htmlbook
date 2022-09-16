@@ -46,7 +46,7 @@ Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
     return box;
 }
 
-void TextNode::build(Box* parent)
+void TextNode::build(Counters& counters, Box* parent)
 {
     auto style = BoxStyle::create(*parent->style(), Display::Inline);
     auto box = createBox(style);
@@ -149,13 +149,13 @@ void ContainerNode::reparentChildren(ContainerNode* newParent)
     }
 }
 
-void ContainerNode::build(Box* parent)
+void ContainerNode::build(Counters& counters, Box* parent)
 {
     if(parent->children() == nullptr)
         return;
     auto child = m_firstChild;
     while(child) {
-        child->build(parent);
+        child->build(counters, parent);
         child = child->nextSibling();
     }
 }
@@ -287,15 +287,7 @@ CSSPropertyList Element::inlineStyle() const
 CSSPropertyList Element::presentationAttributeStyle() const
 {
     std::string value;
-    for(auto& attribute : m_attributes) {
-        if(!isPresentationAttribute(attribute.name()))
-            continue;
-        value += attribute.name();
-        value += ':';
-        value += attribute.value();
-        value += ';';
-    }
-
+    collectPresentationAttributeStyle(value);
     if(value.empty())
         return CSSPropertyList{};
 
@@ -346,7 +338,7 @@ Box* Element::createBox(const RefPtr<BoxStyle>& style)
     return Box::create(this, style);
 }
 
-void Element::build(Box* parent)
+void Element::build(Counters& counters, Box* parent)
 {
     auto style = document()->styleForElement(this, *parent->style());
     if(style == nullptr || style->display() == Display::None)
@@ -356,7 +348,7 @@ void Element::build(Box* parent)
         return;
     parent->addBox(box);
     box->beginBuildingChildern();
-    ContainerNode::build(box);
+    ContainerNode::build(counters, box);
     box->finishBuildingChildern();
 }
 
@@ -491,7 +483,7 @@ Box* Document::createBox(const RefPtr<BoxStyle>& style)
     return new BlockBox(this, style);
 }
 
-void Document::build(Box* parent)
+void Document::build(Counters& counters, Box* parent)
 {
     assert(parent == nullptr);
     auto style = BoxStyle::create(this, PseudoType::None);
@@ -501,7 +493,7 @@ void Document::build(Box* parent)
 
     auto box = createBox(style);
     box->beginBuildingChildern();
-    ContainerNode::build(box);
+    ContainerNode::build(counters, box);
     box->finishBuildingChildern();
 }
 

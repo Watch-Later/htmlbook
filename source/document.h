@@ -13,6 +13,7 @@ class ContainerNode;
 class Document;
 class Box;
 class BoxStyle;
+class Counters;
 
 class Node {
 public:
@@ -43,7 +44,7 @@ public:
     RefPtr<BoxStyle> style() const;
 
     virtual Box* createBox(const RefPtr<BoxStyle>& style) = 0;
-    virtual void build(Box* parent) = 0;
+    virtual void build(Counters& counters, Box* parent) = 0;
     virtual void serialize(std::ostream& o) const = 0;
 
 private:
@@ -66,7 +67,7 @@ public:
     void clearData() { m_data.clear(); }
 
     Box* createBox(const RefPtr<BoxStyle>& style) final;
-    void build(Box* parent) final;
+    void build(Counters& counters, Box* parent) final;
     void serialize(std::ostream& o) const final;
 
 private:
@@ -99,7 +100,7 @@ public:
     void removeChild(Node* child);
     void reparentChildren(ContainerNode* newParent);
 
-    void build(Box* parent) override;
+    void build(Counters& counters, Box* parent) override;
     void serialize(std::ostream& o) const override;
 
 private:
@@ -162,7 +163,7 @@ public:
     void setAttribute(const GlobalString& name, std::string value);
     void removeAttribute(const GlobalString& name);
     virtual void parseAttribute(const GlobalString& name, const std::string_view& value);
-    virtual bool isPresentationAttribute(const GlobalString& name) const { return false; }
+    virtual void collectPresentationAttributeStyle(std::string& value) const {}
 
     CSSPropertyList inlineStyle() const;
     CSSPropertyList presentationAttributeStyle() const;
@@ -172,7 +173,7 @@ public:
     Element* nextElement() const;
 
     Box* createBox(const RefPtr<BoxStyle>& style) override;
-    void build(Box* parent) override;
+    void build(Counters& counters, Box* parent) override;
     void serialize(std::ostream& o) const override;
 
 private:
@@ -246,7 +247,7 @@ public:
     float viewportHeight() const;
 
     Box* createBox(const RefPtr<BoxStyle>& style) override;
-    void build(Box* parent) override;
+    void build(Counters& counters, Box* parent) override;
 
 private:
     template<typename ResourceType>
