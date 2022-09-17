@@ -1196,8 +1196,7 @@ private:
 template<typename T>
 void CSSRuleDataMap<T>::add(const T& name, const CSSRuleData& data)
 {
-    auto& rules = m_ruleDataMap[name];
-    rules.push_back(data);
+    m_ruleDataMap[name].push_back(data);
 }
 
 template<typename T>

@@ -8,7 +8,7 @@ void Counters::reset(const GlobalString& name, int value)
     auto& counter = m_counters.back();
     if(counter == nullptr)
         counter = std::make_unique<Counter>();
-    counter->at(name) = value;
+    counter->insert_or_assign(name, value);
 }
 
 void Counters::set(const GlobalString& name, int value)

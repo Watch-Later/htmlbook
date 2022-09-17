@@ -984,8 +984,7 @@ RefPtr<FontFace> CSSFontFaceCache::get(const std::string& family, bool italic, b
 
 void CSSFontFaceCache::add(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
 {
-    auto& faces = m_fontFaceDataMap[family];
-    faces.emplace_back(italic, smallCaps, weight, std::move(face));
+    m_fontFaceDataMap[family].emplace_back(italic, smallCaps, weight, std::move(face));
 }
 
 std::unique_ptr<CSSRuleCache> CSSRuleCache::create(Document* document)
