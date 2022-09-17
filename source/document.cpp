@@ -5,6 +5,7 @@
 #include "resource.h"
 #include "boxstyle.h"
 #include "box.h"
+#include "counter.h"
 
 namespace htmlbook {
 
@@ -46,10 +47,9 @@ Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
     return box;
 }
 
-void TextNode::build(Counters& counters, Box* parent)
+void TextNode::buildBox(Counters& counters, Box* parent)
 {
-    auto style = BoxStyle::create(*parent->style(), Display::Inline);
-    auto box = createBox(style);
+    auto box = createBox(parent->style());
     if(box == nullptr)
         return;
     parent->addBox(box);
@@ -149,13 +149,13 @@ void ContainerNode::reparentChildren(ContainerNode* newParent)
     }
 }
 
-void ContainerNode::build(Counters& counters, Box* parent)
+void ContainerNode::buildBox(Counters& counters, Box* parent)
 {
     if(parent->children() == nullptr)
         return;
     auto child = m_firstChild;
     while(child) {
-        child->build(counters, parent);
+        child->buildBox(counters, parent);
         child = child->nextSibling();
     }
 }
@@ -338,7 +338,73 @@ Box* Element::createBox(const RefPtr<BoxStyle>& style)
     return Box::create(this, style);
 }
 
-void Element::build(Counters& counters, Box* parent)
+void Element::buildPseudoBox(Counters& counters, Box* parent, PseudoType pseudoType)
+{
+    auto style = document()->pseudoStyleForElement(this, *parent->style(), pseudoType);
+    if(style == nullptr || style->display() == Display::None)
+        return;
+
+    auto box = Box::create(nullptr, style);
+    parent->addBox(box);
+    counters.update(*style);
+    if(box->children() == nullptr)
+        return;
+
+    auto content = style->get(CSSPropertyID::Content);
+    if(content == nullptr || !content->isListValue())
+        return;
+    auto addtext = [&](const auto& text) {
+        if(text.empty())
+            return;
+        auto lastBox = box->lastBox();
+        if(lastBox && lastBox->isTextBox()) {
+            auto textBox = to<TextBox>(lastBox);
+            textBox->appendText(text);
+            return;
+        }
+
+        auto textBox = new TextBox(nullptr, style);
+        textBox->setText(text);
+        box->addBox(textBox);
+    };
+
+    for(auto& value : to<CSSListValue>(*content)->values()) {
+        if(auto string = to<CSSStringValue>(*value)) {
+            addtext(string->value());
+        } else if(auto image = to<CSSImageValue>(*value)) {
+            auto resource = image->fetch(document());
+            if(resource == nullptr)
+                continue;
+            auto imageBox = new ImageBox(nullptr, style);
+            imageBox->setImage(std::move(resource));
+            box->addBox(imageBox);
+        } else if(auto ident = to<CSSIdentValue>(*value)) {
+            auto quote = ident->value();
+            auto usequote = (quote == CSSValueID::OpenQuote || quote == CSSValueID::CloseQuote);
+            auto openquote = (quote == CSSValueID::OpenQuote || quote == CSSValueID::NoOpenQuote);
+            if(!openquote && counters.quoteDepth() > 0)
+                counters.decreaseQuoteDepth();
+            if(usequote)
+                addtext(style->getQuote(openquote, counters.quoteDepth()));
+            if(openquote)
+                counters.increaseQuoteDepth();
+        } else if(auto function = to<CSSFunctionValue>(*value)) {
+            switch(function->id()) {
+            case CSSValueID::Attr: {
+                auto name = to<CSSCustomIdentValue>(*function->front());
+                if(auto attribute = findAttribute(name->value()))
+                    addtext(attribute->value());
+                break;
+            }
+
+            default:
+                assert(false);
+            }
+        }
+    }
+}
+
+void Element::buildBox(Counters& counters, Box* parent)
 {
     auto style = document()->styleForElement(this, *parent->style());
     if(style == nullptr || style->display() == Display::None)
@@ -347,7 +413,12 @@ void Element::build(Counters& counters, Box* parent)
     if(box == nullptr)
         return;
     parent->addBox(box);
-    ContainerNode::build(counters, box);
+    counters.push();
+    counters.update(*style);
+    buildPseudoBox(counters, box, PseudoType::Before);
+    ContainerNode::buildBox(counters, box);
+    buildPseudoBox(counters, box, PseudoType::After);
+    counters.pop();
 }
 
 void Element::serialize(std::ostream& o) const
@@ -481,7 +552,7 @@ Box* Document::createBox(const RefPtr<BoxStyle>& style)
     return new BlockBox(this, style);
 }
 
-void Document::build(Counters& counters, Box* parent)
+void Document::buildBox(Counters& counters, Box* parent)
 {
     assert(parent == nullptr);
     auto style = BoxStyle::create(this, PseudoType::None);
@@ -490,7 +561,7 @@ void Document::build(Counters& counters, Box* parent)
     style->set(CSSPropertyID::ZIndex, CSSIntegerValue::create(0));
 
     auto box = createBox(style);
-    ContainerNode::build(counters, box);
+    ContainerNode::buildBox(counters, box);
     box->build(nullptr);
 }
 

@@ -1068,6 +1068,26 @@ int BoxStyle::orphans() const
     return convertInteger(*value);
 }
 
+const std::string& BoxStyle::getQuote(bool open, size_t depth) const
+{
+    auto value = get(CSSPropertyID::Quotes);
+    if(value == nullptr) {
+        static std::string defaultQuote("\"");
+        return defaultQuote;
+    }
+
+    if(auto ident = to<CSSIdentValue>(*value)) {
+        assert(ident->value() == CSSValueID::None);
+        static std::string emptyString;
+        return emptyString;
+    }
+
+    auto list = to<CSSListValue>(*value);
+    auto pair = to<CSSPairValue>(*list->at(std::min(depth, list->length() - 1)));
+    auto quote = open ? pair->first() : pair->second();
+    return to<CSSStringValue>(*quote)->value();
+}
+
 RefPtr<CSSValue> BoxStyle::get(CSSPropertyID id) const
 {
     auto it = m_properties.find(id);

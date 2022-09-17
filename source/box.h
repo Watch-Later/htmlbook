@@ -26,7 +26,8 @@ public:
     virtual bool isReplacedBox() const { return false; }
     virtual bool isImageBox() const { return false; }
     virtual bool isListItemBox() const { return false; }
-    virtual bool isListMarkerBox() const { return false; }
+    virtual bool isInsideListMarkerBox() const { return false; }
+    virtual bool isOutsideListMarkerBox() const { return false; }
     virtual bool isTableBox() const { return false; }
     virtual bool isTableCellBox() const { return false; }
     virtual bool isTableColumnBox() const { return false; }
@@ -152,6 +153,8 @@ public:
     LineBoxList* lines() const final { return &m_lines; }
     const std::string& text() const { return m_text; }
     void setText(std::string text) { m_text = std::move(text); }
+    void appendText(const std::string& text) { m_text += text; }
+    void clearText() { m_text.clear(); }
 
 private:
     std::string m_text;
@@ -369,19 +372,17 @@ struct is<ImageBox> {
     static bool check(const Box& box) { return box.isImageBox(); }
 };
 
-class ListMarkerBox;
-
 class ListItemBox final : public BlockBox {
 public:
     ListItemBox(Node* node, const RefPtr<BoxStyle>& style);
 
     bool isListItemBox() const final { return true; }
 
-    ListMarkerBox* listMarker() const { return m_listMarker; }
-    void setListMarker(ListMarkerBox* marker) { m_listMarker = marker; }
+    BoxModel* listMarker() const { return m_listMarker; }
+    void setListMarker(BoxModel* marker) { m_listMarker = marker; }
 
 private:
-    ListMarkerBox* m_listMarker{nullptr};
+    BoxModel* m_listMarker{nullptr};
 };
 
 template<>
@@ -389,29 +390,40 @@ struct is<ListItemBox> {
     static bool check(const Box& box) { return box.isListItemBox(); }
 };
 
-class ListMarkerBox final : public BoxFrame {
+class InsideListMarkerBox final : public InlineBox {
 public:
-    ListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style);
-    ~ListMarkerBox() final;
+    InsideListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style);
+    ~InsideListMarkerBox() final;
 
-    bool isListMarkerBox() const final { return true; }
+    bool isInsideListMarkerBox() const final { return true; }
 
     ListItemBox* listItem() const { return m_listItem; }
-    const RefPtr<Image>& image() const { return m_image; }
-    const std::string& text() const { return m_text; }
-
-    void setImage(RefPtr<Image> image);
-    void setText(std::string text) { m_text = std::move(text); }
 
 private:
     ListItemBox* m_listItem;
-    RefPtr<Image> m_image;
-    std::string m_text;
 };
 
 template<>
-struct is<ListMarkerBox> {
-    static bool check(const Box& box) { return box.isListMarkerBox(); }
+struct is<InsideListMarkerBox> {
+    static bool check(const Box& box) { return box.isInsideListMarkerBox(); }
+};
+
+class OutsideListMarkerBox final : public BlockBox {
+public:
+    OutsideListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style);
+    ~OutsideListMarkerBox() final;
+
+    bool isOutsideListMarkerBox() const final { return true; }
+
+    ListItemBox* listItem() const { return m_listItem; }
+
+private:
+    ListItemBox* m_listItem;
+};
+
+template<>
+struct is<OutsideListMarkerBox> {
+    static bool check(const Box& box) { return box.isOutsideListMarkerBox(); }
 };
 
 class TableCaptionBox;

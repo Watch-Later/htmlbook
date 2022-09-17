@@ -445,18 +445,34 @@ ImageBox::ImageBox(Node* node, const RefPtr<BoxStyle>& style)
 {
 }
 
+void ImageBox::setImage(RefPtr<Image> image)
+{
+    m_image = std::move(image);
+}
+
 ListItemBox::ListItemBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
 {
 }
 
-ListMarkerBox::ListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style)
-    : BoxFrame(nullptr, style)
+InsideListMarkerBox::InsideListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style)
+    : InlineBox(nullptr, style), m_listItem(item)
 {
     item->setListMarker(this);
 }
 
-ListMarkerBox::~ListMarkerBox()
+InsideListMarkerBox::~InsideListMarkerBox()
+{
+    m_listItem->setListMarker(nullptr);
+}
+
+OutsideListMarkerBox::OutsideListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style)
+    : BlockBox(nullptr, style), m_listItem(item)
+{
+    item->setListMarker(this);
+}
+
+OutsideListMarkerBox::~OutsideListMarkerBox()
 {
     m_listItem->setListMarker(nullptr);
 }

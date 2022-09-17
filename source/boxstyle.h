@@ -548,6 +548,8 @@ public:
     int widows() const;
     int orphans() const;
 
+    const std::string& getQuote(bool open, size_t depth) const;
+
     RefPtr<CSSValue> get(CSSPropertyID id) const;
     void set(CSSPropertyID id, RefPtr<CSSValue> value);
     void remove(CSSPropertyID id);
