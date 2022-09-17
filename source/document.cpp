@@ -347,9 +347,6 @@ void Element::buildPseudoBox(Counters& counters, Box* parent, PseudoType pseudoT
     auto box = Box::create(nullptr, style);
     parent->addBox(box);
     counters.update(*style);
-    if(box->children() == nullptr)
-        return;
-
     auto content = style->get(CSSPropertyID::Content);
     if(content == nullptr || !content->isListValue())
         return;
@@ -379,27 +376,20 @@ void Element::buildPseudoBox(Counters& counters, Box* parent, PseudoType pseudoT
             imageBox->setImage(std::move(resource));
             box->addBox(imageBox);
         } else if(auto ident = to<CSSIdentValue>(*value)) {
-            auto quote = ident->value();
-            auto usequote = (quote == CSSValueID::OpenQuote || quote == CSSValueID::CloseQuote);
-            auto openquote = (quote == CSSValueID::OpenQuote || quote == CSSValueID::NoOpenQuote);
-            if(!openquote && counters.quoteDepth() > 0)
+            auto usequote = (ident->value() == CSSValueID::OpenQuote || ident->value() == CSSValueID::CloseQuote);
+            auto openquote = (ident->value() == CSSValueID::OpenQuote || ident->value() == CSSValueID::NoOpenQuote);
+            if(counters.quoteDepth() > 0 && !openquote)
                 counters.decreaseQuoteDepth();
             if(usequote)
                 addtext(style->getQuote(openquote, counters.quoteDepth()));
             if(openquote)
                 counters.increaseQuoteDepth();
         } else if(auto function = to<CSSFunctionValue>(*value)) {
-            switch(function->id()) {
-            case CSSValueID::Attr: {
-                auto name = to<CSSCustomIdentValue>(*function->front());
-                if(auto attribute = findAttribute(name->value()))
-                    addtext(attribute->value());
-                break;
-            }
-
-            default:
-                assert(false);
-            }
+            auto name = to<CSSCustomIdentValue>(*function->front());
+            auto attribute = findAttribute(name->value());
+            if(attribute == nullptr)
+                continue;
+            addtext(attribute->value());
         }
     }
 }
