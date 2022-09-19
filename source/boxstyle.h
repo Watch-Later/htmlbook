@@ -75,21 +75,6 @@ enum class LineStyle : uint8_t {
     Double
 };
 
-enum class ListStyleType : uint8_t {
-    None,
-    Disc,
-    Circle,
-    Square,
-    Decimal,
-    DecimalLeadingZero,
-    LowerAlpha,
-    LowerLatin,
-    LowerRoman,
-    UpperAlpha,
-    UpperLatin,
-    UpperRoman
-};
-
 enum class ListStylePosition : uint8_t {
     Outside,
     Inside

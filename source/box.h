@@ -392,15 +392,9 @@ struct is<ListItemBox> {
 
 class InsideListMarkerBox final : public InlineBox {
 public:
-    InsideListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style);
-    ~InsideListMarkerBox() final;
+    InsideListMarkerBox(const RefPtr<BoxStyle>& style);
 
     bool isInsideListMarkerBox() const final { return true; }
-
-    ListItemBox* listItem() const { return m_listItem; }
-
-private:
-    ListItemBox* m_listItem;
 };
 
 template<>
@@ -410,15 +404,9 @@ struct is<InsideListMarkerBox> {
 
 class OutsideListMarkerBox final : public BlockBox {
 public:
-    OutsideListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style);
-    ~OutsideListMarkerBox() final;
+    OutsideListMarkerBox(const RefPtr<BoxStyle>& style);
 
     bool isOutsideListMarkerBox() const final { return true; }
-
-    ListItemBox* listItem() const { return m_listItem; }
-
-private:
-    ListItemBox* m_listItem;
 };
 
 template<>

@@ -1,37 +1,6 @@
 #include "counter.h"
-#include "boxstyle.h"
 
 namespace htmlbook {
-
-void Counters::reset(const GlobalString& name, int value)
-{
-    auto& counter = m_counters.back();
-    if(counter == nullptr)
-        counter = std::make_unique<Counter>();
-    counter->insert_or_assign(name, value);
-}
-
-void Counters::set(const GlobalString& name, int value)
-{
-    auto counter = find(name);
-    if(counter == nullptr) {
-        reset(name, value);
-        return;
-    }
-
-    counter->at(name) = value;
-}
-
-void Counters::increment(const GlobalString& name, int value)
-{
-    auto counter = find(name);
-    if(counter == nullptr) {
-        reset(name, value);
-        return;
-    }
-
-    counter->at(name) += value;
-}
 
 void Counters::update(const BoxStyle& style)
 {
@@ -63,6 +32,12 @@ void Counters::update(const BoxStyle& style)
     }
 }
 
+std::string Counters::format(const GlobalString& name, ListStyleType listStyle, std::string_view seperator) const
+{
+    std::string value;
+    return value;
+}
+
 int Counters::value(const GlobalString& name) const
 {
     auto counter = find(name);
@@ -84,6 +59,36 @@ std::vector<int> Counters::values(const GlobalString& name) const
     }
 
     return values;
+}
+
+void Counters::reset(const GlobalString& name, int value)
+{
+    auto& counter = m_counters.back();
+    if(counter == nullptr)
+        counter = std::make_unique<Counter>();
+    counter->insert_or_assign(name, value);
+}
+
+void Counters::set(const GlobalString& name, int value)
+{
+    auto counter = find(name);
+    if(counter == nullptr) {
+        reset(name, value);
+        return;
+    }
+
+    counter->at(name) = value;
+}
+
+void Counters::increment(const GlobalString& name, int value)
+{
+    auto counter = find(name);
+    if(counter == nullptr) {
+        reset(name, value);
+        return;
+    }
+
+    counter->at(name) += value;
 }
 
 Counter* Counters::find(const GlobalString& name) const

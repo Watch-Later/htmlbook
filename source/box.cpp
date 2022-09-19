@@ -119,6 +119,12 @@ LineBox* Box::lastLine() const
 
 Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
 {
+    if(style->pseudoType() == PseudoType::Marker) {
+        if(style->listStylePosition() == ListStylePosition::Inside)
+            return new InsideListMarkerBox(style);
+        return new OutsideListMarkerBox(style);
+    }
+
     switch(style->display()) {
     case Display::Inline:
         return new InlineBox(node, style);
@@ -455,26 +461,14 @@ ListItemBox::ListItemBox(Node* node, const RefPtr<BoxStyle>& style)
 {
 }
 
-InsideListMarkerBox::InsideListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style)
-    : InlineBox(nullptr, style), m_listItem(item)
+InsideListMarkerBox::InsideListMarkerBox(const RefPtr<BoxStyle>& style)
+    : InlineBox(nullptr, style)
 {
-    item->setListMarker(this);
 }
 
-InsideListMarkerBox::~InsideListMarkerBox()
+OutsideListMarkerBox::OutsideListMarkerBox(const RefPtr<BoxStyle>& style)
+    : BlockBox(nullptr, style)
 {
-    m_listItem->setListMarker(nullptr);
-}
-
-OutsideListMarkerBox::OutsideListMarkerBox(ListItemBox* item, const RefPtr<BoxStyle>& style)
-    : BlockBox(nullptr, style), m_listItem(item)
-{
-    item->setListMarker(this);
-}
-
-OutsideListMarkerBox::~OutsideListMarkerBox()
-{
-    m_listItem->setListMarker(nullptr);
 }
 
 TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)

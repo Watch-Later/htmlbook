@@ -340,17 +340,20 @@ Box* Element::createBox(const RefPtr<BoxStyle>& style)
 
 void Element::buildPseudoBox(Counters& counters, Box* parent, PseudoType pseudoType)
 {
+    if(pseudoType == PseudoType::Marker && !parent->isListItemBox())
+        return;
     auto style = document()->pseudoStyleForElement(this, *parent->style(), pseudoType);
     if(style == nullptr || style->display() == Display::None)
         return;
 
     auto box = Box::create(nullptr, style);
     parent->addBox(box);
-    counters.update(*style);
-    auto content = style->get(CSSPropertyID::Content);
-    if(content == nullptr || !content->isListValue())
-        return;
-    auto addtext = [&](const auto& text) {
+    if(pseudoType == PseudoType::Before || pseudoType == PseudoType::After) {
+        counters.update(*style);
+        buildPseudoBox(counters, box, PseudoType::Marker);
+    }
+
+    auto addText = [&](const auto& text) {
         if(text.empty())
             return;
         auto lastBox = box->lastBox();
@@ -365,31 +368,51 @@ void Element::buildPseudoBox(Counters& counters, Box* parent, PseudoType pseudoT
         box->addBox(textBox);
     };
 
+    auto addImage = [&](const auto& image) {
+        if(image == nullptr)
+            return;
+        auto imageBox = new ImageBox(nullptr, style);
+        imageBox->setImage(image);
+        box->addBox(imageBox);
+    };
+
+    auto content = style->get(CSSPropertyID::Content);
+    if(content == nullptr || !content->isListValue()) {
+        if(pseudoType == PseudoType::Marker)
+            return;
+        if(auto image = style->listStyleImage()) {
+            addImage(image);
+            return;
+        }
+
+        static const GlobalString listItem("list-item");
+        addText(counters.format(listItem, style->listStyleType(), emptyString));
+        return;
+    }
+
     for(auto& value : to<CSSListValue>(*content)->values()) {
         if(auto string = to<CSSStringValue>(*value)) {
-            addtext(string->value());
+            addText(string->value());
         } else if(auto image = to<CSSImageValue>(*value)) {
-            auto resource = image->fetch(document());
-            if(resource == nullptr)
-                continue;
-            auto imageBox = new ImageBox(nullptr, style);
-            imageBox->setImage(std::move(resource));
-            box->addBox(imageBox);
+            addImage(image->fetch(document()));
+        } else if(auto counter = to<CSSCounterValue>(*value)) {
+            addText(counters.format(counter->identifier(), counter->listStyle(), counter->seperator()));
         } else if(auto ident = to<CSSIdentValue>(*value)) {
             auto usequote = (ident->value() == CSSValueID::OpenQuote || ident->value() == CSSValueID::CloseQuote);
             auto openquote = (ident->value() == CSSValueID::OpenQuote || ident->value() == CSSValueID::NoOpenQuote);
             if(counters.quoteDepth() > 0 && !openquote)
                 counters.decreaseQuoteDepth();
             if(usequote)
-                addtext(style->getQuote(openquote, counters.quoteDepth()));
+                addText(style->getQuote(openquote, counters.quoteDepth()));
             if(openquote)
                 counters.increaseQuoteDepth();
-        } else if(auto function = to<CSSFunctionValue>(*value)) {
+        } else {
+            auto function = to<CSSFunctionValue>(*value);
             auto name = to<CSSCustomIdentValue>(*function->front());
             auto attribute = findAttribute(name->value());
             if(attribute == nullptr)
                 continue;
-            addtext(attribute->value());
+            addText(attribute->value());
         }
     }
 }
@@ -405,6 +428,7 @@ void Element::buildBox(Counters& counters, Box* parent)
     parent->addBox(box);
     counters.push();
     counters.update(*style);
+    buildPseudoBox(counters, box, PseudoType::Marker);
     buildPseudoBox(counters, box, PseudoType::Before);
     ContainerNode::buildBox(counters, box);
     buildPseudoBox(counters, box, PseudoType::After);

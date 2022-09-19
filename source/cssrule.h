@@ -501,21 +501,36 @@ struct is<CSSColorValue> {
     static bool check(const CSSValue& value) { return value.isColorValue(); }
 };
 
+enum class ListStyleType : uint8_t {
+    None,
+    Disc,
+    Circle,
+    Square,
+    Decimal,
+    DecimalLeadingZero,
+    LowerAlpha,
+    LowerLatin,
+    LowerRoman,
+    UpperAlpha,
+    UpperLatin,
+    UpperRoman
+};
+
 class CSSCounterValue final : public CSSValue {
 public:
-    static RefPtr<CSSCounterValue> create(CSSValueID listStyle, const GlobalString& identifier, std::string seperator);
+    static RefPtr<CSSCounterValue> create(ListStyleType listStyle, const GlobalString& identifier, std::string seperator);
 
-    CSSValueID listStyle() const { return m_listStyle; }
+    ListStyleType listStyle() const { return m_listStyle; }
     const GlobalString& identifier() const { return m_identifier; }
     const std::string& seperator() const { return m_seperator; }
     bool isCounterValue() const final { return true; }
 
 private:
-    CSSCounterValue(CSSValueID listStyle, const GlobalString& identifier, std::string seperator)
+    CSSCounterValue(ListStyleType listStyle, const GlobalString& identifier, std::string seperator)
         : m_listStyle(listStyle), m_identifier(identifier), m_seperator(std::move(seperator))
     {}
 
-    CSSValueID m_listStyle;
+    ListStyleType m_listStyle;
     GlobalString m_identifier;
     std::string m_seperator;
 };

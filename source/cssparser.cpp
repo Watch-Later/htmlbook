@@ -1522,26 +1522,33 @@ RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool co
         input.consumeIncludingWhitespace();
     }
 
-    CSSValueID listStyle = CSSValueID::Decimal;
+    auto listStyle = ListStyleType::Decimal;
     if(input->type() == CSSToken::Type::Comma) {
         input.consumeIncludingWhitespace();
-        static const idententry_t table[] = {
-            {"disc", CSSValueID::Disc},
-            {"circle", CSSValueID::Circle},
-            {"square", CSSValueID::Square},
-            {"decimal", CSSValueID::Decimal},
-            {"decimal-leading-zero", CSSValueID::DecimalLeadingZero},
-            {"lower-alpha", CSSValueID::LowerAlpha},
-            {"lower-latin", CSSValueID::LowerLatin},
-            {"lower-roman", CSSValueID::LowerRoman},
-            {"upper-alpha", CSSValueID::UpperAlpha},
-            {"upper-latin", CSSValueID::UpperLatin},
-            {"upper-roman", CSSValueID::UpperRoman}
+        if(input->type() == CSSToken::Type::Ident)
+            return nullptr;
+        static const struct {
+            std::string_view name;
+            ListStyleType listStyle;
+        }table[] = {
+            {"disc", ListStyleType::Disc},
+            {"circle", ListStyleType::Circle},
+            {"square", ListStyleType::Square},
+            {"decimal", ListStyleType::Decimal},
+            {"decimal-leading-zero", ListStyleType::DecimalLeadingZero},
+            {"lower-alpha", ListStyleType::LowerAlpha},
+            {"lower-latin", ListStyleType::LowerLatin},
+            {"lower-roman", ListStyleType::LowerRoman},
+            {"upper-alpha", ListStyleType::UpperAlpha},
+            {"upper-latin", ListStyleType::UpperLatin},
+            {"upper-roman", ListStyleType::UpperRoman}
         };
 
-        listStyle = matchIdent(input, table);
-        if(listStyle == CSSValueID::Unknown)
+        auto name = input->data();
+        auto it = std::find_if(table, std::end(table), [name](auto& item) { return equals(name, item.name, false); });
+        if(it == std::end(table))
             return nullptr;
+        listStyle = it->listStyle;
         input.consumeIncludingWhitespace();
     }
 
