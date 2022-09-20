@@ -1,7 +1,7 @@
 #ifndef GLOBALSTRING_H
 #define GLOBALSTRING_H
 
-#include <string_view>
+#include <string>
 #include <vector>
 #include <ostream>
 
@@ -46,9 +46,11 @@ inline bool operator>(const std::string_view& a, const GlobalString& b) { return
 
 using GlobalStringList = std::vector<GlobalString>;
 
-extern const GlobalString nullString;
-extern const GlobalString emptyString;
-extern const GlobalString starString;
+extern const std::string emptyString;
+
+extern const GlobalString nullGlo;
+extern const GlobalString emptyGlo;
+extern const GlobalString starGlo;
 
 namespace namespaceuri {
 
@@ -57,8 +59,6 @@ extern const GlobalString mathml;
 extern const GlobalString svg;
 
 } // namespace namespaceuri
-
-namespace htmlnames {
 
 extern const GlobalString aTag;
 extern const GlobalString abbrTag;
@@ -176,23 +176,6 @@ extern const GlobalString videoTag;
 extern const GlobalString wbrTag;
 extern const GlobalString xmpTag;
 
-extern const GlobalString checkedAttr;
-extern const GlobalString classAttr;
-extern const GlobalString colorAttr;
-extern const GlobalString disabledAttr;
-extern const GlobalString enabledAttr;
-extern const GlobalString faceAttr;
-extern const GlobalString hrefAttr;
-extern const GlobalString idAttr;
-extern const GlobalString langAttr;
-extern const GlobalString sizeAttr;
-extern const GlobalString styleAttr;
-extern const GlobalString typeAttr;
-
-} // namespace htmlnames
-
-namespace svgnames {
-
 extern const GlobalString aTag;
 extern const GlobalString circleTag;
 extern const GlobalString clipPathTag;
@@ -224,6 +207,36 @@ extern const GlobalString titleTag;
 extern const GlobalString trefTag;
 extern const GlobalString tspanTag;
 extern const GlobalString useTag;
+
+extern const GlobalString annotation_xmlTag;
+extern const GlobalString malignmarkTag;
+extern const GlobalString mathTag;
+extern const GlobalString mglyphTag;
+extern const GlobalString miTag;
+extern const GlobalString mnTag;
+extern const GlobalString moTag;
+extern const GlobalString msTag;
+extern const GlobalString mtextTag;
+
+extern const GlobalString valueAttr;
+extern const GlobalString startAttr;
+extern const GlobalString borderAttr;
+extern const GlobalString altAttr;
+extern const GlobalString checkedAttr;
+extern const GlobalString classAttr;
+extern const GlobalString colorAttr;
+extern const GlobalString disabledAttr;
+extern const GlobalString enabledAttr;
+extern const GlobalString faceAttr;
+extern const GlobalString heightAttr;
+extern const GlobalString hrefAttr;
+extern const GlobalString idAttr;
+extern const GlobalString langAttr;
+extern const GlobalString sizeAttr;
+extern const GlobalString srcAttr;
+extern const GlobalString styleAttr;
+extern const GlobalString typeAttr;
+extern const GlobalString widthAttr;
 
 extern const GlobalString clipAttr;
 extern const GlobalString clipPathUnitsAttr;
@@ -313,23 +326,7 @@ extern const GlobalString yAttr;
 extern const GlobalString y1Attr;
 extern const GlobalString y2Attr;
 
-} // namespace svgnames
-
-namespace mathnames {
-
-extern const GlobalString annotation_xmlTag;
-extern const GlobalString malignmarkTag;
-extern const GlobalString mathTag;
-extern const GlobalString mglyphTag;
-extern const GlobalString miTag;
-extern const GlobalString mnTag;
-extern const GlobalString moTag;
-extern const GlobalString msTag;
-extern const GlobalString mtextTag;
-
 extern const GlobalString encodingAttr;
-
-} // namespace mathnames
 
 } // namespace htmlbook
 

@@ -19,9 +19,11 @@ std::string_view GlobalString::add(const std::string_view& value)
     return *table.emplace_hint(lb, value);
 }
 
-const GlobalString nullString;
-const GlobalString emptyString("");
-const GlobalString starString("*");
+const std::string emptyString;
+
+const GlobalString nullGlo;
+const GlobalString emptyGlo("");
+const GlobalString starGlo("*");
 
 namespace namespaceuri {
 
@@ -30,8 +32,6 @@ const GlobalString mathml("http://www.w3.org/1998/Math/MathML");
 const GlobalString svg("http://www.w3.org/2000/svg");
 
 } // namespace namespaceuri
-
-namespace htmlnames {
 
 const GlobalString aTag("a");
 const GlobalString abbrTag("abbr");
@@ -165,24 +165,6 @@ const GlobalString videoTag("video");
 const GlobalString wbrTag("wbr");
 const GlobalString xmpTag("xmp");
 
-const GlobalString checkedAttr("checked");
-const GlobalString classAttr("class");
-const GlobalString colorAttr("color");
-const GlobalString disabledAttr("disabled");
-const GlobalString enabledAttr("enabled");
-const GlobalString faceAttr("face");
-const GlobalString hrefAttr("href");
-const GlobalString idAttr("id");
-const GlobalString langAttr("lang");
-const GlobalString sizeAttr("size");
-const GlobalString styleAttr("style");
-const GlobalString typeAttr("type");
-
-} // namespace htmlnames
-
-namespace svgnames {
-
-const GlobalString aTag("a");
 const GlobalString circleTag("circle");
 const GlobalString clipPathTag("clipPath");
 const GlobalString defsTag("defs");
@@ -190,7 +172,6 @@ const GlobalString descTag("desc");
 const GlobalString ellipseTag("ellipse");
 const GlobalString foreignObjectTag("foreignObject");
 const GlobalString gTag("g");
-const GlobalString imageTag("image");
 const GlobalString lineTag("line");
 const GlobalString linearGradientTag("linearGradient");
 const GlobalString markerTag("marker");
@@ -203,22 +184,49 @@ const GlobalString polylineTag("polyline");
 const GlobalString radialGradientTag("radialGradient");
 const GlobalString rectTag("rect");
 const GlobalString stopTag("stop");
-const GlobalString styleTag("style");
 const GlobalString svgTag("svg");
 const GlobalString switchTag("switch");
 const GlobalString symbolTag("symbol");
 const GlobalString textTag("text");
 const GlobalString textPathTag("textPath");
-const GlobalString titleTag("title");
 const GlobalString trefTag("tref");
 const GlobalString tspanTag("tspan");
 const GlobalString useTag("use");
+
+const GlobalString annotation_xmlTag("annotation-xml");
+const GlobalString malignmarkTag("malignmark");
+const GlobalString mathTag("math");
+const GlobalString mglyphTag("mglyph");
+const GlobalString miTag("mi");
+const GlobalString mnTag("mn");
+const GlobalString moTag("mo");
+const GlobalString msTag("ms");
+const GlobalString mtextTag("mtext");
+
+const GlobalString valueAttr("value");
+const GlobalString startAttr("start");
+const GlobalString borderAttr("border");
+const GlobalString altAttr("alt");
+const GlobalString checkedAttr("checked");
+const GlobalString classAttr("class");
+const GlobalString colorAttr("color");
+const GlobalString disabledAttr("disabled");
+const GlobalString enabledAttr("enabled");
+const GlobalString faceAttr("face");
+const GlobalString heightAttr("height");
+const GlobalString hrefAttr("href");
+const GlobalString idAttr("id");
+const GlobalString langAttr("lang");
+const GlobalString sizeAttr("size");
+const GlobalString srcAttr("src");
+const GlobalString styleAttr("style");
+const GlobalString typeAttr("type");
+const GlobalString widthAttr("width");
 
 const GlobalString clipAttr("clip");
 const GlobalString clipPathUnitsAttr("clipPathUnits");
 const GlobalString clip_pathAttr("clip-path");
 const GlobalString clip_ruleAttr("clip-rule");
-const GlobalString colorAttr("color");
 const GlobalString cxAttr("cx");
 const GlobalString cyAttr("cy");
 const GlobalString dAttr("d");
@@ -239,7 +247,6 @@ const GlobalString fxAttr("fx");
 const GlobalString fyAttr("fy");
 const GlobalString gradientTransformAttr("gradientTransform");
 const GlobalString gradientUnitsAttr("gradientUnits");
-const GlobalString heightAttr("height");
 const GlobalString lengthAdjustAttr("lengthAdjust");
 const GlobalString letter_spacingAttr("letter-spacing");
 const GlobalString markerHeightAttr("markerHeight");
@@ -281,7 +288,6 @@ const GlobalString stroke_linejoinAttr("stroke-linejoin");
 const GlobalString stroke_miterlimitAttr("stroke-miterlimit");
 const GlobalString stroke_opacityAttr("stroke-opacity");
 const GlobalString stroke_widthAttr("stroke-width");
-const GlobalString styleAttr("style");
 const GlobalString textLengthAttr("textLength");
 const GlobalString text_anchorAttr("text-anchor");
 const GlobalString text_decorationAttr("text-decoration");
@@ -294,7 +300,6 @@ const GlobalString unicode_bidiAttr("unicode-bidi");
 const GlobalString unicode_rangeAttr("unicode-range");
 const GlobalString viewBoxAttr("viewBox");
 const GlobalString visibilityAttr("visibility");
-const GlobalString widthAttr("width");
 const GlobalString word_spacingAttr("word-spacing");
 const GlobalString writing_modeAttr("writing-mode");
 const GlobalString xAttr("x");
@@ -304,22 +309,6 @@ const GlobalString yAttr("y");
 const GlobalString y1Attr("y1");
 const GlobalString y2Attr("y2");
 
-} // namespace svgnames
-
-namespace mathnames {
-
-const GlobalString annotation_xmlTag("annotation-xml");
-const GlobalString malignmarkTag("malignmark");
-const GlobalString mathTag("math");
-const GlobalString mglyphTag("mglyph");
-const GlobalString miTag("mi");
-const GlobalString mnTag("mn");
-const GlobalString moTag("mo");
-const GlobalString msTag("ms");
-const GlobalString mtextTag("mtext");
-
 const GlobalString encodingAttr("encoding");
-
-} // namespace mathnames
 
 } // namespace htmlbook

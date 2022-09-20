@@ -1,33 +1,37 @@
 #include "counter.h"
 
+#include <cassert>
+
 namespace htmlbook {
 
 void Counters::update(const BoxStyle& style)
 {
-    if(auto value = style.get(CSSPropertyID::CounterReset)) {
-        for(auto& counter : to<CSSListValue>(*value)->values()) {
-            auto pair = to<CSSPairValue>(*counter);
-            auto name = to<CSSCustomIdentValue>(*pair->first());
-            auto value = to<CSSIntegerValue>(*pair->second());
+    update(style, CSSPropertyID::CounterReset);
+    update(style, CSSPropertyID::CounterSet);
+    update(style, CSSPropertyID::CounterIncrement);
+}
+
+void Counters::update(const BoxStyle& style, CSSPropertyID id)
+{
+    auto value = style.get(id);
+    if(value == nullptr || !value->isListValue())
+        return;
+    for(auto& counter : to<CSSListValue>(*value)->values()) {
+        auto pair = to<CSSPairValue>(*counter);
+        auto name = to<CSSCustomIdentValue>(*pair->first());
+        auto value = to<CSSIntegerValue>(*pair->second());
+        switch(id) {
+        case CSSPropertyID::CounterReset:
             reset(name->value(), value->value());
-        }
-    }
-
-    if(auto value = style.get(CSSPropertyID::CounterSet)) {
-        for(auto& counter : to<CSSListValue>(*value)->values()) {
-            auto pair = to<CSSPairValue>(*counter);
-            auto name = to<CSSCustomIdentValue>(*pair->first());
-            auto value = to<CSSIntegerValue>(*pair->second());
+            break;
+        case CSSPropertyID::CounterSet:
             set(name->value(), value->value());
-        }
-    }
-
-    if(auto value = style.get(CSSPropertyID::CounterIncrement)) {
-        for(auto& counter : to<CSSListValue>(*value)->values()) {
-            auto pair = to<CSSPairValue>(*counter);
-            auto name = to<CSSCustomIdentValue>(*pair->first());
-            auto value = to<CSSIntegerValue>(*pair->second());
+            break;
+        case CSSPropertyID::CounterIncrement:
             increment(name->value(), value->value());
+            break;
+        default:
+            assert(false);
         }
     }
 }

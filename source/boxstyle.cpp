@@ -1078,7 +1078,6 @@ const std::string& BoxStyle::getQuote(bool open, size_t depth) const
 
     if(auto ident = to<CSSIdentValue>(*value)) {
         assert(ident->value() == CSSValueID::None);
-        static std::string emptyString;
         return emptyString;
     }
 

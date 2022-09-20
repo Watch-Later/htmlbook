@@ -114,12 +114,74 @@ void HTMLElement::buildBox(Counters& counters, Box* parent)
 }
 
 HTMLImageElement::HTMLImageElement(Document* document)
-    : HTMLElement(document, htmlnames::imgTag)
+    : HTMLElement(document, imgTag)
 {
 }
 
-void HTMLImageElement::parseAttribute(const GlobalString& name, const std::string_view& value)
+void HTMLImageElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
 {
+    if(name == widthAttr) {
+        addAttributeStyle(name, value, output);
+    } else if(name == heightAttr) {
+        addAttributeStyle(name, value, output);
+    } else if(name == borderAttr) {
+        addAttributeStyle("border-width", value + "px", output);
+        addAttributeStyle("border-style", "solid", output);
+    }
+
+    HTMLElement::collectAttributeStyle(name, value, output);
+}
+
+const std::string& HTMLImageElement::src() const
+{
+    return getAttribute(srcAttr);
+}
+
+const std::string& HTMLImageElement::altText() const
+{
+    return getAttribute(altAttr);
+}
+
+RefPtr<Image> HTMLImageElement::image() const
+{
+    auto resource = document()->fetchImageResource(src());
+    if(resource == nullptr)
+        return nullptr;
+    return resource->image();
+}
+
+Box* HTMLImageElement::createBox(const RefPtr<BoxStyle>& style)
+{
+    auto box = new ImageBox(this, style);
+    box->setImage(image());
+    box->setAlternativeText(altText());
+    return box;
+}
+
+HTMLLIElement::HTMLLIElement(Document* document)
+    : HTMLElement(document, liTag)
+{
+}
+
+void HTMLLIElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+{
+    if(name == valueAttr) {
+        addAttributeStyle("counter-reset", "list-item " + value, output);
+        addAttributeStyle("counter-increment", "none", output);
+    }
+}
+
+HTMLOLElement::HTMLOLElement(Document* document)
+    : HTMLElement(document, olTag)
+{
+}
+
+void HTMLOLElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+{
+    if(name == startAttr) {
+        addAttributeStyle("counter-reset", "list-item " + value, output);
+        addAttributeStyle("counter-increment", "list-item -1", output);
+    }
 }
 
 HTMLDocument::HTMLDocument(const PageSize& pageSize)

@@ -15,6 +15,7 @@ public:
     void pop() { m_counters.pop_back(); }
 
     void update(const BoxStyle& style);
+    void update(const BoxStyle& style, CSSPropertyID id);
 
     void increaseQuoteDepth() { ++m_quoteDepth; }
     void decreaseQuoteDepth() { --m_quoteDepth; }

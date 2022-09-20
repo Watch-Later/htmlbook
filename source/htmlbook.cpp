@@ -25,7 +25,7 @@ void Book::setBaseUrl(std::string_view baseUrl)
     m_document->setBaseUrl(baseUrl);
 }
 
-std::string_view Book::baseUrl() const
+const std::string& Book::baseUrl() const
 {
     return m_document->baseUrl();
 }

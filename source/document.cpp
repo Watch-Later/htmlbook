@@ -220,11 +220,11 @@ bool Element::hasAttribute(const GlobalString& name) const
     return findAttribute(name);
 }
 
-std::string_view Element::getAttribute(const GlobalString& name) const
+const std::string& Element::getAttribute(const GlobalString& name) const
 {
     auto attribute = findAttribute(name);
     if(attribute == nullptr)
-        return nullString;
+        return emptyString;
     return attribute->value();
 }
 
@@ -255,7 +255,7 @@ void Element::removeAttribute(const GlobalString& name)
     auto end = m_attributes.end();
     for(; it != end; ++it) {
         if(name == it->name()) {
-            parseAttribute(name, nullString);
+            parseAttribute(name, nullGlo);
             m_attributes.erase(it);
             break;
         }
@@ -264,16 +264,24 @@ void Element::removeAttribute(const GlobalString& name)
 
 void Element::parseAttribute(const GlobalString& name, const std::string_view& value)
 {
-    if(name == htmlnames::idAttr) {
+    if(name == idAttr) {
         setId(value);
-    } else if(name == htmlnames::classAttr) {
+    } else if(name == classAttr) {
         setClass(value);
     }
 }
 
+void Element::addAttributeStyle(const std::string_view& name, const std::string& value, std::string& output)
+{
+    output += name;
+    output += ':';
+    output += value;
+    output += ';';
+}
+
 CSSPropertyList Element::inlineStyle() const
 {
-    auto value = getAttribute(htmlnames::styleAttr);
+    auto value = getAttribute(styleAttr);
     if(value.empty())
         return CSSPropertyList{};
 
@@ -284,19 +292,20 @@ CSSPropertyList Element::inlineStyle() const
 
 CSSPropertyList Element::presentationAttributeStyle() const
 {
-    std::string value;
-    collectPresentationAttributeStyle(value);
-    if(value.empty())
+    std::string output;
+    for(auto& attribute : m_attributes)
+        collectAttributeStyle(attribute.name(), attribute.value(), output);
+    if(output.empty())
         return CSSPropertyList{};
 
     CSSPropertyList properties;
-    CSSParser::parseStyle(properties, value);
+    CSSParser::parseStyle(properties, output);
     return properties;
 }
 
-std::string_view Element::lang() const
+const std::string& Element::lang() const
 {
-    return getAttribute(htmlnames::langAttr);
+    return getAttribute(langAttr);
 }
 
 Element* Element::parentElement() const

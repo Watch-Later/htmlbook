@@ -5,8 +5,6 @@
 
 namespace htmlbook {
 
-using namespace htmlnames;
-
 inline bool isNumberedHeaderTag(const GlobalString& tagName)
 {
     return tagName == h1Tag
@@ -64,18 +62,18 @@ inline bool isSpecialElement(const Element* element)
 {
     auto tagName = element->tagName();
     if(element->namespaceUri() == namespaceuri::svg) {
-        return tagName == svgnames::foreignObjectTag
-            || tagName == svgnames::descTag
-            || tagName == svgnames::titleTag;
+        return tagName == foreignObjectTag
+            || tagName == descTag
+            || tagName == titleTag;
     }
 
     if(element->namespaceUri() == namespaceuri::mathml) {
-        return tagName == mathnames::miTag
-            || tagName == mathnames::moTag
-            || tagName == mathnames::mnTag
-            || tagName == mathnames::msTag
-            || tagName == mathnames::mtextTag
-            || tagName == mathnames::annotation_xmlTag;
+        return tagName == miTag
+            || tagName == moTag
+            || tagName == mnTag
+            || tagName == msTag
+            || tagName == mtextTag
+            || tagName == annotation_xmlTag;
     }
 
     return tagName == addressTag
@@ -156,8 +154,8 @@ inline bool isSpecialElement(const Element* element)
 inline bool isHTMLIntegrationPoint(const Element* element)
 {
     if(element->namespaceUri() == namespaceuri::mathml
-        && element->tagName() == mathnames::annotation_xmlTag) {
-        auto attribute = element->findAttribute(mathnames::encodingAttr);
+        && element->tagName() == annotation_xmlTag) {
+        auto attribute = element->findAttribute(encodingAttr);
         if(attribute == nullptr)
             return false;
         auto& encoding = attribute->value();
@@ -166,9 +164,9 @@ inline bool isHTMLIntegrationPoint(const Element* element)
     }
 
     if(element->namespaceUri() == namespaceuri::svg) {
-        return element->tagName() == svgnames::foreignObjectTag
-            || element->tagName() == svgnames::descTag
-            || element->tagName() == svgnames::titleTag;
+        return element->tagName() == foreignObjectTag
+            || element->tagName() == descTag
+            || element->tagName() == titleTag;
     }
 
     return false;
@@ -177,11 +175,11 @@ inline bool isHTMLIntegrationPoint(const Element* element)
 inline bool isMathMLTextIntegrationPoint(const Element* element)
 {
     if(element->namespaceUri() == namespaceuri::mathml) {
-        return element->tagName() == mathnames::miTag
-            || element->tagName() == mathnames::moTag
-            || element->tagName() == mathnames::mnTag
-            || element->tagName() == mathnames::msTag
-            || element->tagName() == mathnames::mtextTag;
+        return element->tagName() == miTag
+            || element->tagName() == moTag
+            || element->tagName() == mnTag
+            || element->tagName() == msTag
+            || element->tagName() == mtextTag;
     }
 
     return false;
@@ -191,18 +189,18 @@ inline bool isScopeMarker(const Element* element)
 {
     auto tagName = element->tagName();
     if(element->namespaceUri() == namespaceuri::svg) {
-        return tagName == svgnames::foreignObjectTag
-            || tagName == svgnames::descTag
-            || tagName == svgnames::titleTag;
+        return tagName == foreignObjectTag
+            || tagName == descTag
+            || tagName == titleTag;
     }
 
     if(element->namespaceUri() == namespaceuri::mathml) {
-        return tagName == mathnames::miTag
-            || tagName == mathnames::moTag
-            || tagName == mathnames::mnTag
-            || tagName == mathnames::msTag
-            || tagName == mathnames::mtextTag
-            || tagName == mathnames::annotation_xmlTag;
+        return tagName == miTag
+            || tagName == moTag
+            || tagName == mnTag
+            || tagName == msTag
+            || tagName == mtextTag
+            || tagName == annotation_xmlTag;
     }
 
     return tagName == captionTag
@@ -1185,8 +1183,8 @@ HTMLParser::InsertionMode HTMLParser::currentInsertionMode(HTMLToken& token) con
 
     if(isMathMLTextIntegrationPoint(element)) {
         if(token.type() == HTMLToken::Type::StartTag
-            && token.tagName() != mathnames::mglyphTag
-            && token.tagName() != mathnames::malignmarkTag)
+            && token.tagName() != mglyphTag
+            && token.tagName() != malignmarkTag)
             return m_insertionMode;
         if(token.type() == HTMLToken::Type::Character
             || token.type() == HTMLToken::Type::SpaceCharacter)
@@ -1194,9 +1192,9 @@ HTMLParser::InsertionMode HTMLParser::currentInsertionMode(HTMLToken& token) con
     }
 
     if(element->namespaceUri() == namespaceuri::mathml
-        && element->tagName() == mathnames::annotation_xmlTag
+        && element->tagName() == annotation_xmlTag
         && token.type() == HTMLToken::Type::StartTag
-        && token.tagName() == svgnames::svgTag) {
+        && token.tagName() == svgTag) {
         return m_insertionMode;
     }
 
@@ -1811,14 +1809,14 @@ void HTMLParser::handleInBodyMode(HTMLToken& token)
             return;
         }
 
-        if(token.tagName() == mathnames::mathTag) {
+        if(token.tagName() == mathTag) {
             reconstructActiveFormattingElements();
             adjustMathMLAttributes(token);
             insertForeignElement(token, namespaceuri::mathml);
             return;
         }
 
-        if(token.tagName() == svgnames::svgTag) {
+        if(token.tagName() == svgTag) {
             reconstructActiveFormattingElements();
             adjustSVGTagNames(token);
             adjustSVGAttributes(token);

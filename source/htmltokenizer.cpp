@@ -286,7 +286,7 @@ bool HTMLTokenizer::handleEndTagOpenState(char cc)
     if(isalpha(cc)) {
         m_currentToken.beginEndTag();
         m_currentToken.addToTagName(tolower(cc));
-        m_appropriateEndTagName = emptyString;
+        m_appropriateEndTagName = emptyGlo;
         return advanceTo(State::TagName);
     }
 
@@ -601,7 +601,7 @@ bool HTMLTokenizer::handleScriptDataDoubleEscapeStartState(char cc)
 {
     if(isspace(cc) || cc == '/' || cc == '>') {
         m_characterBuffer += cc;
-        if(temporaryBufferIs(htmlnames::scriptTag.value()))
+        if(temporaryBufferIs(scriptTag.value()))
             return advanceTo(State::ScriptDataDoubleEscaped);
         return advanceTo(State::ScriptDataEscaped);
     }
@@ -692,7 +692,7 @@ bool HTMLTokenizer::handleScriptDataDoubleEscapeEndState(char cc)
 {
     if(isspace(cc) || cc == '/' || cc == '>') {
         m_characterBuffer += cc;
-        if(temporaryBufferIs(htmlnames::scriptTag.value()))
+        if(temporaryBufferIs(scriptTag.value()))
             return advanceTo(State::ScriptDataEscaped);
         return advanceTo(State::ScriptDataDoubleEscaped);
     }
@@ -1507,7 +1507,7 @@ bool HTMLTokenizer::flushEndTagNameBuffer()
     m_currentToken.beginEndTag();
     for(auto cc : m_endTagNameBuffer)
         m_currentToken.addToTagName(cc);
-    m_appropriateEndTagName = emptyString;
+    m_appropriateEndTagName = emptyGlo;
     m_endTagNameBuffer.clear();
     m_temporaryBuffer.clear();
     return true;

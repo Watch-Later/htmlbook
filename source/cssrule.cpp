@@ -852,22 +852,22 @@ bool CSSRuleData::matchPseudoClassNotSelector(const Element* element, PseudoType
 
 bool CSSRuleData::matchPseudoClassLinkSelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return element->tagName() == htmlnames::aTag && element->hasAttribute(htmlnames::langAttr);
+    return element->tagName() == aTag && element->hasAttribute(langAttr);
 }
 
 bool CSSRuleData::matchPseudoClassEnabledSelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return element->tagName() == htmlnames::inputTag && element->hasAttribute(htmlnames::enabledAttr);
+    return element->tagName() == inputTag && element->hasAttribute(enabledAttr);
 }
 
 bool CSSRuleData::matchPseudoClassDisabledSelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return element->tagName() == htmlnames::inputTag && element->hasAttribute(htmlnames::disabledAttr);
+    return element->tagName() == inputTag && element->hasAttribute(disabledAttr);
 }
 
 bool CSSRuleData::matchPseudoClassCheckedSelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return element->tagName() == htmlnames::inputTag && element->hasAttribute(htmlnames::checkedAttr);
+    return element->tagName() == inputTag && element->hasAttribute(checkedAttr);
 }
 
 bool CSSRuleData::matchPseudoClassLangSelector(const Element* element, const CSSSimpleSelector& selector)
@@ -877,7 +877,7 @@ bool CSSRuleData::matchPseudoClassLangSelector(const Element* element, const CSS
 
 bool CSSRuleData::matchPseudoClassRootSelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return element->tagName() == htmlnames::htmlTag;
+    return element->tagName() == htmlTag;
 }
 
 bool CSSRuleData::matchPseudoClassEmptySelector(const Element* element, const CSSSimpleSelector& selector)

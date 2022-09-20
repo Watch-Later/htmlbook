@@ -18,7 +18,26 @@ class HTMLImageElement final : public HTMLElement {
 public:
     HTMLImageElement(Document* document);
 
-    void parseAttribute(const GlobalString& name, const std::string_view& value) final;
+    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+    const std::string& src() const;
+    const std::string& altText() const;
+    RefPtr<Image> image() const;
+
+    Box* createBox(const RefPtr<BoxStyle>& style) final;
+};
+
+class HTMLLIElement final : public HTMLElement {
+public:
+    HTMLLIElement(Document* document);
+
+    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+};
+
+class HTMLOLElement final : public HTMLElement {
+public:
+    HTMLOLElement(Document* document);
+
+    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
 };
 
 class HTMLDocument final : public Document {

@@ -78,7 +78,7 @@ public:
         assert(m_type == Type::Unknown);
         m_type = Type::StartTag;
         m_selfClosing = false;
-        m_tagName = emptyString;
+        m_tagName = emptyGlo;
         m_attributes.clear();
         m_data.clear();
     }
@@ -87,7 +87,7 @@ public:
         assert(m_type == Type::Unknown);
         m_type = Type::EndTag;
         m_selfClosing = false;
-        m_tagName = emptyString;
+        m_tagName = emptyGlo;
         m_attributes.clear();
         m_data.clear();
     }

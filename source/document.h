@@ -148,7 +148,7 @@ public:
     const GlobalString& namespaceUri() const { return m_namespaceUri; }
     const AttributeList& attributes() const { return m_attributes; }
 
-    std::string_view lang() const;
+    const std::string& lang() const;
     const GlobalString& id() const { return m_id; }
     const GlobalStringList& classNames() const { return m_classNames; }
 
@@ -157,13 +157,14 @@ public:
 
     Attribute* findAttribute(const GlobalString& name) const;
     bool hasAttribute(const GlobalString& name) const;
-    std::string_view getAttribute(const GlobalString& name) const;
+    const std::string& getAttribute(const GlobalString& name) const;
     void setAttributeList(const AttributeList& attributes);
     void setAttribute(const Attribute& attribute);
     void setAttribute(const GlobalString& name, std::string value);
     void removeAttribute(const GlobalString& name);
     virtual void parseAttribute(const GlobalString& name, const std::string_view& value);
-    virtual void collectPresentationAttributeStyle(std::string& value) const {}
+    virtual void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const {}
+    static void addAttributeStyle(const std::string_view& name, const std::string& value, std::string& output);
 
     CSSPropertyList inlineStyle() const;
     CSSPropertyList presentationAttributeStyle() const;
@@ -194,14 +195,14 @@ inline const GlobalString& Node::tagName() const
 {
     if(isElementNode())
         return to<Element>(this)->tagName();
-    return emptyString;
+    return emptyGlo;
 }
 
 inline const GlobalString& Node::namespaceUri() const
 {
     if(isElementNode())
         return to<Element>(this)->tagName();
-    return emptyString;
+    return emptyGlo;
 }
 
 class Resource;

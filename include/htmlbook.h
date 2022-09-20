@@ -147,7 +147,7 @@ public:
      * @brief title
      * @return
      */
-    std::string_view title() const;
+    const std::string& title() const;
 
     /**
      * @brief setSubject
@@ -159,7 +159,7 @@ public:
      * @brief subject
      * @return
      */
-    std::string_view subject() const;
+    const std::string& subject() const;
 
     /**
      * @brief setAuthor
@@ -171,7 +171,7 @@ public:
      * @brief author
      * @return
      */
-    std::string_view author() const;
+    const std::string& author() const;
 
     /**
      * @brief setCreator
@@ -183,7 +183,7 @@ public:
      * @brief creator
      * @return
      */
-    std::string_view creator() const;
+    const std::string& creator() const;
 
     /**
      * @brief setCreationDate
@@ -195,7 +195,7 @@ public:
      * @brief creationDate
      * @return
      */
-    std::string_view creationDate() const;
+    const std::string& creationDate() const;
 
     /**
      * @brief setModificationDate
@@ -207,7 +207,7 @@ public:
      * @brief modificationDate
      * @return
      */
-    std::string_view modificationDate() const;
+    const std::string& modificationDate() const;
 
     /**
      * @brief setBaseUrl
@@ -219,7 +219,7 @@ public:
      * @brief baseUrl
      * @return
      */
-    std::string_view baseUrl() const;
+    const std::string& baseUrl() const;
 
     /**
      * @brief loadUrl
