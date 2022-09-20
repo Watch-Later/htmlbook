@@ -396,7 +396,7 @@ void Element::buildPseudoBox(Counters& counters, Box* parent, PseudoType pseudoT
         } else if(auto image = to<CSSImageValue>(*value)) {
             addImage(image->fetch(document()));
         } else if(auto counter = to<CSSCounterValue>(*value)) {
-            addText(counters.format(counter->identifier(), counter->listStyle(), counter->seperator()));
+            addText(counters.format(counter->identifier(), counter->listStyle(), counter->separator()));
         } else if(auto ident = to<CSSIdentValue>(*value)) {
             auto usequote = (ident->value() == CSSValueID::OpenQuote || ident->value() == CSSValueID::CloseQuote);
             auto openquote = (ident->value() == CSSValueID::OpenQuote || ident->value() == CSSValueID::NoOpenQuote);

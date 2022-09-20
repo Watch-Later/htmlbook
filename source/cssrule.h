@@ -518,21 +518,21 @@ enum class ListStyleType : uint8_t {
 
 class CSSCounterValue final : public CSSValue {
 public:
-    static RefPtr<CSSCounterValue> create(ListStyleType listStyle, const GlobalString& identifier, std::string seperator);
+    static RefPtr<CSSCounterValue> create(const GlobalString& identifier, ListStyleType listStyle, std::string separator);
 
-    ListStyleType listStyle() const { return m_listStyle; }
     const GlobalString& identifier() const { return m_identifier; }
-    const std::string& seperator() const { return m_seperator; }
+    ListStyleType listStyle() const { return m_listStyle; }
+    const std::string& separator() const { return m_separator; }
     bool isCounterValue() const final { return true; }
 
 private:
-    CSSCounterValue(ListStyleType listStyle, const GlobalString& identifier, std::string seperator)
-        : m_listStyle(listStyle), m_identifier(identifier), m_seperator(std::move(seperator))
+    CSSCounterValue(const GlobalString& identifier, ListStyleType listStyle, std::string separator)
+        : m_identifier(identifier), m_listStyle(listStyle), m_separator(std::move(separator))
     {}
 
-    ListStyleType m_listStyle;
     GlobalString m_identifier;
-    std::string m_seperator;
+    ListStyleType m_listStyle;
+    std::string m_separator;
 };
 
 template<>

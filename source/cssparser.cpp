@@ -1511,14 +1511,14 @@ RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool co
 
     auto identifier = input->data();
     input.consumeIncludingWhitespace();
-    std::string seperator;
+    std::string separator;
     if(counters) {
         if(input->type() != CSSToken::Type::Comma)
             return nullptr;
         input.consumeIncludingWhitespace();
         if(input->type() != CSSToken::Type::String)
             return nullptr;
-        seperator = input->data();
+        separator = input->data();
         input.consumeIncludingWhitespace();
     }
 
@@ -1530,7 +1530,7 @@ RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool co
         static const struct {
             std::string_view name;
             ListStyleType listStyle;
-        }table[] = {
+        } table[] = {
             {"disc", ListStyleType::Disc},
             {"circle", ListStyleType::Circle},
             {"square", ListStyleType::Square},
@@ -1554,7 +1554,7 @@ RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool co
 
     if(!input.empty())
         return nullptr;
-    return CSSCounterValue::create(listStyle, identifier, std::move(seperator));
+    return CSSCounterValue::create(identifier, listStyle, std::move(separator));
 }
 
 RefPtr<CSSValue> CSSParser::consumeCounter(CSSTokenStream& input, bool increment)

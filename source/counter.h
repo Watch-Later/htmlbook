@@ -20,7 +20,7 @@ public:
     void decreaseQuoteDepth() { --m_quoteDepth; }
     size_t quoteDepth() const { return m_quoteDepth; }
 
-    std::string format(const GlobalString& name, ListStyleType listStyle, std::string_view seperator) const;
+    std::string format(const GlobalString& name, ListStyleType listStyle, std::string_view separator) const;
 
     int value(const GlobalString& name) const;
     std::vector<int> values(const GlobalString& name) const;

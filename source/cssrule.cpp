@@ -103,9 +103,9 @@ RefPtr<CSSColorValue> CSSColorValue::create(uint8_t r, uint8_t g, uint8_t b, uin
     return adoptPtr(new CSSColorValue(a << 24 | r << 16 | g << 8 | b));
 }
 
-RefPtr<CSSCounterValue> CSSCounterValue::create(ListStyleType listStyle, const GlobalString& identifier, std::string seperator)
+RefPtr<CSSCounterValue> CSSCounterValue::create(const GlobalString& identifier, ListStyleType listStyle, std::string separator)
 {
-    return adoptPtr(new CSSCounterValue(listStyle, identifier, std::move(seperator)));
+    return adoptPtr(new CSSCounterValue(identifier, listStyle, std::move(separator)));
 }
 
 RefPtr<CSSPairValue> CSSPairValue::create(RefPtr<CSSValue> first, RefPtr<CSSValue> second)

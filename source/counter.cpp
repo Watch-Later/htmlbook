@@ -32,7 +32,7 @@ void Counters::update(const BoxStyle& style)
     }
 }
 
-std::string Counters::format(const GlobalString& name, ListStyleType listStyle, std::string_view seperator) const
+std::string Counters::format(const GlobalString& name, ListStyleType listStyle, std::string_view separator) const
 {
     std::string value;
     return value;

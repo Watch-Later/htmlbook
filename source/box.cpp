@@ -288,17 +288,9 @@ void BoxModel::addBox(Box* box)
 {
     auto children = this->children();
     assert(children != nullptr);
-    switch(box->display()) {
-    case Display::TableCaption:
-    case Display::TableCell:
-    case Display::TableColumn:
-    case Display::TableColumnGroup:
-    case Display::TableFooterGroup:
-    case Display::TableHeaderGroup:
-    case Display::TableRow:
-    case Display::TableRowGroup:
-        break;
-    default:
+    if(!box->isTableCellBox() && !box->isTableRowBox()
+        && !box->isTableCaptionBox() && !box->isTableColumnBox()
+        && !box->isTableSectionBox()) {
         children->append(this, box);
         return;
     }
@@ -478,17 +470,10 @@ TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableBox::addBox(Box* box)
 {
-    switch(box->display()) {
-    case Display::TableCaption:
-    case Display::TableColumn:
-    case Display::TableColumnGroup:
-    case Display::TableFooterGroup:
-    case Display::TableHeaderGroup:
-    case Display::TableRowGroup:
+    if(box->isTableCaptionBox() || box->isTableColumnBox()
+        || box->isTableSectionBox()) {
         m_children.append(this, box);
         return;
-    default:
-        break;
     }
 
     auto lastChild = m_children.lastBox();
