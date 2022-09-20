@@ -56,7 +56,7 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
 
     auto content = style->get(CSSPropertyID::Content);
     if(content == nullptr || !content->isListValue()) {
-        if(pseudoType == PseudoType::Marker)
+        if(pseudoType != PseudoType::Marker)
             return;
         if(auto image = style->listStyleImage()) {
             addImage(image);
