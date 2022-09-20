@@ -110,7 +110,7 @@ public:
     virtual bool loadFont(std::string_view family, bool italic, bool smallCaps, int weight, std::vector<char>& data) = 0;
 };
 
-class Document;
+class HTMLDocument;
 
 class HTMLBOOK_API Book {
 public:
@@ -291,7 +291,7 @@ public:
      * @brief document
      * @return
      */
-    Document* document() const;
+    HTMLDocument* document() const;
 
     /**
      * @brief setResourceClient
@@ -328,7 +328,7 @@ public:
     static bool addFontData(const std::string& family, bool italic, bool smallCaps, int weight, std::vector<char> data);
 
 private:
-    std::unique_ptr<Document> m_document;
+    std::unique_ptr<HTMLDocument> m_document;
 };
 
 inline std::ostream& operator<<(std::ostream& o, const Book& book)

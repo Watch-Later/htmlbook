@@ -172,9 +172,8 @@ public:
     Element* previousElement() const;
     Element* nextElement() const;
 
-    Box* createBox(const RefPtr<BoxStyle>& style) override;
-    void buildPseudoBox(Counters& counters, Box* parent, PseudoType pseudoType);
-    void buildBox(Counters& counters, Box* parent) override;
+    Box* createBox(const RefPtr<BoxStyle>& style) override { return nullptr; }
+    void buildBox(Counters& counters, Box* parent) override {}
     void serialize(std::ostream& o) const override;
 
 private:
@@ -211,7 +210,7 @@ class ImageResource;
 class FontResource;
 class FontFace;
 
-class Document final : public ContainerNode {
+class Document : public ContainerNode {
 public:
     Document(const PageSize& pageSize);
 
@@ -222,7 +221,7 @@ public:
     const std::string& baseUrl() const { return m_baseUrl.value(); }
     void setBaseUrl(const std::string_view& value) { m_baseUrl = value; }
 
-    void load(const std::string_view& content);
+    virtual bool load(const std::string_view& content) = 0;
 
     void updateIdCache(const GlobalString& name, Element* element);
     void addAuthorStyleSheet(const std::string_view& content);
@@ -247,7 +246,6 @@ public:
     float viewportWidth() const;
     float viewportHeight() const;
 
-    Box* createBox(const RefPtr<BoxStyle>& style) override;
     void buildBox(Counters& counters, Box* parent) override;
 
 private:

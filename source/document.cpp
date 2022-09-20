@@ -1,11 +1,9 @@
 #include "document.h"
+#include "htmldocument.h"
 #include "htmlparser.h"
-#include "htmlelement.h"
 #include "cssparser.h"
 #include "resource.h"
-#include "boxstyle.h"
 #include "box.h"
-#include "counter.h"
 
 namespace htmlbook {
 
@@ -333,108 +331,6 @@ Element* Element::nextElement() const
     return nullptr;
 }
 
-Box* Element::createBox(const RefPtr<BoxStyle>& style)
-{
-    return Box::create(this, style);
-}
-
-void Element::buildPseudoBox(Counters& counters, Box* parent, PseudoType pseudoType)
-{
-    if(pseudoType == PseudoType::Marker && !parent->isListItemBox())
-        return;
-    auto style = document()->pseudoStyleForElement(this, *parent->style(), pseudoType);
-    if(style == nullptr || style->display() == Display::None)
-        return;
-
-    auto box = Box::create(nullptr, style);
-    parent->addBox(box);
-    if(pseudoType == PseudoType::Before || pseudoType == PseudoType::After) {
-        counters.update(*style);
-        buildPseudoBox(counters, box, PseudoType::Marker);
-    }
-
-    auto addText = [&](const auto& text) {
-        if(text.empty())
-            return;
-        auto lastBox = box->lastBox();
-        if(lastBox && lastBox->isTextBox()) {
-            auto textBox = to<TextBox>(lastBox);
-            textBox->appendText(text);
-            return;
-        }
-
-        auto textBox = new TextBox(nullptr, style);
-        textBox->setText(text);
-        box->addBox(textBox);
-    };
-
-    auto addImage = [&](const auto& image) {
-        if(image == nullptr)
-            return;
-        auto imageBox = new ImageBox(nullptr, style);
-        imageBox->setImage(image);
-        box->addBox(imageBox);
-    };
-
-    auto content = style->get(CSSPropertyID::Content);
-    if(content == nullptr || !content->isListValue()) {
-        if(pseudoType == PseudoType::Marker)
-            return;
-        if(auto image = style->listStyleImage()) {
-            addImage(image);
-            return;
-        }
-
-        static const GlobalString listItem("list-item");
-        addText(counters.format(listItem, style->listStyleType(), emptyString));
-        return;
-    }
-
-    for(auto& value : to<CSSListValue>(*content)->values()) {
-        if(auto string = to<CSSStringValue>(*value)) {
-            addText(string->value());
-        } else if(auto image = to<CSSImageValue>(*value)) {
-            addImage(image->fetch(document()));
-        } else if(auto counter = to<CSSCounterValue>(*value)) {
-            addText(counters.format(counter->identifier(), counter->listStyle(), counter->separator()));
-        } else if(auto ident = to<CSSIdentValue>(*value)) {
-            auto usequote = (ident->value() == CSSValueID::OpenQuote || ident->value() == CSSValueID::CloseQuote);
-            auto openquote = (ident->value() == CSSValueID::OpenQuote || ident->value() == CSSValueID::NoOpenQuote);
-            if(counters.quoteDepth() > 0 && !openquote)
-                counters.decreaseQuoteDepth();
-            if(usequote)
-                addText(style->getQuote(openquote, counters.quoteDepth()));
-            if(openquote)
-                counters.increaseQuoteDepth();
-        } else {
-            auto function = to<CSSFunctionValue>(*value);
-            auto name = to<CSSCustomIdentValue>(*function->front());
-            auto attribute = findAttribute(name->value());
-            if(attribute == nullptr)
-                continue;
-            addText(attribute->value());
-        }
-    }
-}
-
-void Element::buildBox(Counters& counters, Box* parent)
-{
-    auto style = document()->styleForElement(this, *parent->style());
-    if(style == nullptr || style->display() == Display::None)
-        return;
-    auto box = createBox(style);
-    if(box == nullptr)
-        return;
-    parent->addBox(box);
-    counters.push();
-    counters.update(*style);
-    buildPseudoBox(counters, box, PseudoType::Marker);
-    buildPseudoBox(counters, box, PseudoType::Before);
-    ContainerNode::buildBox(counters, box);
-    buildPseudoBox(counters, box, PseudoType::After);
-    counters.pop();
-}
-
 void Element::serialize(std::ostream& o) const
 {
     o << '<';
@@ -471,12 +367,6 @@ Element* Document::createElement(const GlobalString& tagName, const GlobalString
     if(namespaceUri == namespaceuri::xhtml)
         return new HTMLElement(this, tagName);
     return new Element(this, tagName, namespaceUri);
-}
-
-void Document::load(const std::string_view& content)
-{
-    HTMLParser parser(this, content);
-    parser.parse();
 }
 
 void Document::updateIdCache(const GlobalString& name, Element* element)
@@ -559,11 +449,6 @@ float Document::viewportWidth() const
 float Document::viewportHeight() const
 {
     return 0.0;
-}
-
-Box* Document::createBox(const RefPtr<BoxStyle>& style)
-{
-    return new BlockBox(this, style);
 }
 
 void Document::buildBox(Counters& counters, Box* parent)

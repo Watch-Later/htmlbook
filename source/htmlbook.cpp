@@ -1,5 +1,5 @@
 #include "htmlbook.h"
-#include "document.h"
+#include "htmldocument.h"
 #include "resource.h"
 
 namespace htmlbook {
@@ -14,7 +14,7 @@ const PageSize PageSize::Legal(8.5, 14, PageUnit::Inches);
 const PageSize PageSize::Ledger(11, 17, PageUnit::Inches);
 
 Book::Book(const PageSize& pageSize)
-    : m_document(new Document(pageSize))
+    : m_document(new HTMLDocument(pageSize))
 {
 }
 
@@ -67,7 +67,7 @@ void Book::serialize(std::ostream& o) const
     m_document->serialize(o);
 }
 
-Document* Book::document() const
+HTMLDocument* Book::document() const
 {
     return m_document.get();
 }

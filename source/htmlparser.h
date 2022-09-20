@@ -101,13 +101,15 @@ private:
     std::vector<Element*> m_elements;
 };
 
+class HTMLDocument;
+
 class HTMLParser {
 public:
-    HTMLParser(Document* document, const std::string_view& content)
+    HTMLParser(HTMLDocument* document, const std::string_view& content)
         : m_document(document), m_tokenizer(content)
     {}
 
-    void parse();
+    bool parse();
 
 private:
     Element* createHTMLElement(HTMLToken& token) const;
@@ -225,7 +227,7 @@ private:
     void finishTree();
 
 private:
-    Document* m_document;
+    HTMLDocument* m_document;
     Element* m_form{nullptr};
     Element* m_head{nullptr};
 

@@ -1,5 +1,5 @@
 #include "htmlparser.h"
-#include "htmlelement.h"
+#include "htmldocument.h"
 
 #include <algorithm>
 
@@ -3051,7 +3051,7 @@ void HTMLParser::finishTree()
     m_openElements.popAll();
 }
 
-void HTMLParser::parse()
+bool HTMLParser::parse()
 {
     m_document->beginParsingChildern();
     while(!m_tokenizer.atEOF()) {
@@ -3060,6 +3060,7 @@ void HTMLParser::parse()
 
     finishTree();
     m_document->finishParsingChildern();
+    return true;
 }
 
 } // namespace htmlbook
