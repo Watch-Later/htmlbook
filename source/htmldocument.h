@@ -33,9 +33,16 @@ public:
     Box* createBox(const RefPtr<BoxStyle>& style) final;
 };
 
-class HTMLBRElement final : public HTMLElement {
+class HTMLFontElement final : public HTMLElement {
 public:
-    HTMLBRElement(Document* document);
+    HTMLFontElement(Document* document);
+
+    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+};
+
+class HTMLHRElement final : public HTMLElement {
+public:
+    HTMLHRElement(Document* document);
 
     void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
 };
@@ -54,11 +61,42 @@ public:
     void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
 };
 
+class HTMLTableElement final : public HTMLElement {
+public:
+    HTMLTableElement(Document* document);
+
+    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+};
+
+class HTMLTableSectionElement final : public HTMLElement {
+public:
+    HTMLTableSectionElement(Document* document, const GlobalString& tagName);
+
+    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+};
+
+class HTMLTableCaptionElement final : public HTMLElement {
+public:
+    HTMLTableCaptionElement(Document* document);
+
+    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+};
+
 class HTMLTableRowElement final : public HTMLElement {
 public:
     HTMLTableRowElement(Document* document);
 
     void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+};
+
+class HTMLTableColElement final : public HTMLElement {
+public:
+    HTMLTableColElement(Document* document, const GlobalString& tagName);
+
+    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+    int span() const;
+
+    Box* createBox(const RefPtr<BoxStyle>& style) final;
 };
 
 class HTMLTableCellElement final : public HTMLElement {

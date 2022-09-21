@@ -120,7 +120,9 @@ HTMLBodyElement::HTMLBodyElement(Document* document)
 
 void HTMLBodyElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
 {
-    if(name == bgcolorAttr) {
+    if(name == textAttr) {
+        addAttributeStyle("color", value, output);
+    } else if(name == bgcolorAttr) {
         addAttributeStyle("background-color", value, output);
     } else if(name == backgroundAttr) {
         addAttributeStyle("background-image", "url(" + value + ")", output);
@@ -181,12 +183,28 @@ Box* HTMLImageElement::createBox(const RefPtr<BoxStyle>& style)
     return box;
 }
 
-HTMLBRElement::HTMLBRElement(Document* document)
-    : HTMLElement(document, brTag)
+HTMLFontElement::HTMLFontElement(Document* document)
+    : HTMLElement(document, fontTag)
 {
 }
 
-void HTMLBRElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+void HTMLFontElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+{
+    if(name == colorAttr) {
+        addAttributeStyle(name, value, output);
+    } else if(name == faceAttr) {
+        addAttributeStyle("font-family", value, output);
+    } else {
+        HTMLElement::collectAttributeStyle(name, value, output);
+    }
+}
+
+HTMLHRElement::HTMLHRElement(Document* document)
+    : HTMLElement(document, hrTag)
+{
+}
+
+void HTMLHRElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
 {
     if(name == widthAttr) {
         addAttributeStyle(name, value, output);
@@ -225,6 +243,66 @@ void HTMLOLElement::collectAttributeStyle(const GlobalString& name, const std::s
     }
 }
 
+HTMLTableElement::HTMLTableElement(Document* document)
+    : HTMLElement(document, tableTag)
+{
+}
+
+void HTMLTableElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+{
+    if(name == widthAttr) {
+        addAttributeStyle(name, value, output);
+    } else if(name == heightAttr) {
+        addAttributeStyle(name, value, output);
+    } else if(name == valignAttr) {
+        addAttributeStyle("vertical-align", value, output);
+    } else if(name == cellspacingAttr) {
+        addAttributeStyle("border-spacing", value, output);
+    } else if(name == borderAttr) {
+        addAttributeStyle("border-width", value, output);
+    } else if(name == bordercolorAttr) {
+        addAttributeStyle("border-color", value, output);
+    } else if(name == bgcolorAttr) {
+        addAttributeStyle("background-color", value, output);
+    } else if(name == backgroundAttr) {
+        addAttributeStyle("background-image", "url(" + value + ")", output);
+    } else {
+        HTMLElement::collectAttributeStyle(name, value, output);
+    }
+}
+
+HTMLTableSectionElement::HTMLTableSectionElement(Document* document, const GlobalString& tagName)
+    : HTMLElement(document, tagName)
+{
+}
+
+void HTMLTableSectionElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+{
+    if(name == heightAttr) {
+        addAttributeStyle(name, value, output);
+    } else if(name == bgcolorAttr) {
+        addAttributeStyle("background-color", value, output);
+    } else if(name == backgroundAttr) {
+        addAttributeStyle("background-image", "url(" + value + ")", output);
+    } else {
+        HTMLElement::collectAttributeStyle(name, value, output);
+    }
+}
+
+HTMLTableCaptionElement::HTMLTableCaptionElement(Document* document)
+    : HTMLElement(document, captionTag)
+{
+}
+
+void HTMLTableCaptionElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+{
+    if(name == widthAttr) {
+        addAttributeStyle(name, value, output);
+    } else {
+        HTMLElement::collectAttributeStyle(name, value, output);
+    }
+}
+
 HTMLTableRowElement::HTMLTableRowElement(Document* document)
     : HTMLElement(document, trTag)
 {
@@ -241,6 +319,42 @@ void HTMLTableRowElement::collectAttributeStyle(const GlobalString& name, const 
     } else {
         HTMLElement::collectAttributeStyle(name, value, output);
     }
+}
+
+HTMLTableColElement::HTMLTableColElement(Document* document, const GlobalString& tagName)
+    : HTMLElement(document, tagName)
+{
+}
+
+void HTMLTableColElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+{
+    if(name == widthAttr) {
+        addAttributeStyle(name, value, output);
+    } else if(name == heightAttr) {
+        addAttributeStyle(name, value, output);
+    } else if(name == bgcolorAttr) {
+        addAttributeStyle("background-color", value, output);
+    } else if(name == backgroundAttr) {
+        addAttributeStyle("background-image", "url(" + value + ")", output);
+    } else {
+        HTMLElement::collectAttributeStyle(name, value, output);
+    }
+}
+
+int HTMLTableColElement::span() const
+{
+    return 0;
+}
+
+Box* HTMLTableColElement::createBox(const RefPtr<BoxStyle> &style)
+{
+    auto box = HTMLElement::createBox(style);
+    if(box->isTableColumnBox()) {
+        auto column = to<TableColumnBox>(*box);
+        column->setSpan(span());
+    }
+
+    return box;
 }
 
 HTMLTableCellElement::HTMLTableCellElement(Document* document, const GlobalString& tagName)

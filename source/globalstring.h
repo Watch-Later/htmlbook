@@ -218,6 +218,9 @@ extern const GlobalString moTag;
 extern const GlobalString msTag;
 extern const GlobalString mtextTag;
 
+extern const GlobalString cellspacingAttr;
+extern const GlobalString bordercolorAttr;
+extern const GlobalString textAttr;
 extern const GlobalString backgroundAttr;
 extern const GlobalString bgcolorAttr;
 extern const GlobalString vspaceAttr;

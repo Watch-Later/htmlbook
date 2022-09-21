@@ -203,6 +203,9 @@ const GlobalString moTag("mo");
 const GlobalString msTag("ms");
 const GlobalString mtextTag("mtext");
 
+const GlobalString cellspacingAttr("cellspacing");
+const GlobalString bordercolorAttr("bordercolor");
+const GlobalString textAttr("text");
 const GlobalString backgroundAttr("background");
 const GlobalString bgcolorAttr("bgcolor");
 const GlobalString valignAttr("valign");
