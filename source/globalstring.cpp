@@ -203,6 +203,11 @@ const GlobalString moTag("mo");
 const GlobalString msTag("ms");
 const GlobalString mtextTag("mtext");
 
+const GlobalString backgroundAttr("background");
+const GlobalString bgcolorAttr("bgcolor");
+const GlobalString valignAttr("valign");
+const GlobalString vspaceAttr("vspace");
+const GlobalString hspaceAttr("hspace");
 const GlobalString valueAttr("value");
 const GlobalString startAttr("start");
 const GlobalString borderAttr("border");

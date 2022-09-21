@@ -14,6 +14,13 @@ public:
     void buildBox(Counters& counters, Box* parent) override;
 };
 
+class HTMLBodyElement final : public HTMLElement {
+public:
+    HTMLBodyElement(Document* document);
+
+    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+};
+
 class HTMLImageElement final : public HTMLElement {
 public:
     HTMLImageElement(Document* document);
@@ -24,6 +31,13 @@ public:
     RefPtr<Image> image() const;
 
     Box* createBox(const RefPtr<BoxStyle>& style) final;
+};
+
+class HTMLBRElement final : public HTMLElement {
+public:
+    HTMLBRElement(Document* document);
+
+    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
 };
 
 class HTMLLIElement final : public HTMLElement {
@@ -38,6 +52,24 @@ public:
     HTMLOLElement(Document* document);
 
     void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+};
+
+class HTMLTableRowElement final : public HTMLElement {
+public:
+    HTMLTableRowElement(Document* document);
+
+    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+};
+
+class HTMLTableCellElement final : public HTMLElement {
+public:
+    HTMLTableCellElement(Document* document, const GlobalString& tagName);
+
+    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+    int colSpan() const;
+    int rowSpan() const;
+
+    Box* createBox(const RefPtr<BoxStyle>& style) final;
 };
 
 class HTMLDocument final : public Document {

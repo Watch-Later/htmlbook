@@ -218,6 +218,11 @@ extern const GlobalString moTag;
 extern const GlobalString msTag;
 extern const GlobalString mtextTag;
 
+extern const GlobalString backgroundAttr;
+extern const GlobalString bgcolorAttr;
+extern const GlobalString vspaceAttr;
+extern const GlobalString hspaceAttr;
+extern const GlobalString valignAttr;
 extern const GlobalString valueAttr;
 extern const GlobalString startAttr;
 extern const GlobalString borderAttr;
