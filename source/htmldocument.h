@@ -110,6 +110,24 @@ public:
     Box* createBox(const RefPtr<BoxStyle>& style) final;
 };
 
+class HTMLStyleElement final : public HTMLElement {
+public:
+    HTMLStyleElement(Document* document);
+
+    void finishParsingChildren() final;
+};
+
+class HTMLLinkElement final : public HTMLElement {
+public:
+    HTMLLinkElement(Document* document);
+
+    const std::string& href() const;
+    const std::string& type() const;
+    const std::string& rel() const;
+
+    void finishParsingChildren() final;
+};
+
 class HTMLDocument final : public Document {
 public:
     HTMLDocument(const PageSize& pageSize);

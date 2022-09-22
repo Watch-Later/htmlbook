@@ -297,7 +297,7 @@ void HTMLElementStack::pop()
     assert(element->tagName() != htmlTag);
     assert(element->tagName() != headTag);
     assert(element->tagName() != bodyTag);
-    element->finishParsingChildern();
+    element->finishParsingChildren();
     m_elements.pop_back();
 }
 
@@ -305,7 +305,7 @@ void HTMLElementStack::popHTMLHeadElement()
 {
     auto element = m_elements.back();
     assert(element == m_headElement);
-    element->finishParsingChildern();
+    element->finishParsingChildren();
     m_headElement = nullptr;
     m_elements.pop_back();
 }
@@ -314,7 +314,7 @@ void HTMLElementStack::popHTMLBodyElement()
 {
     auto element = m_elements.back();
     assert(element == m_bodyElement);
-    element->finishParsingChildern();
+    element->finishParsingChildren();
     m_bodyElement = nullptr;
     m_elements.pop_back();
 }
@@ -386,7 +386,7 @@ void HTMLElementStack::popAll()
     m_bodyElement = nullptr;
     while(!m_elements.empty()) {
         auto element = m_elements.back();
-        element->finishParsingChildern();
+        element->finishParsingChildren();
         m_elements.pop_back();
     }
 }
@@ -412,7 +412,7 @@ void HTMLElementStack::remove(Element* element)
     assert(element->tagName() != bodyTag);
     auto it = std::find(m_elements.begin(), m_elements.end(), element);
     assert(it != m_elements.end());
-    element->finishParsingChildern();
+    element->finishParsingChildren();
     m_elements.erase(it);
 }
 
@@ -423,7 +423,7 @@ void HTMLElementStack::removeHTMLHeadElement(Element* element)
     assert(m_headElement == element);
     auto it = std::find(m_elements.begin(), m_elements.end(), element);
     assert(it != m_elements.end());
-    element->finishParsingChildern();
+    element->finishParsingChildren();
     m_headElement = nullptr;
     m_elements.erase(it);
 }
@@ -739,9 +739,9 @@ void HTMLParser::insert(const InsertionLocation& location)
         return;
 
     auto child = to<ContainerNode>(location.child);
-    child->beginParsingChildern();
+    child->beginParsingChildren();
     if(location.selfClosing)
-        child->finishParsingChildern();
+        child->finishParsingChildren();
 }
 
 void HTMLParser::append(ContainerNode* parent, Node* child, bool selfClosing)
@@ -3051,13 +3051,13 @@ void HTMLParser::finishTree()
 
 bool HTMLParser::parse()
 {
-    m_document->beginParsingChildern();
+    m_document->beginParsingChildren();
     while(!m_tokenizer.atEOF()) {
         buildTree(m_tokenizer.nextToken());
     }
 
     finishTree();
-    m_document->finishParsingChildern();
+    m_document->finishParsingChildren();
     return true;
 }
 

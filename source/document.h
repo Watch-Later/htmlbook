@@ -84,8 +84,8 @@ public:
     ContainerNode(Document* document);
     ~ContainerNode() override;
 
-    virtual void beginParsingChildern() {}
-    virtual void finishParsingChildern() {}
+    virtual void beginParsingChildren() {}
+    virtual void finishParsingChildren() {}
 
     bool isContainerNode() const final { return true; }
 

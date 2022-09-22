@@ -346,7 +346,7 @@ int HTMLTableColElement::span() const
     return 0;
 }
 
-Box* HTMLTableColElement::createBox(const RefPtr<BoxStyle> &style)
+Box* HTMLTableColElement::createBox(const RefPtr<BoxStyle>& style)
 {
     auto box = HTMLElement::createBox(style);
     if(box->isTableColumnBox()) {
@@ -397,6 +397,54 @@ Box* HTMLTableCellElement::createBox(const RefPtr<BoxStyle>& style)
     }
 
     return box;
+}
+
+HTMLStyleElement::HTMLStyleElement(Document* document)
+    : HTMLElement(document, styleTag)
+{
+}
+
+void HTMLStyleElement::finishParsingChildren()
+{
+    std::string content;
+    auto child = firstChild();
+    while(child) {
+        if(auto node = to<TextNode>(child))
+            content += node->data();
+        child = child->nextSibling();
+    }
+
+    document()->addAuthorStyleSheet(content);
+}
+
+HTMLLinkElement::HTMLLinkElement(Document* document)
+    : HTMLElement(document, linkTag)
+{
+}
+
+const std::string& HTMLLinkElement::href() const
+{
+    return getAttribute(hrefAttr);
+}
+
+const std::string& HTMLLinkElement::type() const
+{
+    return getAttribute(typeAttr);
+}
+
+const std::string& HTMLLinkElement::rel() const
+{
+    return getAttribute(relAttr);
+}
+
+void HTMLLinkElement::finishParsingChildren()
+{
+    if(!equals(rel(), "stylesheet", false) && !equals(type(), "text/css", false))
+        return;
+    auto resource = document()->fetchTextResource(href());
+    if(resource == nullptr)
+        return;
+    document()->addAuthorStyleSheet(resource->text());
 }
 
 HTMLDocument::HTMLDocument(const PageSize& pageSize)

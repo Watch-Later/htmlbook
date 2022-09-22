@@ -70,7 +70,7 @@ void Counters::reset(const GlobalString& name, int value)
     auto& counter = m_counters.back();
     if(counter == nullptr)
         counter = std::make_unique<Counter>();
-    counter->insert_or_assign(name, value);
+    counter->operator[](name) = value;
 }
 
 void Counters::set(const GlobalString& name, int value)
