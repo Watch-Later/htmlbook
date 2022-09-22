@@ -1,4 +1,5 @@
 #include "counter.h"
+#include "htmldocument.h"
 
 #include <cassert>
 
@@ -9,19 +10,41 @@ void Counters::update(const Box* box)
     update(box, CSSPropertyID::CounterReset);
     update(box, CSSPropertyID::CounterSet);
     update(box, CSSPropertyID::CounterIncrement);
+
+    static const GlobalString listItem("list-item");
+    auto node = box->node();
+    if(box->isListItemBox()) {
+        if(node && node->tagName() == liTag) {
+            auto element = static_cast<HTMLLIElement*>(node);
+            if(auto value = element->value()) {
+                reset(listItem, *value);
+                return;
+            }
+        }
+
+        increment(listItem, 1);
+        return;
+    }
+
+    if(node == nullptr)
+        return;
+    if(node->tagName() == olTag) {
+        auto element = static_cast<HTMLOLElement*>(node);
+        reset(listItem, element->start());
+        return;
+    }
+
+    if(node->tagName() == ulTag
+        || node->tagName() == dirTag
+        || node->tagName() == menuTag) {
+        reset(listItem, 0);
+    }
 }
 
 void Counters::update(const Box* box, CSSPropertyID id)
 {
     auto value = box->style()->get(id);
-    if(value == nullptr) {
-        static const GlobalString listItem("list-item");
-        if(id == CSSPropertyID::CounterIncrement && box->isListItemBox())
-            increment(listItem, 1);
-        return;
-    }
-
-    if(!value->isListValue())
+    if(value == nullptr && !value->isListValue())
         return;
     for(auto& counter : to<CSSListValue>(*value)->values()) {
         auto pair = to<CSSPairValue>(*counter);

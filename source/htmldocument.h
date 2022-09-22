@@ -3,6 +3,8 @@
 
 #include "document.h"
 
+#include <optional>
+
 namespace htmlbook {
 
 class HTMLElement : public Element {
@@ -51,14 +53,14 @@ class HTMLLIElement final : public HTMLElement {
 public:
     HTMLLIElement(Document* document);
 
-    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+    std::optional<int> value() const;
 };
 
 class HTMLOLElement final : public HTMLElement {
 public:
     HTMLOLElement(Document* document);
 
-    void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const final;
+    int start() const;
 };
 
 class HTMLTableElement final : public HTMLElement {

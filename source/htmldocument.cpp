@@ -220,13 +220,9 @@ HTMLLIElement::HTMLLIElement(Document* document)
 {
 }
 
-void HTMLLIElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+std::optional<int> HTMLLIElement::value() const
 {
-    if(name == valueAttr) {
-        addAttributeStyle("counter-reset", "list-item " + value, output);
-    } else {
-        HTMLElement::collectAttributeStyle(name, value, output);
-    }
+    return std::nullopt;
 }
 
 HTMLOLElement::HTMLOLElement(Document* document)
@@ -234,13 +230,9 @@ HTMLOLElement::HTMLOLElement(Document* document)
 {
 }
 
-void HTMLOLElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+int HTMLOLElement::start() const
 {
-    if(name == startAttr) {
-        addAttributeStyle("counter-reset", "list-item " + value, output);
-    } else {
-        HTMLElement::collectAttributeStyle(name, value, output);
-    }
+    return 1;
 }
 
 HTMLTableElement::HTMLTableElement(Document* document)
@@ -343,7 +335,7 @@ void HTMLTableColElement::collectAttributeStyle(const GlobalString& name, const 
 
 int HTMLTableColElement::span() const
 {
-    return 0;
+    return 1;
 }
 
 Box* HTMLTableColElement::createBox(const RefPtr<BoxStyle>& style)
@@ -379,12 +371,12 @@ void HTMLTableCellElement::collectAttributeStyle(const GlobalString& name, const
 
 int HTMLTableCellElement::colSpan() const
 {
-    return 0;
+    return 1;
 }
 
 int HTMLTableCellElement::rowSpan() const
 {
-    return 0;
+    return 1;
 }
 
 Box* HTMLTableCellElement::createBox(const RefPtr<BoxStyle>& style)

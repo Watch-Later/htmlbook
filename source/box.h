@@ -377,12 +377,6 @@ public:
     ListItemBox(Node* node, const RefPtr<BoxStyle>& style);
 
     bool isListItemBox() const final { return true; }
-
-    BoxModel* listMarker() const { return m_listMarker; }
-    void setListMarker(BoxModel* marker) { m_listMarker = marker; }
-
-private:
-    BoxModel* m_listMarker{nullptr};
 };
 
 template<>
