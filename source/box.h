@@ -40,7 +40,7 @@ public:
 
     virtual BoxList* children() const { return nullptr; }
     virtual LineBoxList* lines() const { return nullptr; }
-    virtual void build(BoxLayer* parent) {}
+    virtual void build(BoxLayer* parent);
     virtual void addBox(Box* box);
 
     void addLine(LineBox* line);
@@ -170,10 +170,12 @@ class BoxModel : public Box {
 public:
     BoxModel(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isBoxModel() const final { return false; }
+    bool isBoxModel() const final { return true; }
 
+    virtual bool requiresLayer() const { return false; }
+
+    void build(BoxLayer* parent) override;
     BoxLayer* layer() const { return m_layer.get(); }
-    void setLayer(std::unique_ptr<BoxLayer> layer) { m_layer = std::move(layer); }
 
     float marginTop() const { return m_marginTop; }
     float marginBottom() const { return m_marginBottom; }

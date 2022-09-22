@@ -25,6 +25,18 @@ void Box::computePreferredWidths(float& minWidth, float& maxWidth) const
     maxWidth = 0;
 }
 
+void Box::build(BoxLayer* parent)
+{
+    auto children = this->children();
+    if(children == nullptr)
+        return;
+    auto box = children->firstBox();
+    while(box) {
+        box->build(parent);
+        box = box->nextBox();
+    }
+}
+
 void Box::addBox(Box* box)
 {
     appendChild(box);
@@ -282,6 +294,16 @@ TextBox::TextBox(Node* node, const RefPtr<BoxStyle>& style)
 BoxModel::BoxModel(Node* node, const RefPtr<BoxStyle>& style)
     : Box(node, style)
 {
+}
+
+void BoxModel::build(BoxLayer* parent)
+{
+    if(parent == nullptr || requiresLayer()) {
+        m_layer = BoxLayer::create(this, parent);
+        parent = m_layer.get();
+    }
+
+    Box::build(parent);
 }
 
 void BoxModel::addBox(Box* box)

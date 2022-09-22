@@ -255,7 +255,7 @@ void Element::removeAttribute(const GlobalString& name)
     auto end = m_attributes.end();
     for(; it != end; ++it) {
         if(name == it->name()) {
-            parseAttribute(name, nullGlo);
+            parseAttribute(name, emptyString);
             m_attributes.erase(it);
             break;
         }
@@ -373,8 +373,38 @@ Document::Document(const PageSize& pageSize)
 
 Element* Document::createElement(const GlobalString& tagName, const GlobalString& namespaceUri)
 {
-    if(namespaceUri == namespaceuri::xhtml)
+    if(namespaceUri == namespaceuri::xhtml) {
+        if(tagName == bodyTag)
+            return new HTMLBodyElement(this);
+        if(tagName == imageTag)
+            return new HTMLImageElement(this);
+        if(tagName == fontTag)
+            return new HTMLFontElement(this);
+        if(tagName == hrTag)
+            return new HTMLHRElement(this);
+        if(tagName == liTag)
+            return new HTMLLIElement(this);
+        if(tagName == olTag)
+            return new HTMLOLElement(this);
+        if(tagName == tableTag)
+            return new HTMLTableElement(this);
+        if(tagName == theadTag || tagName == tbodyTag || tagName == tfootTag)
+            return new HTMLTableSectionElement(this, tagName);
+        if(tagName == captionTag)
+            return new HTMLTableCaptionElement(this);
+        if(tagName == trTag)
+            return new HTMLTableRowElement(this);
+        if(tagName == colTag || tagName == colgroupTag)
+            return new HTMLTableColElement(this, tagName);
+        if(tagName == tdTag || tagName == thTag)
+            return new HTMLTableCellElement(this, tagName);
+        if(tagName == styleTag)
+            return new HTMLStyleElement(this);
+        if(tagName == linkTag)
+            return new HTMLLinkElement(this);
         return new HTMLElement(this, tagName);
+    }
+
     return new Element(this, tagName, namespaceUri);
 }
 

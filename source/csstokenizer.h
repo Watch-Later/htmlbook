@@ -90,8 +90,6 @@ public:
         default:
             assert(false);
         }
-
-        return Type::Unknown;
     }
 
 private:

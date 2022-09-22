@@ -43,8 +43,8 @@ public:
     Box* box() const { return m_box; }
     RefPtr<BoxStyle> style() const;
 
-    virtual Box* createBox(const RefPtr<BoxStyle>& style) = 0;
-    virtual void buildBox(Counters& counters, Box* parent) = 0;
+    virtual Box* createBox(const RefPtr<BoxStyle>& style) { return nullptr; }
+    virtual void buildBox(Counters& counters, Box* parent) {}
     virtual void serialize(std::ostream& o) const = 0;
 
 private:
@@ -173,8 +173,6 @@ public:
     Element* previousElement() const;
     Element* nextElement() const;
 
-    Box* createBox(const RefPtr<BoxStyle>& style) override { return nullptr; }
-    void buildBox(Counters& counters, Box* parent) override {}
     void serialize(std::ostream& o) const override;
 
 private:
