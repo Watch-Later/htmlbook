@@ -4,17 +4,24 @@
 
 namespace htmlbook {
 
-void Counters::update(const BoxStyle& style)
+void Counters::update(const Box* box)
 {
-    update(style, CSSPropertyID::CounterReset);
-    update(style, CSSPropertyID::CounterSet);
-    update(style, CSSPropertyID::CounterIncrement);
+    update(box, CSSPropertyID::CounterReset);
+    update(box, CSSPropertyID::CounterSet);
+    update(box, CSSPropertyID::CounterIncrement);
 }
 
-void Counters::update(const BoxStyle& style, CSSPropertyID id)
+void Counters::update(const Box* box, CSSPropertyID id)
 {
-    auto value = style.get(id);
-    if(value == nullptr || !value->isListValue())
+    auto value = box->style()->get(id);
+    if(value == nullptr) {
+        static const GlobalString listItem("list-item");
+        if(id == CSSPropertyID::CounterIncrement && box->isListItemBox())
+            increment(listItem, 1);
+        return;
+    }
+
+    if(!value->isListValue())
         return;
     for(auto& counter : to<CSSListValue>(*value)->values()) {
         auto pair = to<CSSPairValue>(*counter);

@@ -27,7 +27,7 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
     auto box = Box::create(nullptr, style);
     parent->addBox(box);
     if(pseudoType == PseudoType::Before || pseudoType == PseudoType::After) {
-        counters.update(*style);
+        counters.update(box);
         buildPseudoBox(counters, box, PseudoType::Marker);
     }
 
@@ -105,7 +105,7 @@ void HTMLElement::buildBox(Counters& counters, Box* parent)
         return;
     parent->addBox(box);
     counters.push();
-    counters.update(*style);
+    counters.update(box);
     buildPseudoBox(counters, box, PseudoType::Marker);
     buildPseudoBox(counters, box, PseudoType::Before);
     ContainerNode::buildBox(counters, box);
@@ -404,8 +404,16 @@ HTMLStyleElement::HTMLStyleElement(Document* document)
 {
 }
 
+const std::string& HTMLStyleElement::type() const
+{
+    return getAttribute(typeAttr);
+}
+
 void HTMLStyleElement::finishParsingChildren()
 {
+    auto& type = getAttribute(typeAttr);
+    if(!type.empty() && !equals(type, "text/css", false))
+        return;
     std::string content;
     auto child = firstChild();
     while(child) {

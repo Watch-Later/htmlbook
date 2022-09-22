@@ -1,7 +1,7 @@
 #ifndef COUNTER_H
 #define COUNTER_H
 
-#include "boxstyle.h"
+#include "box.h"
 
 namespace htmlbook {
 
@@ -14,8 +14,8 @@ public:
     void push() { m_counters.push_back(nullptr); }
     void pop() { m_counters.pop_back(); }
 
-    void update(const BoxStyle& style);
-    void update(const BoxStyle& style, CSSPropertyID id);
+    void update(const Box* box);
+    void update(const Box* box, CSSPropertyID id);
 
     void increaseQuoteDepth() { ++m_quoteDepth; }
     void decreaseQuoteDepth() { --m_quoteDepth; }
