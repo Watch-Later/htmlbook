@@ -412,6 +412,7 @@ struct is<OutsideListMarkerBox> {
 
 class TableCaptionBox;
 class TableSectionBox;
+class TableColumnBox;
 
 class TableBox final : public BlockBox {
 public:
@@ -423,6 +424,7 @@ public:
     TableSectionBox* foot() const { return m_foot; }
     const std::vector<TableCaptionBox*>& captions() const { return m_captions; }
     const std::vector<TableSectionBox*>& sections() const { return m_sections; }
+    const std::vector<TableColumnBox*>& columns() const { return m_columns; }
 
     void build(BoxLayer* parent) override;
     void addBox(Box* box) final;
@@ -432,6 +434,7 @@ private:
     TableSectionBox* m_foot{nullptr};
     std::vector<TableSectionBox*> m_sections;
     std::vector<TableCaptionBox*> m_captions;
+    std::vector<TableColumnBox*> m_columns;
 };
 
 template<>

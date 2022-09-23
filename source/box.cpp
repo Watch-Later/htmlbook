@@ -508,6 +508,20 @@ void TableBox::build(BoxLayer* parent)
             }
         } else if(auto caption = to<TableCaptionBox>(child)) {
             m_captions.push_back(caption);
+        } else {
+            assert(child->isTableColumnBox());
+            auto column = to<TableColumnBox>(child);
+            auto children = column->children();
+            if(children == nullptr || children->empty()) {
+                m_columns.push_back(column);
+            } else {
+                auto child = children->firstBox();
+                while(child) {
+                    if(auto column = to<TableColumnBox>(child))
+                        m_columns.push_back(column);
+                    child = child->nextBox();
+                }
+            }
         }
 
         child = child->nextBox();
