@@ -175,7 +175,7 @@ public:
     virtual bool requiresLayer() const { return false; }
 
     void build(BoxLayer* parent) override;
-    BoxLayer* layer() const { return m_layer.get(); }
+    void addBox(Box* box) override;
 
     float marginTop() const { return m_marginTop; }
     float marginBottom() const { return m_marginBottom; }
@@ -207,7 +207,7 @@ public:
     void setPaddingLeft(float value) { m_paddingLeft = value; }
     void setPaddingRight(float value) { m_paddingRight = value; }
 
-    void addBox(Box* box) override;
+    BoxLayer* layer() const { return m_layer.get(); }
 
 private:
     std::unique_ptr<BoxLayer> m_layer;
@@ -424,6 +424,7 @@ public:
     const std::vector<TableCaptionBox*>& captions() const { return m_captions; }
     const std::vector<TableSectionBox*>& sections() const { return m_sections; }
 
+    void build(BoxLayer* parent) override;
     void addBox(Box* box) final;
 
 private:

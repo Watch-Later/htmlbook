@@ -490,6 +490,32 @@ TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
 {
 }
 
+void TableBox::build(BoxLayer* parent)
+{
+    auto child = m_children.firstBox();
+    while(child) {
+        if(auto section = to<TableSectionBox>(child)) {
+            switch(child->display()) {
+            case Display::TableHeaderGroup:
+                m_head = section;
+                break;
+            case Display::TableFooterGroup:
+                m_foot = section;
+                break;
+            default:
+                m_sections.push_back(section);
+                break;
+            }
+        } else if(auto caption = to<TableCaptionBox>(child)) {
+            m_captions.push_back(caption);
+        }
+
+        child = child->nextBox();
+    }
+
+    BlockBox::build(parent);
+}
+
 void TableBox::addBox(Box* box)
 {
     if(box->isTableCaptionBox() || box->isTableColumnBox()
