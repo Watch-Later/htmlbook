@@ -507,11 +507,11 @@ void TableBox::build(BoxLayer* parent)
             }
         } else if(auto column = to<TableColumnBox>(child)) {
             if(auto child = column->firstBox()) {
-                while(child) {
+                do {
                     if(auto column = to<TableColumnBox>(child))
                         m_columns.push_back(column);
                     child = child->nextBox();
-                }
+                } while(child);
             } else {
                 m_columns.push_back(column);
             }
