@@ -170,16 +170,16 @@ Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
     }
 }
 
-Box* Box::createAnonymous(const BoxStyle& parentStyle, Display display)
+Box* Box::createAnonymous(const RefPtr<BoxStyle>& parentStyle, Display display)
 {
-    auto newBox = create(nullptr, BoxStyle::create(parentStyle, display));
+    auto newBox = create(nullptr, BoxStyle::create(*parentStyle, display));
     newBox->setAnonymous(true);
     return newBox;
 }
 
-BlockBox* Box::createAnonymousBlock(const BoxStyle& parentStyle)
+BlockBox* Box::createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle)
 {
-    auto newBlock = new BlockBox(nullptr, BoxStyle::create(parentStyle, Display::Block));
+    auto newBlock = new BlockBox(nullptr, BoxStyle::create(*parentStyle, Display::Block));
     newBlock->setAnonymous(true);
     return newBlock;
 }
@@ -323,7 +323,7 @@ void BoxModel::addBox(Box* box)
         return;
     }
 
-    auto newTable = createAnonymous(*box->style(), Display::Table);
+    auto newTable = createAnonymous(style(), Display::Table);
     children->append(this, newTable);
     newTable->addBox(box);
 }
@@ -351,13 +351,13 @@ void InlineBox::addBox(Box* box)
         return;
     }
 
-    auto newBlock = createAnonymousBlock(*box->style());
+    auto newBlock = createAnonymousBlock(style());
     BlockBox* preBlock = nullptr;
     BlockBox* postBlock = nullptr;
     auto block = containingBlock();
     if(block->isAnonymous()) {
         preBlock = block;
-        postBlock = createAnonymousBlock(*block->style());
+        postBlock = createAnonymousBlock(block->style());
         block = block->containingBlock();
 
         auto children = block->children();
@@ -365,8 +365,8 @@ void InlineBox::addBox(Box* box)
         children->append(block, newBlock);
         children->append(block, postBlock);
     } else {
-        preBlock = createAnonymousBlock(*block->style());
-        postBlock = createAnonymousBlock(*block->style());
+        preBlock = createAnonymousBlock(block->style());
+        postBlock = createAnonymousBlock(block->style());
         block->moveChildrenTo(preBlock);
 
         auto children = block->children();
@@ -414,7 +414,7 @@ void BlockBox::addBox(Box* box)
 
     if(isChildrenInline() && !box->isInline() && !box->isFloatingOrPositioned()) {
         if(!m_children.empty()) {
-            auto newBlock = createAnonymousBlock(*style());
+            auto newBlock = createAnonymousBlock(style());
             moveChildrenTo(newBlock);
             m_children.append(this, newBlock);
         }
@@ -428,7 +428,7 @@ void BlockBox::addBox(Box* box)
         }
 
         if(box->isInline()) {
-            auto newBlock = createAnonymousBlock(*style());
+            auto newBlock = createAnonymousBlock(style());
             m_children.append(this, newBlock);
 
             auto children = newBlock->children();
@@ -492,39 +492,34 @@ TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableBox::build(BoxLayer* parent)
 {
-    auto child = m_children.firstBox();
-    while(child) {
+    for(auto child = m_children.firstBox(); child; child = child->nextBox()) {
         if(auto section = to<TableSectionBox>(child)) {
             switch(child->display()) {
             case Display::TableHeaderGroup:
-                m_head = section;
+                m_header = section;
                 break;
             case Display::TableFooterGroup:
-                m_foot = section;
+                m_footer = section;
                 break;
             default:
                 m_sections.push_back(section);
                 break;
             }
-        } else if(auto caption = to<TableCaptionBox>(child)) {
-            m_captions.push_back(caption);
-        } else {
-            assert(child->isTableColumnBox());
-            auto column = to<TableColumnBox>(child);
-            auto children = column->children();
-            if(children == nullptr || children->empty()) {
-                m_columns.push_back(column);
-            } else {
-                auto child = children->firstBox();
+        } else if(auto column = to<TableColumnBox>(child)) {
+            if(auto child = column->firstBox()) {
                 while(child) {
                     if(auto column = to<TableColumnBox>(child))
                         m_columns.push_back(column);
                     child = child->nextBox();
                 }
+            } else {
+                m_columns.push_back(column);
             }
+        } else {
+            assert(child->isTableCaptionBox());
+            auto caption = to<TableCaptionBox>(child);
+            m_captions.push_back(caption);
         }
-
-        child = child->nextBox();
     }
 
     BlockBox::build(parent);
@@ -544,7 +539,7 @@ void TableBox::addBox(Box* box)
         return;
     }
 
-    auto newSection = createAnonymous(*box->style(), Display::TableRowGroup);
+    auto newSection = createAnonymous(style(), Display::TableRowGroup);
     m_children.append(this, newSection);
     newSection->addBox(box);
 }
@@ -567,7 +562,7 @@ void TableSectionBox::addBox(Box* box)
         return;
     }
 
-    auto newRow = createAnonymous(*box->style(), Display::TableRow);
+    auto newRow = createAnonymous(style(), Display::TableRow);
     m_children.append(this, newRow);
     newRow->addBox(box);
 }
@@ -590,7 +585,7 @@ void TableRowBox::addBox(Box* box)
         return;
     }
 
-    auto newCell = createAnonymous(*box->style(), Display::TableCell);
+    auto newCell = createAnonymous(style(), Display::TableCell);
     m_children.append(this, newCell);
     newCell->addBox(box);
 }

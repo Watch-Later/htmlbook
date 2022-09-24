@@ -71,8 +71,8 @@ public:
     void setNextBox(Box* box) { m_nextBox = box; }
 
     static Box* create(Node* node, const RefPtr<BoxStyle>& style);
-    static Box* createAnonymous(const BoxStyle& parentStyle, Display display);
-    static BlockBox* createAnonymousBlock(const BoxStyle& parentStyle);
+    static Box* createAnonymous(const RefPtr<BoxStyle>& parentStyle, Display display);
+    static BlockBox* createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle);
 
     BlockBox* containingBlock() const;
 
@@ -420,8 +420,8 @@ public:
 
     bool isTableBox() const final { return true; }
 
-    TableSectionBox* head() const { return m_head; }
-    TableSectionBox* foot() const { return m_foot; }
+    TableSectionBox* header() const { return m_header; }
+    TableSectionBox* footer() const { return m_footer; }
     const std::vector<TableCaptionBox*>& captions() const { return m_captions; }
     const std::vector<TableSectionBox*>& sections() const { return m_sections; }
     const std::vector<TableColumnBox*>& columns() const { return m_columns; }
@@ -430,10 +430,10 @@ public:
     void addBox(Box* box) final;
 
 private:
-    TableSectionBox* m_head{nullptr};
-    TableSectionBox* m_foot{nullptr};
-    std::vector<TableSectionBox*> m_sections;
+    TableSectionBox* m_header{nullptr};
+    TableSectionBox* m_footer{nullptr};
     std::vector<TableCaptionBox*> m_captions;
+    std::vector<TableSectionBox*> m_sections;
     std::vector<TableColumnBox*> m_columns;
 };
 
