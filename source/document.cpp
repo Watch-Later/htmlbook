@@ -500,7 +500,7 @@ void Document::buildBox(Counters& counters, Box* parent)
 
     auto box = createBox(style);
     ContainerNode::buildBox(counters, box);
-    box->build(nullptr);
+    box->buildBox(nullptr);
 }
 
 template<typename ResourceType>

@@ -25,14 +25,14 @@ void Box::computePreferredWidths(float& minWidth, float& maxWidth) const
     maxWidth = 0;
 }
 
-void Box::build(BoxLayer* parent)
+void Box::buildBox(BoxLayer* parent)
 {
     auto children = this->children();
     if(children == nullptr)
         return;
     auto box = children->firstBox();
     while(box) {
-        box->build(parent);
+        box->buildBox(parent);
         box = box->nextBox();
     }
 }
@@ -142,7 +142,7 @@ Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
         return new InlineBox(node, style);
     case Display::Block:
     case Display::InlineBlock:
-        return new BlockBox(node, style);
+        return new BlockFlowBox(node, style);
     case Display::Flex:
     case Display::InlineFlex:
         return new FlexibleBox(node, style);
@@ -177,9 +177,9 @@ Box* Box::createAnonymous(const RefPtr<BoxStyle>& parentStyle, Display display)
     return newBox;
 }
 
-BlockBox* Box::createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle)
+BlockFlowBox* Box::createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle)
 {
-    auto newBlock = new BlockBox(nullptr, BoxStyle::create(*parentStyle, Display::Block));
+    auto newBlock = new BlockFlowBox(nullptr, BoxStyle::create(*parentStyle, Display::Block));
     newBlock->setAnonymous(true);
     return newBlock;
 }
@@ -296,14 +296,14 @@ BoxModel::BoxModel(Node* node, const RefPtr<BoxStyle>& style)
 {
 }
 
-void BoxModel::build(BoxLayer* parent)
+void BoxModel::buildBox(BoxLayer* parent)
 {
     if(parent == nullptr || requiresLayer()) {
         m_layer = BoxLayer::create(this, parent);
         parent = m_layer.get();
     }
 
-    Box::build(parent);
+    Box::buildBox(parent);
 }
 
 void BoxModel::addBox(Box* box)
@@ -448,6 +448,17 @@ void BlockBox::addBox(Box* box)
     BoxFrame::addBox(box);
 }
 
+BlockFlowBox::BlockFlowBox(Node *node, const RefPtr<BoxStyle>& style)
+    : BlockBox(node, style)
+{
+    setChildrenInline(true);
+}
+
+void BlockFlowBox::setFirstLineStyle(RefPtr<BoxStyle> firstLineStyle)
+{
+    m_firstLineStyle = std::move(firstLineStyle);
+}
+
 FlexibleBox::FlexibleBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
 {
@@ -471,7 +482,7 @@ void ImageBox::setImage(RefPtr<Image> image)
 }
 
 ListItemBox::ListItemBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BlockBox(node, style)
+    : BlockFlowBox(node, style)
 {
 }
 
@@ -481,16 +492,17 @@ InsideListMarkerBox::InsideListMarkerBox(const RefPtr<BoxStyle>& style)
 }
 
 OutsideListMarkerBox::OutsideListMarkerBox(const RefPtr<BoxStyle>& style)
-    : BlockBox(nullptr, style)
+    : BlockFlowBox(nullptr, style)
 {
 }
 
 TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
 {
+    setChildrenInline(false);
 }
 
-void TableBox::build(BoxLayer* parent)
+void TableBox::buildBox(BoxLayer* parent)
 {
     for(auto child = m_children.firstBox(); child; child = child->nextBox()) {
         if(auto section = to<TableSectionBox>(child)) {
@@ -522,7 +534,7 @@ void TableBox::build(BoxLayer* parent)
         }
     }
 
-    BlockBox::build(parent);
+    BlockBox::buildBox(parent);
 }
 
 void TableBox::addBox(Box* box)
@@ -545,7 +557,7 @@ void TableBox::addBox(Box* box)
 }
 
 TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BoxFrame(node, style)
+    : Box(node, style)
 {
 }
 
@@ -568,7 +580,7 @@ void TableSectionBox::addBox(Box* box)
 }
 
 TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BoxFrame(node, style)
+    : Box(node, style)
 {
 }
 
@@ -591,7 +603,7 @@ void TableRowBox::addBox(Box* box)
 }
 
 TableCellBox::TableCellBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BlockBox(node, style)
+    : BlockFlowBox(node, style)
 {
 }
 
@@ -611,7 +623,7 @@ void TableColumnGroupBox::addBox(Box* box)
 }
 
 TableCaptionBox::TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BlockBox(node, style), m_captionSide(style->captionSide())
+    : BlockFlowBox(node, style), m_captionSide(style->captionSide())
 {
 }
 

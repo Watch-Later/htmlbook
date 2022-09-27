@@ -11,6 +11,7 @@ class Node;
 class BoxList;
 class BoxLayer;
 class BlockBox;
+class BlockFlowBox;
 
 class Box {
 public:
@@ -22,6 +23,7 @@ public:
     virtual bool isBoxFrame() const { return false; }
     virtual bool isInlineBox() const { return false; }
     virtual bool isBlockBox() const { return false; }
+    virtual bool isBlockFlowBox() const { return false; }
     virtual bool isFlexibleBox() const { return false; }
     virtual bool isReplacedBox() const { return false; }
     virtual bool isImageBox() const { return false; }
@@ -40,8 +42,9 @@ public:
 
     virtual BoxList* children() const { return nullptr; }
     virtual LineBoxList* lines() const { return nullptr; }
-    virtual void build(BoxLayer* parent);
+
     virtual void addBox(Box* box);
+    virtual void buildBox(BoxLayer* parent);
 
     void addLine(LineBox* line);
     void removeLine(LineBox* line);
@@ -72,7 +75,7 @@ public:
 
     static Box* create(Node* node, const RefPtr<BoxStyle>& style);
     static Box* createAnonymous(const RefPtr<BoxStyle>& parentStyle, Display display);
-    static BlockBox* createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle);
+    static BlockFlowBox* createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle);
 
     BlockBox* containingBlock() const;
 
@@ -174,8 +177,8 @@ public:
 
     virtual bool requiresLayer() const { return false; }
 
-    void build(BoxLayer* parent) override;
     void addBox(Box* box) override;
+    void buildBox(BoxLayer* parent) override;
 
     float marginTop() const { return m_marginTop; }
     float marginBottom() const { return m_marginBottom; }
@@ -299,8 +302,6 @@ public:
     bool isBlockBox() const final { return true; }
 
     BoxList* children() const final { return &m_children; }
-    LineBoxList* lines() const final { return &m_lines; }
-    const RefPtr<BoxStyle>& firstLineStyle() const { return m_firstLineStyle; }
     Box* continuation() const { return m_continuation; }
     void setContinuation(Box* continuation) { m_continuation = continuation; }
 
@@ -308,16 +309,32 @@ public:
 
 protected:
     mutable BoxList m_children;
-    mutable LineBoxList m_lines;
-
-private:
-    RefPtr<BoxStyle> m_firstLineStyle;
     Box* m_continuation{nullptr};
 };
 
 template<>
 struct is<BlockBox> {
     static bool check(const Box& box) { return box.isBlockBox(); }
+};
+
+class BlockFlowBox : public BlockBox {
+public:
+    BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isBlockFlowBox() const final { return true; }
+
+    LineBoxList* lines() const final { return &m_lines; }
+    const RefPtr<BoxStyle>& firstLineStyle() const { return m_firstLineStyle; }
+    void setFirstLineStyle(RefPtr<BoxStyle> firstLineStyle);
+
+private:
+    mutable LineBoxList m_lines;
+    RefPtr<BoxStyle> m_firstLineStyle;
+};
+
+template<>
+struct is<BlockFlowBox> {
+    static bool check(const Box& box) { return box.isBlockFlowBox(); }
 };
 
 class FlexibleBox : public BlockBox {
@@ -374,7 +391,7 @@ struct is<ImageBox> {
     static bool check(const Box& box) { return box.isImageBox(); }
 };
 
-class ListItemBox final : public BlockBox {
+class ListItemBox final : public BlockFlowBox {
 public:
     ListItemBox(Node* node, const RefPtr<BoxStyle>& style);
 
@@ -398,7 +415,7 @@ struct is<InsideListMarkerBox> {
     static bool check(const Box& box) { return box.isInsideListMarkerBox(); }
 };
 
-class OutsideListMarkerBox final : public BlockBox {
+class OutsideListMarkerBox final : public BlockFlowBox {
 public:
     OutsideListMarkerBox(const RefPtr<BoxStyle>& style);
 
@@ -426,8 +443,8 @@ public:
     const std::vector<TableSectionBox*>& sections() const { return m_sections; }
     const std::vector<TableColumnBox*>& columns() const { return m_columns; }
 
-    void build(BoxLayer* parent) override;
     void addBox(Box* box) final;
+    void buildBox(BoxLayer* parent) final;
 
 private:
     TableSectionBox* m_header{nullptr};
@@ -442,7 +459,7 @@ struct is<TableBox> {
     static bool check(const Box& box) { return box.isTableBox(); }
 };
 
-class TableSectionBox final : public BoxFrame {
+class TableSectionBox final : public Box {
 public:
     TableSectionBox(Node* node, const RefPtr<BoxStyle>& style);
 
@@ -461,7 +478,7 @@ struct is<TableSectionBox> {
     static bool check(const Box& box) { return box.isTableSectionBox(); }
 };
 
-class TableRowBox final : public BoxFrame {
+class TableRowBox final : public Box {
 public:
     TableRowBox(Node* node, const RefPtr<BoxStyle>& style);
 
@@ -480,7 +497,7 @@ struct is<TableRowBox> {
     static bool check(const Box& box) { return box.isTableRowBox(); }
 };
 
-class TableCellBox final : public BlockBox {
+class TableCellBox final : public BlockFlowBox {
 public:
     TableCellBox(Node* node, const RefPtr<BoxStyle>& style);
 
@@ -539,7 +556,7 @@ struct is<TableColumnGroupBox> {
     static bool check(const Box& box) { return box.isTableColumnGroupBox(); }
 };
 
-class TableCaptionBox final : public BlockBox {
+class TableCaptionBox final : public BlockFlowBox {
 public:
     TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style);
 

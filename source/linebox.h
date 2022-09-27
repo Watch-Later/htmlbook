@@ -17,8 +17,8 @@ public:
 
     virtual ~LineBox();
     virtual bool isTextLineBox() const { return false; }
-    virtual bool isEllipsisLineBox() const { return false; }
-    virtual bool isPlaceHolderLineBox() const { return false; }
+    virtual bool isMarkupLineBox() const { return false; }
+    virtual bool isReplacedLineBox() const { return false; }
     virtual bool isFlowLineBox() const { return false; }
     virtual bool isRootLineBox() const { return false; }
 
@@ -97,11 +97,11 @@ struct is<TextLineBox> {
     static bool check(const LineBox& line) { return line.isTextLineBox(); }
 };
 
-class EllipsisLineBox final : public LineBox {
+class MarkupLineBox final : public LineBox {
 public:
-    EllipsisLineBox(Box* box, std::string text);
+    MarkupLineBox(Box* box, std::string text);
 
-    bool isEllipsisLineBox() const final { return true; }
+    bool isMarkupLineBox() const final { return true; }
 
     const std::string& text() const { return m_text; }
 
@@ -110,28 +110,28 @@ private:
 };
 
 template<>
-struct is<EllipsisLineBox> {
-    static bool check(const LineBox& line) { return line.isEllipsisLineBox(); }
+struct is<MarkupLineBox> {
+    static bool check(const LineBox& line) { return line.isMarkupLineBox(); }
 };
 
 class BoxFrame;
 
-class PlaceHolderLineBox final : public LineBox {
+class ReplacedLineBox final : public LineBox {
 public:
-    PlaceHolderLineBox(Box* box, BoxFrame* placeHolderBox);
-    ~PlaceHolderLineBox() final;
+    ReplacedLineBox(Box* box, BoxFrame* replacedBox);
+    ~ReplacedLineBox() final;
 
-    bool isPlaceHolderLineBox() const final { return true; }
+    bool isReplacedLineBox() const final { return true; }
 
-    BoxFrame* placeHolderBox() const { return m_placeHolderBox; }
+    BoxFrame* replacedBox() const { return m_replacedBox; }
 
 private:
-    BoxFrame* m_placeHolderBox;
+    BoxFrame* m_replacedBox;
 };
 
 template<>
-struct is<PlaceHolderLineBox> {
-    static bool check(const LineBox& line) { return line.isPlaceHolderLineBox(); }
+struct is<ReplacedLineBox> {
+    static bool check(const LineBox& line) { return line.isReplacedLineBox(); }
 };
 
 class FlowLineBox : public LineBox {

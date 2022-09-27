@@ -62,15 +62,15 @@ void LineBoxList::remove(Box* box, LineBox* line)
     line->setNextOnBox(nullptr);
 }
 
-PlaceHolderLineBox::PlaceHolderLineBox(Box* box, BoxFrame* placeHolderBox)
-    : LineBox(box), m_placeHolderBox(placeHolderBox)
+ReplacedLineBox::ReplacedLineBox(Box* box, BoxFrame* replacedBox)
+    : LineBox(box), m_replacedBox(replacedBox)
 {
-    placeHolderBox->setLine(this);
+    replacedBox->setLine(this);
 }
 
-PlaceHolderLineBox::~PlaceHolderLineBox()
+ReplacedLineBox::~ReplacedLineBox()
 {
-    m_placeHolderBox->setLine(nullptr);
+    m_replacedBox->setLine(nullptr);
 }
 
 FlowLineBox::~FlowLineBox()
