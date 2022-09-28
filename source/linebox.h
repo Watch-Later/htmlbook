@@ -17,7 +17,6 @@ public:
 
     virtual ~LineBox();
     virtual bool isTextLineBox() const { return false; }
-    virtual bool isMarkupLineBox() const { return false; }
     virtual bool isReplacedLineBox() const { return false; }
     virtual bool isFlowLineBox() const { return false; }
     virtual bool isRootLineBox() const { return false; }
@@ -78,30 +77,16 @@ private:
     LineBox* m_lastLine{nullptr};
 };
 
+class TextBox;
+
 class TextLineBox final : public LineBox {
 public:
-    TextLineBox(Box* box, int begin, int end);
+    TextLineBox(TextBox* box, std::string text);
+    ~TextLineBox();
 
     bool isTextLineBox() const final { return true; }
 
-    int begin() const { return m_begin; }
-    int end() const { return m_end; }
-
-private:
-    int m_begin;
-    int m_end;
-};
-
-template<>
-struct is<TextLineBox> {
-    static bool check(const LineBox& line) { return line.isTextLineBox(); }
-};
-
-class MarkupLineBox final : public LineBox {
-public:
-    MarkupLineBox(Box* box, std::string text);
-
-    bool isMarkupLineBox() const final { return true; }
+    TextBox* box() const;
 
     const std::string& text() const { return m_text; }
 
@@ -110,23 +95,20 @@ private:
 };
 
 template<>
-struct is<MarkupLineBox> {
-    static bool check(const LineBox& line) { return line.isMarkupLineBox(); }
+struct is<TextLineBox> {
+    static bool check(const LineBox& line) { return line.isTextLineBox(); }
 };
 
 class BoxFrame;
 
 class ReplacedLineBox final : public LineBox {
 public:
-    ReplacedLineBox(Box* box, BoxFrame* replacedBox);
+    ReplacedLineBox(BoxFrame* box);
     ~ReplacedLineBox() final;
 
     bool isReplacedLineBox() const final { return true; }
 
-    BoxFrame* replacedBox() const { return m_replacedBox; }
-
-private:
-    BoxFrame* m_replacedBox;
+    BoxFrame* box() const;
 };
 
 template<>
@@ -134,12 +116,16 @@ struct is<ReplacedLineBox> {
     static bool check(const LineBox& line) { return line.isReplacedLineBox(); }
 };
 
+class BoxModel;
+
 class FlowLineBox : public LineBox {
 public:
-    FlowLineBox(Box* box);
+    FlowLineBox(BoxModel* box);
     ~FlowLineBox() override;
 
     bool isFlowLineBox() const final { return true; }
+
+    BoxModel* box() const;
 
     LineBox* firstLine() const { return m_firstLine; }
     LineBox* lastLine() const { return m_lastLine; }
@@ -157,11 +143,15 @@ struct is<FlowLineBox> {
     static bool check(const LineBox& line) { return line.isFlowLineBox(); }
 };
 
+class BlockFlowBox;
+
 class RootLineBox final : public FlowLineBox {
 public:
-    RootLineBox(Box* box);
+    RootLineBox(BlockFlowBox* box);
 
     bool isRootLineBox() const final { return true; }
+
+    BlockFlowBox* box() const;
 };
 
 template<>

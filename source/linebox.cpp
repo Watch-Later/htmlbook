@@ -8,12 +8,10 @@ namespace htmlbook {
 LineBox::LineBox(Box* box)
     : m_box(box)
 {
-    box->addLine(this);
 }
 
 LineBox::~LineBox()
 {
-    m_box->removeLine(this);
 }
 
 LineBoxList::~LineBoxList()
@@ -62,19 +60,47 @@ void LineBoxList::remove(Box* box, LineBox* line)
     line->setNextOnBox(nullptr);
 }
 
-ReplacedLineBox::ReplacedLineBox(Box* box, BoxFrame* replacedBox)
-    : LineBox(box), m_replacedBox(replacedBox)
+TextLineBox::TextLineBox(TextBox* box, std::string text)
+    : LineBox(box), m_text(std::move(text))
 {
-    replacedBox->setLine(this);
+    box->addLine(this);
+}
+
+TextLineBox::~TextLineBox()
+{
+    box()->removeLine(this);
+}
+
+TextBox* TextLineBox::box() const
+{
+    return to<TextBox>(LineBox::box());
+}
+
+ReplacedLineBox::ReplacedLineBox(BoxFrame* box)
+    : LineBox(box)
+{
+    box->setLine(this);
 }
 
 ReplacedLineBox::~ReplacedLineBox()
 {
-    m_replacedBox->setLine(nullptr);
+    box()->setLine(nullptr);
+}
+
+BoxFrame* ReplacedLineBox::box() const
+{
+    return to<BoxFrame>(LineBox::box());
+}
+
+FlowLineBox::FlowLineBox(BoxModel* box)
+    : LineBox(box)
+{
+    box->addLine(this);
 }
 
 FlowLineBox::~FlowLineBox()
 {
+    box()->removeLine(this);
     auto line = m_firstLine;
     while(line) {
         auto nextLine = line->nextOnLine();
@@ -84,6 +110,11 @@ FlowLineBox::~FlowLineBox()
         delete line;
         line = nextLine;
     }
+}
+
+BoxModel* FlowLineBox::box() const
+{
+    return to<BoxModel>(LineBox::box());
 }
 
 void FlowLineBox::addLine(LineBox* line)
@@ -120,6 +151,16 @@ void FlowLineBox::removeLine(LineBox *line)
     line->setParentLine(nullptr);
     line->setPrevOnLine(nullptr);
     line->setNextOnLine(nullptr);
+}
+
+RootLineBox::RootLineBox(BlockFlowBox* box)
+    : FlowLineBox(box)
+{
+}
+
+BlockFlowBox* RootLineBox::box() const
+{
+    return to<BlockFlowBox>(LineBox::box());
 }
 
 } // namespace htmlbook
