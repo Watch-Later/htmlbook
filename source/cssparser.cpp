@@ -186,7 +186,7 @@ std::unique_ptr<CSSPageMarginRule> CSSParser::consumePageMarginRule(CSSTokenStre
 
     static const struct {
         std::string_view name;
-        CSSPageMarginRule::MarginType marginType;
+        CSSPageMarginRule::MarginType value;
     } table[] = {
         {"top-left-corner", CSSPageMarginRule::MarginType::TopLeftCorner},
         {"top-left", CSSPageMarginRule::MarginType::TopLeft},
@@ -212,7 +212,7 @@ std::unique_ptr<CSSPageMarginRule> CSSParser::consumePageMarginRule(CSSTokenStre
 
     CSSPropertyList properties;
     consumeDeclaractionList(block, properties);
-    return CSSPageMarginRule::create(it->marginType, std::move(properties));
+    return CSSPageMarginRule::create(it->value, std::move(properties));
 }
 
 bool CSSParser::consumePageSelectorList(CSSTokenStream& input, CSSPageSelectorList& selectors)
@@ -249,7 +249,7 @@ bool CSSParser::consumePageSelector(CSSTokenStream& input, CSSPageSelector& sele
 
     static const struct {
         std::string_view name;
-        CSSSimpleSelector::MatchType matchType;
+        CSSSimpleSelector::MatchType value;
     } table[] = {
         {"first", CSSSimpleSelector::MatchType::PseudoPageFirst},
         {"left", CSSSimpleSelector::MatchType::PseudoPageLeft},
@@ -266,7 +266,7 @@ bool CSSParser::consumePageSelector(CSSTokenStream& input, CSSPageSelector& sele
         auto it = std::find_if(table, std::end(table), [name](auto& item) { return equals(name, item.name, false); });
         if(it == std::end(table))
             return false;
-        selector.emplace_back(it->matchType);
+        selector.emplace_back(it->value);
     }
 
     return true;
@@ -584,7 +584,7 @@ bool CSSParser::consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector
         input.consume();
         static const struct {
             std::string_view name;
-            CSSSimpleSelector::MatchType matchType;
+            CSSSimpleSelector::MatchType value;
         } table[] = {
             {"before", CSSSimpleSelector::MatchType::PseudoElementBefore},
             {"after", CSSSimpleSelector::MatchType::PseudoElementAfter},
@@ -596,7 +596,7 @@ bool CSSParser::consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector
         auto it = std::find_if(table, std::end(table), [name](auto& item) { return equals(name, item.name, false); });
         if(it == std::end(table))
             return false;
-        selector.emplace_back(it->matchType);
+        selector.emplace_back(it->value);
         return true;
     }
 
@@ -605,7 +605,7 @@ bool CSSParser::consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector
         input.consume();
         static const struct {
             std::string_view name;
-            CSSSimpleSelector::MatchType matchType;
+            CSSSimpleSelector::MatchType value;
         } table[] = {
             {"link", CSSSimpleSelector::MatchType::PseudoClassLink},
             {"enabled", CSSSimpleSelector::MatchType::PseudoClassEnabled},
@@ -624,7 +624,7 @@ bool CSSParser::consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector
         auto it = std::find_if(table, std::end(table), [name](auto& item) { return equals(name, item.name, false); });
         if(it == std::end(table))
             return false;
-        selector.emplace_back(it->matchType);
+        selector.emplace_back(it->value);
         return true;
     }
 
@@ -634,7 +634,7 @@ bool CSSParser::consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector
         block.consumeIncludingWhitespace();
         static const struct {
             std::string_view name;
-            CSSSimpleSelector::MatchType matchType;
+            CSSSimpleSelector::MatchType value;
         } table[] = {
             {"is", CSSSimpleSelector::MatchType::PseudoClassIs},
             {"not", CSSSimpleSelector::MatchType::PseudoClassNot},
@@ -648,21 +648,20 @@ bool CSSParser::consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector
         auto it = std::find_if(table, std::end(table), [name](auto& item) { return equals(name, item.name, false); });
         if(it == std::end(table))
             return false;
-        auto matchType = it->matchType;
-        switch(matchType) {
+        switch(it->value) {
         case CSSSimpleSelector::MatchType::PseudoClassIs:
         case CSSSimpleSelector::MatchType::PseudoClassNot: {
             auto subSelectors = std::make_unique<CSSCompoundSelectorList>();
             if(!consumeCompoundSelectorList(block, *subSelectors))
                 return false;
-            selector.emplace_back(matchType, std::move(subSelectors));
+            selector.emplace_back(it->value, std::move(subSelectors));
             break;
         }
 
         case CSSSimpleSelector::MatchType::PseudoClassLang: {
             if(block->type() != CSSToken::Type::Ident)
                 return false;
-            selector.emplace_back(matchType, block->data());
+            selector.emplace_back(it->value, block->data());
             block.consume();
             break;
         }
@@ -674,7 +673,7 @@ bool CSSParser::consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector
             CSSSimpleSelector::MatchPattern pattern;
             if(!consumeMatchPattern(block, pattern))
                 return false;
-            selector.emplace_back(matchType, pattern);
+            selector.emplace_back(it->value, pattern);
             break;
         }
 
@@ -867,7 +866,7 @@ void CSSParser::addExpandedProperty(CSSPropertyList& properties, CSSPropertyID i
 }
 
 struct idententry_t {
-    const char* name;
+    std::string_view name;
     CSSValueID value;
 };
 
@@ -993,9 +992,9 @@ RefPtr<CSSValue> CSSParser::consumeLength(CSSTokenStream& input, bool negative, 
         return CSSLengthValue::create(value, CSSLengthValue::Unit::None);
     }
 
-    static struct {
+    static const struct {
         std::string_view name;
-        CSSLengthValue::Unit unit;
+        CSSLengthValue::Unit value;
     } table[] = {
         {"em", CSSLengthValue::Unit::Ems},
         {"ex", CSSLengthValue::Unit::Exs},
@@ -1013,12 +1012,12 @@ RefPtr<CSSValue> CSSParser::consumeLength(CSSTokenStream& input, bool negative, 
         {"ch", CSSLengthValue::Unit::Chs}
     };
 
-    auto unit = input->data();
-    auto it = std::find_if(table, std::end(table), [unit](auto& item) { return equals(unit, item.name, false); });
+    auto name = input->data();
+    auto it = std::find_if(table, std::end(table), [name](auto& item) { return equals(name, item.name, false); });
     if(it == std::end(table))
         return nullptr;
     input.consumeIncludingWhitespace();
-    return CSSLengthValue::create(value, it->unit);
+    return CSSLengthValue::create(value, it->value);
 }
 
 RefPtr<CSSValue> CSSParser::consumeLengthOrAuto(CSSTokenStream& input, bool negative, bool unitless)
@@ -1529,7 +1528,7 @@ RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool co
             return nullptr;
         static const struct {
             std::string_view name;
-            ListStyleType listStyle;
+            ListStyleType value;
         } table[] = {
             {"disc", ListStyleType::Disc},
             {"circle", ListStyleType::Circle},
@@ -1548,7 +1547,7 @@ RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool co
         auto it = std::find_if(table, std::end(table), [name](auto& item) { return equals(name, item.name, false); });
         if(it == std::end(table))
             return nullptr;
-        listStyle = it->listStyle;
+        listStyle = it->value;
         input.consumeIncludingWhitespace();
     }
 
@@ -1955,9 +1954,9 @@ RefPtr<CSSValue> CSSParser::consumeAngle(CSSTokenStream& input)
     if(input->type() != CSSToken::Type::Dimension)
         return nullptr;
 
-    static struct {
+    static const struct {
         std::string_view name;
-        CSSAngleValue::Unit unit;
+        CSSAngleValue::Unit value;
     } table[] = {
         {"deg", CSSAngleValue::Unit::Degrees},
         {"rad", CSSAngleValue::Unit::Radians},
@@ -1971,7 +1970,7 @@ RefPtr<CSSValue> CSSParser::consumeAngle(CSSTokenStream& input)
         return nullptr;
     auto value = input->number();
     input.consumeIncludingWhitespace();
-    return CSSAngleValue::create(value, it->unit);
+    return CSSAngleValue::create(value, it->value);
 }
 
 RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
@@ -1979,9 +1978,9 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
     if(input->type() != CSSToken::Type::Function)
         return nullptr;
 
-    static struct {
+    static const struct {
         std::string_view name;
-        CSSValueID transformType;
+        CSSValueID value;
     } table[] = {
         {"rotate", CSSValueID::Rotate},
         {"rotatex", CSSValueID::RotateX},
@@ -2006,9 +2005,7 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
     CSSValueList values;
     auto block = input.consumeBlock();
     block.consumeWhitespace();
-
-    auto id = it->transformType;
-    switch(id) {
+    switch(it->value) {
     case CSSValueID::Rotate:
     case CSSValueID::RotateX:
     case CSSValueID::RotateY:
@@ -2019,7 +2016,7 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
         if(value == nullptr)
             return nullptr;
         values.push_back(value);
-        if(id == CSSValueID::Skew && block->type() == CSSToken::Type::Comma) {
+        if(it->value == CSSValueID::Skew && block->type() == CSSToken::Type::Comma) {
             block.consumeIncludingWhitespace();
             auto value = consumeAngle(block);
             if(value == nullptr)
@@ -2037,7 +2034,7 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
         if(value == nullptr)
             return nullptr;
         values.push_back(value);
-        if(id == CSSValueID::Scale && block->type() == CSSToken::Type::Comma) {
+        if(it->value == CSSValueID::Scale && block->type() == CSSToken::Type::Comma) {
             block.consumeIncludingWhitespace();
             auto value = consumeNumberOrPercent(block, true);
             if(value == nullptr)
@@ -2055,7 +2052,7 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
         if(value == nullptr)
             return nullptr;
         values.push_back(value);
-        if(id == CSSValueID::Translate && block->type() == CSSToken::Type::Comma) {
+        if(it->value == CSSValueID::Translate && block->type() == CSSToken::Type::Comma) {
             block.consumeIncludingWhitespace();
             auto value = consumeLengthOrPercent(block, true, false);
             if(value == nullptr)
@@ -2088,7 +2085,7 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
     if(!block.empty())
         return nullptr;
     input.consumeWhitespace();
-    return CSSFunctionValue::create(id, std::move(values));
+    return CSSFunctionValue::create(it->value, std::move(values));
 }
 
 RefPtr<CSSValue> CSSParser::consumeTransform(CSSTokenStream& input)

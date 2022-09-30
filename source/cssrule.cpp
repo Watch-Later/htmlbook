@@ -387,7 +387,7 @@ CSSPropertyID csspropertyid(const std::string_view& name)
 {
     static const struct {
         std::string_view name;
-        CSSPropertyID id;
+        CSSPropertyID value;
     } table[] = {
         {"align-content", CSSPropertyID::AlignContent},
         {"align-items", CSSPropertyID::AlignItems},
@@ -575,7 +575,7 @@ CSSPropertyID csspropertyid(const std::string_view& name)
 
     auto it = std::lower_bound(table, std::end(table), name, [](auto& item, auto& name) { return item.name < name; });
     if(it != std::end(table) && it->name == name)
-        return it->id;
+        return it->value;
     return CSSPropertyID::Unknown;
 }
 
