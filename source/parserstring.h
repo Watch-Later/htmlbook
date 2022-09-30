@@ -10,7 +10,11 @@ namespace htmlbook {
 class ParserString {
 public:
     explicit ParserString(const std::string_view& value)
-        : ParserString(value.begin(), value.begin(), value.end())
+        : ParserString(value.data(), value.length())
+    {}
+
+    ParserString(const char* begin, size_t length)
+        : ParserString(begin, begin + length)
     {}
 
     ParserString(const char* begin, const char* end)
@@ -145,19 +149,19 @@ constexpr bool equals(const std::string_view& a, const std::string_view& b, bool
 }
 
 constexpr bool contains(const std::string_view& value, const std::string_view& subvalue, bool caseSensitive) {
-    auto it = value.begin();
-    auto end = value.end();
+    auto it = value.data();
+    auto end = it + value.length();
     while(true) {
         while(it < end && !isspace(*it))
             ++it;
-        if(it == end)
+        if(it >= end)
             return false;
         size_t count = 0;
         auto begin = it;
-        while(it < end && !isspace(*it)) {
+        do {
             ++count;
             ++it;
-        }
+        } while(it < end && !isspace(*it));
 
         if(equals(begin, count, subvalue.data(), subvalue.length(), caseSensitive))
             return true;
@@ -168,19 +172,19 @@ constexpr bool contains(const std::string_view& value, const std::string_view& s
 }
 
 constexpr bool includes(const std::string_view& value, const std::string_view& subvalue, bool caseSensitive) {
-    auto it = value.begin();
-    auto end = value.end();
+    auto it = value.data();
+    auto end = it + value.length();
     while(true) {
         while(it < end && !isspace(*it))
             ++it;
-        if(it == end)
+        if(it >= end)
             return false;
         size_t count = 0;
         auto begin = it;
-        while(it < end && !isspace(*it)) {
+        do {
             ++count;
             ++it;
-        }
+        } while(it < end && !isspace(*it));
 
         if(equals(begin, count, subvalue.data(), subvalue.length(), caseSensitive))
             return true;

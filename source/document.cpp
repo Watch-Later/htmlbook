@@ -199,7 +199,7 @@ void AttributeData::remove(const GlobalString& name)
     m_attributes.erase(it);
 }
 
-bool AttributeData::has(const GlobalString &name) const
+bool AttributeData::has(const GlobalString& name) const
 {
     for(auto& attribute : m_attributes) {
         if(name == attribute.name()) {
@@ -210,7 +210,7 @@ bool AttributeData::has(const GlobalString &name) const
     return false;
 }
 
-const Attribute* AttributeData::find(const GlobalString &name) const
+const Attribute* AttributeData::find(const GlobalString& name) const
 {
     for(auto& attribute : m_attributes) {
         if(name == attribute.name()) {
@@ -238,20 +238,19 @@ void AttributeData::setClass(const std::string_view& value)
     if(value.empty())
         return;
 
-    auto it = value.begin();
-    auto end = value.end();
+    auto it = value.data();
+    auto end = it + value.length();
     while(true) {
         while(it != end && isspace(*it))
             ++it;
         if(it == end)
             break;
-
         size_t count = 0;
         auto begin = it;
-        while(it != end && !isspace(*it)) {
+        do {
             ++count;
             ++it;
-        }
+        } while(it != end && !isspace(*it));
 
         std::string_view name(begin, count);
         assert(!name.empty());
