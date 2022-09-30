@@ -167,18 +167,72 @@ void ContainerNode::serialize(std::ostream& o) const
     }
 }
 
-Element::Element(Document* document, const GlobalString& tagName, const GlobalString& namespaceUri)
-    : ContainerNode(document), m_tagName(tagName), m_namespaceUri(namespaceUri)
+const std::string& AttributeData::get(const GlobalString& name) const
 {
+    for(auto& attribute : m_attributes) {
+        if(name == attribute.name()) {
+            return attribute.value();
+        }
+    }
+
+    return emptyString;
 }
 
-void Element::setId(const std::string_view& value)
+void AttributeData::set(const GlobalString& name, std::string value)
 {
-    m_id = value;
-    document()->updateIdCache(m_id, this);
+    auto attribute = find(name);
+    if(attribute == nullptr) {
+        m_attributes.emplace_back(name, std::move(value));
+        return;
+    }
+
+    attribute->setValue(std::move(value));
 }
 
-void Element::setClass(const std::string_view& value)
+void AttributeData::remove(const GlobalString& name)
+{
+    auto begin = m_attributes.begin();
+    auto end = m_attributes.end();
+    auto it = std::find_if(begin, end, [&name](auto& item) { return name == item.name(); });
+    if(it == end)
+        return;
+    m_attributes.erase(it);
+}
+
+bool AttributeData::has(const GlobalString &name) const
+{
+    for(auto& attribute : m_attributes) {
+        if(name == attribute.name()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+const Attribute* AttributeData::find(const GlobalString &name) const
+{
+    for(auto& attribute : m_attributes) {
+        if(name == attribute.name()) {
+            return &attribute;
+        }
+    }
+
+    return nullptr;
+}
+
+Attribute* AttributeData::find(const GlobalString& name)
+{
+    for(auto& attribute : m_attributes) {
+        if(name == attribute.name()) {
+            return &attribute;
+        }
+    }
+
+    return nullptr;
+}
+
+void AttributeData::setClass(const std::string_view& value)
 {
     m_classNames.clear();
     if(value.empty())
@@ -205,27 +259,57 @@ void Element::setClass(const std::string_view& value)
     }
 }
 
-Attribute* Element::findAttribute(const GlobalString& name) const
+Element::Element(Document* document, const GlobalString& tagName, const GlobalString& namespaceUri)
+    : ContainerNode(document), m_tagName(tagName), m_namespaceUri(namespaceUri)
 {
-    for(auto& attribute : m_attributes) {
-        if(name == attribute.name())
-            return &attribute;
-    }
+}
 
-    return nullptr;
+const AttributeList& Element::attributes() const
+{
+    return attributeData()->attributes();
+}
+
+const std::string& Element::lang() const
+{
+    return attributeData()->get(langAttr);
+}
+
+const GlobalString& Element::id() const
+{
+    return attributeData()->id();
+}
+
+const GlobalStringList& Element::classNames() const
+{
+    return attributeData()->classNames();
+}
+
+void Element::setId(const std::string_view& value)
+{
+    auto attributeData = this->attributeData();
+    auto oldValue = attributeData->id();
+    attributeData->setId(value);
+    document()->updateIdCache(this, oldValue, attributeData->id());
+}
+
+void Element::setClass(const std::string_view& value)
+{
+    attributeData()->setClass(value);
+}
+
+const Attribute* Element::findAttribute(const GlobalString& name) const
+{
+    return attributeData()->find(name);
 }
 
 bool Element::hasAttribute(const GlobalString& name) const
 {
-    return findAttribute(name);
+    return attributeData()->has(name);
 }
 
 const std::string& Element::getAttribute(const GlobalString& name) const
 {
-    auto attribute = findAttribute(name);
-    if(attribute == nullptr)
-        return emptyString;
-    return attribute->value();
+    return attributeData()->get(name);
 }
 
 void Element::setAttributeList(const AttributeList& attributes)
@@ -242,24 +326,13 @@ void Element::setAttribute(const Attribute& attribute)
 void Element::setAttribute(const GlobalString& name, std::string value)
 {
     parseAttribute(name, value);
-    if(auto attribute = findAttribute(name)) {
-        attribute->setValue(std::move(value));
-    } else {
-        m_attributes.emplace_back(name, std::move(value));
-    }
+    attributeData()->set(name, std::move(value));
 }
 
 void Element::removeAttribute(const GlobalString& name)
 {
-    auto it = m_attributes.begin();
-    auto end = m_attributes.end();
-    for(; it != end; ++it) {
-        if(name == it->name()) {
-            parseAttribute(name, emptyString);
-            m_attributes.erase(it);
-            break;
-        }
-    }
+    parseAttribute(name, emptyString);
+    attributeData()->remove(name);
 }
 
 void Element::parseAttribute(const GlobalString& name, const std::string_view& value)
@@ -293,7 +366,7 @@ CSSPropertyList Element::inlineStyle() const
 CSSPropertyList Element::presentationAttributeStyle() const
 {
     std::string output;
-    for(auto& attribute : m_attributes)
+    for(auto& attribute : attributes())
         collectAttributeStyle(attribute.name(), attribute.value(), output);
     if(output.empty())
         return CSSPropertyList{};
@@ -303,9 +376,21 @@ CSSPropertyList Element::presentationAttributeStyle() const
     return properties;
 }
 
-const std::string& Element::lang() const
+const AttributeData* Element::attributeData() const
 {
-    return getAttribute(langAttr);
+    if(m_attributeData == nullptr) {
+        static AttributeData attributeData;
+        return &attributeData;
+    }
+
+    return m_attributeData.get();
+}
+
+AttributeData* Element::attributeData()
+{
+    if(m_attributeData == nullptr)
+        m_attributeData = std::make_unique<AttributeData>();
+    return m_attributeData.get();
 }
 
 Element* Element::parentElement() const
@@ -344,7 +429,7 @@ void Element::serialize(std::ostream& o) const
 {
     o << '<';
     o << m_tagName;
-    for(auto& attribute : m_attributes) {
+    for(auto& attribute : attributes()) {
         o << ' ';
         o << attribute.name();
         o << '=';
@@ -408,9 +493,13 @@ Element* Document::createElement(const GlobalString& tagName, const GlobalString
     return new Element(this, tagName, namespaceUri);
 }
 
-void Document::updateIdCache(const GlobalString& name, Element* element)
+void Document::updateIdCache(Element* element, const GlobalString& newValue, const GlobalString& oldValue)
 {
-    m_idCache.emplace(name, element);
+    if(!oldValue.empty())
+        m_idCache.erase(oldValue);
+    if(newValue.empty())
+        return;
+    m_idCache.emplace(newValue, element);
 }
 
 void Document::addAuthorStyleSheet(const std::string_view& content)

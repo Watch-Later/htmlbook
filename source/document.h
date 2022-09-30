@@ -138,6 +138,32 @@ inline bool operator!=(const Attribute& a, const Attribute& b) { return a.name()
 
 using AttributeList = std::vector<Attribute>;
 
+class AttributeData {
+public:
+    AttributeData() = default;
+
+    const std::string& get(const GlobalString& name) const;
+    bool has(const GlobalString& name) const;
+
+    void set(const GlobalString& name, std::string value);
+    void remove(const GlobalString& name);
+
+    const Attribute* find(const GlobalString& name) const;
+    Attribute* find(const GlobalString& name);
+
+    void setId(const std::string_view& value) { m_id = value; }
+    void setClass(const std::string_view& value);
+
+    const GlobalString& id() const { return m_id; }
+    const GlobalStringList& classNames() const { return m_classNames; }
+    const AttributeList& attributes() const { return m_attributes; }
+
+private:
+    GlobalString m_id;
+    GlobalStringList m_classNames;
+    AttributeList m_attributes;
+};
+
 class Element : public ContainerNode {
 public:
     Element(Document* document, const GlobalString& tagName, const GlobalString& namespaceUri);
@@ -146,16 +172,16 @@ public:
 
     const GlobalString& tagName() const { return m_tagName; }
     const GlobalString& namespaceUri() const { return m_namespaceUri; }
-    const AttributeList& attributes() const { return m_attributes; }
+    const AttributeList& attributes() const;
 
     const std::string& lang() const;
-    const GlobalString& id() const { return m_id; }
-    const GlobalStringList& classNames() const { return m_classNames; }
+    const GlobalString& id() const;
+    const GlobalStringList& classNames() const;
 
     void setId(const std::string_view& value);
     void setClass(const std::string_view& value);
 
-    Attribute* findAttribute(const GlobalString& name) const;
+    const Attribute* findAttribute(const GlobalString& name) const;
     bool hasAttribute(const GlobalString& name) const;
     const std::string& getAttribute(const GlobalString& name) const;
     void setAttributeList(const AttributeList& attributes);
@@ -169,6 +195,9 @@ public:
     CSSPropertyList inlineStyle() const;
     CSSPropertyList presentationAttributeStyle() const;
 
+    const AttributeData* attributeData() const;
+    AttributeData* attributeData();
+
     Element* parentElement() const;
     Element* previousElement() const;
     Element* nextElement() const;
@@ -178,10 +207,7 @@ public:
 private:
     GlobalString m_tagName;
     GlobalString m_namespaceUri;
-    mutable AttributeList m_attributes;
-
-    GlobalString m_id;
-    GlobalStringList m_classNames;
+    std::unique_ptr<AttributeData> m_attributeData;
 };
 
 template<>
@@ -222,7 +248,8 @@ public:
 
     virtual bool load(const std::string_view& content) = 0;
 
-    void updateIdCache(const GlobalString& name, Element* element);
+    void updateIdCache(Element* element, const GlobalString& oldValue, const GlobalString& newValue);
+
     void addAuthorStyleSheet(const std::string_view& content);
     void addUserStyleSheet(const std::string_view& content);
     void clearUserStyleSheet();
