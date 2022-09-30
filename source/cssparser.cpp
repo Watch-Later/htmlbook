@@ -29,12 +29,7 @@ void CSSParser::parseStyle(CSSPropertyList& properties, const std::string_view& 
 {
     CSSTokenizer tokenizer(content);
     auto input = tokenizer.tokenize();
-    input.consumeWhitespace();
-    consumeDeclaraction(input, properties);
-    while(input->type() == CSSToken::Type::Semicolon) {
-        input.consumeIncludingWhitespace();
-        consumeDeclaraction(input, properties);
-    }
+    consumeDeclaractionList(input, properties);
 }
 
 std::unique_ptr<CSSRule> CSSParser::consumeRule(CSSTokenStream& input)
@@ -67,6 +62,7 @@ std::unique_ptr<CSSRule> CSSParser::consumeStyleRule(CSSTokenStream& input)
 
 std::unique_ptr<CSSRule> CSSParser::consumeAtRule(CSSTokenStream& input)
 {
+    assert(input->type() == CSSToken::Type::AtKeyword);
     auto name = input->data();
     input.consume();
     auto preludeBegin = input.begin();
@@ -168,6 +164,7 @@ std::unique_ptr<CSSRule> CSSParser::consumePageRule(CSSTokenStream& prelude, CSS
 
 std::unique_ptr<CSSPageMarginRule> CSSParser::consumePageMarginRule(CSSTokenStream& input)
 {
+    assert(input->type() == CSSToken::Type::AtKeyword);
     auto name = input->data();
     input.consume();
     auto preludeBegin = input.begin();
@@ -215,26 +212,6 @@ std::unique_ptr<CSSPageMarginRule> CSSParser::consumePageMarginRule(CSSTokenStre
     return CSSPageMarginRule::create(it->value, std::move(properties));
 }
 
-bool CSSParser::consumePageSelectorList(CSSTokenStream& input, CSSPageSelectorList& selectors)
-{
-    CSSPageSelector selector;
-    input.consumeWhitespace();
-    if(!consumePageSelector(input, selector))
-        return false;
-
-    selectors.push_back(std::move(selector));
-    input.consumeWhitespace();
-    while(input->type() == CSSToken::Type::Comma) {
-        input.consumeIncludingWhitespace();
-        if(!consumePageSelector(input, selector))
-            return false;
-        selectors.push_back(std::move(selector));
-        input.consumeWhitespace();
-    }
-
-    return input.empty();
-}
-
 bool CSSParser::consumePageSelector(CSSTokenStream& input, CSSPageSelector& selector)
 {
     if(input->type() != CSSToken::Type::Ident
@@ -272,6 +249,38 @@ bool CSSParser::consumePageSelector(CSSTokenStream& input, CSSPageSelector& sele
     return true;
 }
 
+bool CSSParser::consumePageSelectorList(CSSTokenStream& input, CSSPageSelectorList& selectors)
+{
+    CSSPageSelector selector;
+    input.consumeWhitespace();
+    if(!consumePageSelector(input, selector))
+        return false;
+
+    selectors.push_back(std::move(selector));
+    input.consumeWhitespace();
+    while(input->type() == CSSToken::Type::Comma) {
+        input.consumeIncludingWhitespace();
+        if(!consumePageSelector(input, selector))
+            return false;
+        selectors.push_back(std::move(selector));
+        input.consumeWhitespace();
+    }
+
+    return input.empty();
+}
+
+bool CSSParser::consumeSelector(CSSTokenStream& input, CSSSelector& selector)
+{
+    auto combinator = CSSComplexSelector::Combinator::None;
+    do {
+        CSSCompoundSelector sel;
+        if(!consumeCompoundSelector(input, sel))
+            return combinator == CSSComplexSelector::Combinator::Descendant;
+        selector.emplace_back(combinator, std::move(sel));
+    } while(consumeCombinator(input, combinator));
+    return true;
+}
+
 bool CSSParser::consumeSelectorList(CSSTokenStream& input, CSSSelectorList& selectors)
 {
     CSSSelector selector;
@@ -290,15 +299,14 @@ bool CSSParser::consumeSelectorList(CSSTokenStream& input, CSSSelectorList& sele
     return input.empty();
 }
 
-bool CSSParser::consumeSelector(CSSTokenStream& input, CSSSelector& selector)
+bool CSSParser::consumeCompoundSelector(CSSTokenStream& input, CSSCompoundSelector& selector)
 {
-    auto combinator = CSSComplexSelector::Combinator::None;
-    do {
-        CSSCompoundSelector sel;
-        if(!consumeCompoundSelector(input, sel))
-            return combinator == CSSComplexSelector::Combinator::Descendant;
-        selector.emplace_back(combinator, std::move(sel));
-    } while(consumeCombinator(input, combinator));
+    if(!consumeTagSelector(input, selector)
+        && !consumeSimpleSelector(input, selector)) {
+        return false;
+    }
+
+    while(consumeSimpleSelector(input, selector));
     return true;
 }
 
@@ -321,46 +329,17 @@ bool CSSParser::consumeCompoundSelectorList(CSSTokenStream& input, CSSCompoundSe
     return true;
 }
 
-bool CSSParser::consumeCompoundSelector(CSSTokenStream& input, CSSCompoundSelector& selector)
+bool CSSParser::consumeSimpleSelector(CSSTokenStream& input, CSSCompoundSelector& selector)
 {
-    if(!consumeTagSelector(input, selector)
-        && !consumeSimpleSelector(input, selector)) {
-        return false;
-    }
-
-    while(consumeSimpleSelector(input, selector));
-    return true;
-}
-
-bool CSSParser::consumeCombinator(CSSTokenStream& input, CSSComplexSelector::Combinator& combinator)
-{
-    combinator = CSSComplexSelector::Combinator::None;
-    while(input->type() == CSSToken::Type::Whitespace) {
-        combinator = CSSComplexSelector::Combinator::Descendant;
-        input.consume();
-    }
-
-    if(input->type() == CSSToken::Type::Delim) {
-        if(input->delim() == '+') {
-            combinator = CSSComplexSelector::Combinator::DirectAdjacent;
-            input.consumeIncludingWhitespace();
-            return true;
-        }
-
-        if(input->delim() == '~') {
-            combinator = CSSComplexSelector::Combinator::InDirectAdjacent;
-            input.consumeIncludingWhitespace();
-            return true;
-        }
-
-        if(input->delim() == '>') {
-            combinator = CSSComplexSelector::Combinator::Child;
-            input.consumeIncludingWhitespace();
-            return true;
-        }
-    }
-
-    return combinator == CSSComplexSelector::Combinator::Descendant;
+    if(input->type() == CSSToken::Type::Hash)
+        return consumeIdSelector(input, selector);
+    if(input->type() == CSSToken::Type::Delim && input->delim() == '.')
+        return consumeClassSelector(input, selector);
+    if(input->type() == CSSToken::Type::LeftSquareBracket)
+        return consumeAttributeSelector(input, selector);
+    if(input->type() == CSSToken::Type::Colon)
+        return consumePseudoSelector(input, selector);
+    return false;
 }
 
 bool CSSParser::consumeTagSelector(CSSTokenStream& input, CSSCompoundSelector& selector)
@@ -382,6 +361,7 @@ bool CSSParser::consumeTagSelector(CSSTokenStream& input, CSSCompoundSelector& s
 
 bool CSSParser::consumeIdSelector(CSSTokenStream& input, CSSCompoundSelector& selector)
 {
+    assert(input->type() == CSSToken::Type::Hash);
     if(input->hashType() == CSSToken::HashType::Identifier) {
         selector.emplace_back(CSSSimpleSelector::MatchType::Id, input->data());
         input.consume();
@@ -393,6 +373,7 @@ bool CSSParser::consumeIdSelector(CSSTokenStream& input, CSSCompoundSelector& se
 
 bool CSSParser::consumeClassSelector(CSSTokenStream& input, CSSCompoundSelector& selector)
 {
+    assert(input->type() == CSSToken::Type::Delim);
     input.consume();
     if(input->type() == CSSToken::Type::Ident) {
         selector.emplace_back(CSSSimpleSelector::MatchType::Class, input->data());
@@ -405,6 +386,7 @@ bool CSSParser::consumeClassSelector(CSSTokenStream& input, CSSCompoundSelector&
 
 bool CSSParser::consumeAttributeSelector(CSSTokenStream& input, CSSCompoundSelector& selector)
 {
+    assert(input->type() == CSSToken::Type::LeftSquareBracket);
     auto block = input.consumeBlock();
     if(block->type() != CSSToken::Type::Ident)
         return false;
@@ -470,111 +452,9 @@ bool CSSParser::consumeAttributeSelector(CSSTokenStream& input, CSSCompoundSelec
     return false;
 }
 
-bool CSSParser::consumeMatchPattern(CSSTokenStream& input, CSSSimpleSelector::MatchPattern& pattern)
-{
-    if(input->type() == CSSToken::Type::Number) {
-        if(input->numberType() != CSSToken::NumberType::Integer)
-            return false;
-        pattern = std::make_pair(0, input->integer());
-        input.consume();
-        return true;
-    }
-
-    if(input->type() == CSSToken::Type::Ident) {
-        if(equals(input->data(), "odd", false)) {
-            pattern = std::make_pair(2, 1);
-            input.consume();
-            return true;
-        }
-
-        if(equals(input->data(), "even", false)) {
-            pattern = std::make_pair(2, 0);
-            input.consume();
-            return true;
-        }
-    }
-
-    std::stringstream ss;
-    if(input->type() == CSSToken::Type::Delim) {
-        if(input->delim() != '+')
-            return false;
-        input.consume();
-        if(input->type() != CSSToken::Type::Ident)
-            return false;
-        pattern.first = 1;
-        ss << input->data();
-        input.consume();
-    } else if(input->type() == CSSToken::Type::Ident) {
-        auto ident = input->data();
-        input.consume();
-        if(ident.front() == '-') {
-            pattern.first = -1;
-            ss << ident.substr(1);
-        } else {
-            pattern.first = 1;
-            ss << ident;
-        }
-    } else if(input->type() == CSSToken::Type::Dimension) {
-        if(input->numberType() != CSSToken::NumberType::Integer)
-            return false;
-        pattern.first = input->integer();
-        ss << input->data();
-        input.consume();
-    }
-
-    constexpr auto eof = std::stringstream::traits_type::eof();
-    if(ss.peek() == eof || !equals(ss.get(), 'n', false))
-        return false;
-
-    auto sign = CSSToken::NumberSign::None;
-    if(ss.peek() != eof) {
-        if(ss.get() != '-')
-            return false;
-        sign = CSSToken::NumberSign::Minus;
-        if(ss.peek() != eof) {
-            ss >> pattern.second;
-            if(ss.fail())
-                return false;
-            pattern.second = -pattern.second;
-            return true;
-        }
-    }
-
-    input.consumeWhitespace();
-    if(sign == CSSToken::NumberSign::None && input->type() == CSSToken::Type::Delim) {
-        auto delim = input->delim();
-        if(delim == '+')
-            sign = CSSToken::NumberSign::Plus;
-        else if(delim == '-')
-            sign = CSSToken::NumberSign::Minus;
-        else
-            return false;
-        input.consumeIncludingWhitespace();
-    }
-
-    if(sign == CSSToken::NumberSign::None && input->type() != CSSToken::Type::Number) {
-        pattern.second = 0;
-        return true;
-    }
-
-    if(input->type() != CSSToken::Type::Number || input->numberType() != CSSToken::NumberType::Integer)
-        return false;
-
-    if(sign == CSSToken::NumberSign::None && input->numberSign() == CSSToken::NumberSign::None)
-        return false;
-
-    if(sign != CSSToken::NumberSign::None && input->numberSign() != CSSToken::NumberSign::None)
-        return false;
-
-    pattern.second = input->integer();
-    if(sign == CSSToken::NumberSign::Minus)
-        pattern.second = -pattern.second;
-    input.consume();
-    return true;
-}
-
 bool CSSParser::consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector& selector)
 {
+    assert(input->type() == CSSToken::Type::Colon);
     input.consume();
     if(input->type() == CSSToken::Type::Colon) {
         input.consume();
@@ -688,17 +568,138 @@ bool CSSParser::consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector
     return false;
 }
 
-bool CSSParser::consumeSimpleSelector(CSSTokenStream& input, CSSCompoundSelector& selector)
+bool CSSParser::consumeCombinator(CSSTokenStream& input, CSSComplexSelector::Combinator& combinator)
 {
-    if(input->type() == CSSToken::Type::Hash)
-        return consumeIdSelector(input, selector);
-    if(input->type() == CSSToken::Type::Delim && input->delim() == '.')
-        return consumeClassSelector(input, selector);
-    if(input->type() == CSSToken::Type::LeftSquareBracket)
-        return consumeAttributeSelector(input, selector);
-    if(input->type() == CSSToken::Type::Colon)
-        return consumePseudoSelector(input, selector);
-    return false;
+    combinator = CSSComplexSelector::Combinator::None;
+    while(input->type() == CSSToken::Type::Whitespace) {
+        combinator = CSSComplexSelector::Combinator::Descendant;
+        input.consume();
+    }
+
+    if(input->type() == CSSToken::Type::Delim) {
+        if(input->delim() == '+') {
+            combinator = CSSComplexSelector::Combinator::DirectAdjacent;
+            input.consumeIncludingWhitespace();
+            return true;
+        }
+
+        if(input->delim() == '~') {
+            combinator = CSSComplexSelector::Combinator::InDirectAdjacent;
+            input.consumeIncludingWhitespace();
+            return true;
+        }
+
+        if(input->delim() == '>') {
+            combinator = CSSComplexSelector::Combinator::Child;
+            input.consumeIncludingWhitespace();
+            return true;
+        }
+    }
+
+    return combinator == CSSComplexSelector::Combinator::Descendant;
+}
+
+bool CSSParser::consumeMatchPattern(CSSTokenStream& input, CSSSimpleSelector::MatchPattern& pattern)
+{
+    if(input->type() == CSSToken::Type::Number) {
+        if(input->numberType() != CSSToken::NumberType::Integer)
+            return false;
+        pattern = std::make_pair(0, input->integer());
+        input.consume();
+        return true;
+    }
+
+    if(input->type() == CSSToken::Type::Ident) {
+        if(equals(input->data(), "odd", false)) {
+            pattern = std::make_pair(2, 1);
+            input.consume();
+            return true;
+        }
+
+        if(equals(input->data(), "even", false)) {
+            pattern = std::make_pair(2, 0);
+            input.consume();
+            return true;
+        }
+    }
+
+    std::stringstream ss;
+    if(input->type() == CSSToken::Type::Delim) {
+        if(input->delim() != '+')
+            return false;
+        input.consume();
+        if(input->type() != CSSToken::Type::Ident)
+            return false;
+        pattern.first = 1;
+        ss << input->data();
+        input.consume();
+    } else if(input->type() == CSSToken::Type::Ident) {
+        auto ident = input->data();
+        input.consume();
+        if(ident.front() == '-') {
+            pattern.first = -1;
+            ss << ident.substr(1);
+        } else {
+            pattern.first = 1;
+            ss << ident;
+        }
+    } else if(input->type() == CSSToken::Type::Dimension) {
+        if(input->numberType() != CSSToken::NumberType::Integer)
+            return false;
+        pattern.first = input->integer();
+        ss << input->data();
+        input.consume();
+    }
+
+    constexpr auto eof = std::stringstream::traits_type::eof();
+    if(ss.peek() == eof || !equals(ss.get(), 'n', false))
+        return false;
+
+    auto sign = CSSToken::NumberSign::None;
+    if(ss.peek() != eof) {
+        if(ss.get() != '-')
+            return false;
+        sign = CSSToken::NumberSign::Minus;
+        if(ss.peek() != eof) {
+            ss >> pattern.second;
+            if(ss.fail())
+                return false;
+            pattern.second = -pattern.second;
+            return true;
+        }
+    }
+
+    input.consumeWhitespace();
+    if(sign == CSSToken::NumberSign::None && input->type() == CSSToken::Type::Delim) {
+        auto delim = input->delim();
+        if(delim == '+')
+            sign = CSSToken::NumberSign::Plus;
+        else if(delim == '-')
+            sign = CSSToken::NumberSign::Minus;
+        else
+            return false;
+        input.consumeIncludingWhitespace();
+    }
+
+    if(sign == CSSToken::NumberSign::None && input->type() != CSSToken::Type::Number) {
+        pattern.second = 0;
+        return true;
+    }
+
+    if(input->type() != CSSToken::Type::Number || input->numberType() != CSSToken::NumberType::Integer)
+        return false;
+
+    if(sign == CSSToken::NumberSign::None && input->numberSign() == CSSToken::NumberSign::None)
+        return false;
+
+    if(sign != CSSToken::NumberSign::None && input->numberSign() != CSSToken::NumberSign::None)
+        return false;
+
+    pattern.second = input->integer();
+    if(sign == CSSToken::NumberSign::Minus)
+        pattern.second = -pattern.second;
+    input.consume();
+    return true;
 }
 
 void CSSParser::consumeDeclaractionList(CSSTokenStream& input, CSSPropertyList& properties)
@@ -1371,6 +1372,7 @@ inline bool consumeRgbComponent(CSSTokenStream& input, int& component)
 
 RefPtr<CSSValue> CSSParser::consumeRgb(CSSTokenStream& input)
 {
+    assert(input->type() == CSSToken::Type::Function);
     CSSTokenStreamGuard guard(input);
     auto block = input.consumeBlock();
     block.consumeWhitespace();
@@ -1458,20 +1460,22 @@ RefPtr<CSSValue> CSSParser::consumeContent(CSSTokenStream& input)
     if(auto value = consumeNoneOrNormal(input))
         return value;
 
-    static const idententry_t table[] = {
-        {"open-quote", CSSValueID::OpenQuote},
-        {"close-quote", CSSValueID::CloseQuote},
-        {"no-open-quote", CSSValueID::NoOpenQuote},
-        {"no-close-quote", CSSValueID::NoCloseQuote}
-    };
-
     CSSValueList values;
     while(!input.empty()) {
         auto value = consumeString(input);
         if(value == nullptr)
             value = consumeUrl(input, true);
-        if(value == nullptr)
+        if(value == nullptr && input->type() == CSSToken::Type::Ident) {
+            static const idententry_t table[] = {
+                {"open-quote", CSSValueID::OpenQuote},
+                {"close-quote", CSSValueID::CloseQuote},
+                {"no-open-quote", CSSValueID::NoOpenQuote},
+                {"no-close-quote", CSSValueID::NoCloseQuote}
+            };
+
             value = consumeIdent(input, table);
+        }
+
         if(value == nullptr && input->type() == CSSToken::Type::Function) {
             auto name = input->data();
             auto block = input.consumeBlock();

@@ -20,20 +20,22 @@ private:
     static std::unique_ptr<CSSRule> consumePageRule(CSSTokenStream& prelude, CSSTokenStream& block);
     static std::unique_ptr<CSSPageMarginRule> consumePageMarginRule(CSSTokenStream& input);
 
-    static bool consumePageSelectorList(CSSTokenStream& input, CSSPageSelectorList& selectors);
     static bool consumePageSelector(CSSTokenStream& input, CSSPageSelector& selector);
-    static bool consumeSelectorList(CSSTokenStream& input, CSSSelectorList& selectors);
+    static bool consumePageSelectorList(CSSTokenStream& input, CSSPageSelectorList& selectors);
     static bool consumeSelector(CSSTokenStream& input, CSSSelector& selector);
-    static bool consumeCompoundSelectorList(CSSTokenStream& input, CSSCompoundSelectorList& selectors);
+    static bool consumeSelectorList(CSSTokenStream& input, CSSSelectorList& selectors);
     static bool consumeCompoundSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
-    static bool consumeCombinator(CSSTokenStream& input, CSSComplexSelector::Combinator& combinator);
+    static bool consumeCompoundSelectorList(CSSTokenStream& input, CSSCompoundSelectorList& selectors);
+
+    static bool consumeSimpleSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
     static bool consumeTagSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
     static bool consumeIdSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
     static bool consumeClassSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
     static bool consumeAttributeSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
-    static bool consumeMatchPattern(CSSTokenStream& input, CSSSimpleSelector::MatchPattern& pattern);
     static bool consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
-    static bool consumeSimpleSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
+
+    static bool consumeCombinator(CSSTokenStream& input, CSSComplexSelector::Combinator& combinator);
+    static bool consumeMatchPattern(CSSTokenStream& input, CSSSimpleSelector::MatchPattern& pattern);
 
     static void consumeDeclaractionList(CSSTokenStream& input, CSSPropertyList& properties);
     static bool consumeDeclaraction(CSSTokenStream& input, CSSPropertyList& properties);
