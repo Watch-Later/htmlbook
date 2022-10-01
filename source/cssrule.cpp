@@ -882,22 +882,22 @@ bool CSSRuleData::matchPseudoClassRootSelector(const Element* element, const CSS
 
 bool CSSRuleData::matchPseudoClassEmptySelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return element->firstChild() == nullptr;
+    return !element->firstChild();
 }
 
 bool CSSRuleData::matchPseudoClassFirstChildSelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return element->previousSibling() == nullptr;
+    return !element->previousElement();
 }
 
 bool CSSRuleData::matchPseudoClassLastChildSelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return element->nextSibling() == nullptr;
+    return !element->nextElement();
 }
 
 bool CSSRuleData::matchPseudoClassOnlyChildSelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return !matchPseudoClassFirstChildSelector(element, selector) && !matchPseudoClassLastChildSelector(element, selector);
+    return matchPseudoClassFirstChildSelector(element, selector) && matchPseudoClassLastChildSelector(element, selector);
 }
 
 bool CSSRuleData::matchPseudoClassFirstOfTypeSelector(const Element* element, const CSSSimpleSelector& selector)
@@ -926,7 +926,7 @@ bool CSSRuleData::matchPseudoClassLastOfTypeSelector(const Element* element, con
 
 bool CSSRuleData::matchPseudoClassOnlyOfTypeSelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return !matchPseudoClassFirstOfTypeSelector(element, selector) && !matchPseudoClassLastOfTypeSelector(element, selector);
+    return matchPseudoClassFirstOfTypeSelector(element, selector) && matchPseudoClassLastOfTypeSelector(element, selector);
 }
 
 bool CSSRuleData::matchPseudoClassNthChildSelector(const Element* element, const CSSSimpleSelector& selector)

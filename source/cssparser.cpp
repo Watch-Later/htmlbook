@@ -2484,8 +2484,8 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
         static const idententry_t table[] = {
             {"auto", CSSValueID::Auto},
             {"visible", CSSValueID::Visible},
-            {"hidden", CSSValueID::Scroll},
-            {"scroll", CSSValueID::Normal},
+            {"hidden", CSSValueID::Hidden},
+            {"scroll", CSSValueID::Scroll},
             {"overlay", CSSValueID::Overlay},
             {"clip", CSSValueID::Clip}
         };
