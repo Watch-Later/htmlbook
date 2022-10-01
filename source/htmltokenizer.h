@@ -1,8 +1,8 @@
 #ifndef HTMLTOKENIZER_H
 #define HTMLTOKENIZER_H
 
-#include "document.h"
 #include "parserstring.h"
+#include "document.h"
 
 #include <string>
 

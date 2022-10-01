@@ -2,8 +2,8 @@
 #define PARSERSTRING_H
 
 #include <string_view>
-#include <cassert>
 #include <iostream>
+#include <cassert>
 
 namespace htmlbook {
 
@@ -149,21 +149,19 @@ constexpr bool equals(const std::string_view& a, const std::string_view& b, bool
 }
 
 constexpr bool contains(const std::string_view& value, const std::string_view& subvalue, bool caseSensitive) {
+    if(subvalue.empty() || subvalue.length() > value.length())
+        return false;
     auto it = value.data();
     auto end = it + value.length();
-    while(true) {
-        while(it < end && !isspace(*it))
-            ++it;
-        if(it >= end)
-            return false;
+    while(it < end) {
         size_t count = 0;
-        auto begin = it;
         do {
+            if(!equals(*it, subvalue[count], caseSensitive))
+                break;
             ++count;
             ++it;
-        } while(it < end && !isspace(*it));
-
-        if(equals(begin, count, subvalue.data(), subvalue.length(), caseSensitive))
+        } while(it < end && count < subvalue.length());
+        if(count == subvalue.length())
             return true;
         ++it;
     }
@@ -172,10 +170,12 @@ constexpr bool contains(const std::string_view& value, const std::string_view& s
 }
 
 constexpr bool includes(const std::string_view& value, const std::string_view& subvalue, bool caseSensitive) {
+    if(subvalue.empty() || subvalue.length() > value.length())
+        return false;
     auto it = value.data();
     auto end = it + value.length();
     while(true) {
-        while(it < end && !isspace(*it))
+        while(it < end && isspace(*it))
             ++it;
         if(it >= end)
             return false;
@@ -185,7 +185,6 @@ constexpr bool includes(const std::string_view& value, const std::string_view& s
             ++count;
             ++it;
         } while(it < end && !isspace(*it));
-
         if(equals(begin, count, subvalue.data(), subvalue.length(), caseSensitive))
             return true;
         ++it;
@@ -194,26 +193,22 @@ constexpr bool includes(const std::string_view& value, const std::string_view& s
     return false;
 }
 
-constexpr bool startswith(const std::string_view& value, const std::string_view& prefix, bool caseSensitive) {
-    if(value.empty() || prefix.length() > value.length())
+constexpr bool startswith(const std::string_view& value, const std::string_view& subvalue, bool caseSensitive) {
+    if(subvalue.empty() || subvalue.length() > value.length())
         return false;
-    auto subvalue = value.substr(0, prefix.size());
-    return equals(subvalue, prefix, caseSensitive);
+    return equals(value.substr(0, subvalue.size()), subvalue, caseSensitive);
 }
 
-constexpr bool endswith(const std::string_view& value, const std::string_view& suffix, bool caseSensitive) {
-    if(value.empty() || suffix.length() > value.length())
+constexpr bool endswith(const std::string_view& value, const std::string_view& subvalue, bool caseSensitive) {
+    if(subvalue.empty() || subvalue.length() > value.length())
         return false;
-    auto subvalue = value.substr(value.size() - suffix.size(), suffix.size());
-    return equals(subvalue, suffix, caseSensitive);
+    return equals(value.substr(value.size() - subvalue.size(), subvalue.size()), subvalue, caseSensitive);
 }
 
 constexpr bool dashequals(const std::string_view& value, const std::string_view& subvalue, bool caseSensitive) {
     if(!startswith(value, subvalue, caseSensitive))
         return false;
-    if(value.length() == subvalue.length())
-        return true;
-    return value.at(subvalue.length()) == '-';
+    return (value.length() == subvalue.length() || value.at(subvalue.length()) == '-');
 }
 
 inline void appendCodepoint(std::string& output, uint32_t cp) {
