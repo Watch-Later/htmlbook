@@ -1903,7 +1903,7 @@ RefPtr<CSSValue> CSSParser::consumeBackgroundPosition(CSSTokenStream& input)
         if(first == nullptr) {
             static const idententry_t table[] = {
                 {"left", CSSValueID::Left},
-                {"right", CSSValueID::Overline},
+                {"right", CSSValueID::Right},
                 {"center", CSSValueID::Center}
             };
 
@@ -1914,7 +1914,7 @@ RefPtr<CSSValue> CSSParser::consumeBackgroundPosition(CSSTokenStream& input)
         if(second == nullptr) {
             static const idententry_t table[] = {
                 {"top", CSSValueID::Left},
-                {"bottom", CSSValueID::Overline},
+                {"bottom", CSSValueID::Bottom},
                 {"center", CSSValueID::Center}
             };
 

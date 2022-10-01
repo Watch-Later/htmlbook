@@ -283,19 +283,6 @@ const GlobalStringList& Element::classNames() const
     return attributeData()->classNames();
 }
 
-void Element::setId(const std::string_view& value)
-{
-    auto attributeData = this->attributeData();
-    auto oldValue = attributeData->id();
-    attributeData->setId(value);
-    document()->updateIdCache(this, oldValue, attributeData->id());
-}
-
-void Element::setClass(const std::string_view& value)
-{
-    attributeData()->setClass(value);
-}
-
 const Attribute* Element::findAttribute(const GlobalString& name) const
 {
     return attributeData()->find(name);
@@ -337,9 +324,9 @@ void Element::removeAttribute(const GlobalString& name)
 void Element::parseAttribute(const GlobalString& name, const std::string_view& value)
 {
     if(name == idAttr) {
-        setId(value);
+        attributeData()->setId(value);
     } else if(name == classAttr) {
-        setClass(value);
+        attributeData()->setClass(value);
     }
 }
 
@@ -487,15 +474,6 @@ Element* Document::createElement(const GlobalString& tagName, const GlobalString
     }
 
     return new Element(this, tagName, namespaceUri);
-}
-
-void Document::updateIdCache(Element* element, const GlobalString& newValue, const GlobalString& oldValue)
-{
-    if(!oldValue.empty())
-        m_idCache.erase(oldValue);
-    if(newValue.empty())
-        return;
-    m_idCache.emplace(newValue, element);
 }
 
 void Document::addAuthorStyleSheet(const std::string_view& content)

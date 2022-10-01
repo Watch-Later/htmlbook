@@ -151,7 +151,7 @@ public:
     const Attribute* find(const GlobalString& name) const;
     Attribute* find(const GlobalString& name);
 
-    void setId(const std::string_view& value) { m_id = value; }
+    void setId(const GlobalString& value) { m_id = value; }
     void setClass(const std::string_view& value);
 
     const GlobalString& id() const { return m_id; }
@@ -177,9 +177,6 @@ public:
     const std::string& lang() const;
     const GlobalString& id() const;
     const GlobalStringList& classNames() const;
-
-    void setId(const std::string_view& value);
-    void setClass(const std::string_view& value);
 
     const Attribute* findAttribute(const GlobalString& name) const;
     bool hasAttribute(const GlobalString& name) const;
@@ -247,8 +244,6 @@ public:
     void setBaseUrl(const std::string_view& value) { m_baseUrl = value; }
 
     virtual bool load(const std::string_view& content) = 0;
-
-    void updateIdCache(Element* element, const GlobalString& oldValue, const GlobalString& newValue);
 
     void addAuthorStyleSheet(const std::string_view& content);
     void addUserStyleSheet(const std::string_view& content);
