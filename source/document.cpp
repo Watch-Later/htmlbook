@@ -394,19 +394,16 @@ AttributeData* Element::attributeData()
 
 Element* Element::parentElement() const
 {
-    auto parent = parentNode();
-    if(parent->isElementNode())
-        return to<Element>(parent);
-    return nullptr;
+    return to<Element>(parentNode());
 }
 
 Element* Element::previousElement() const
 {
-    auto previousChild = previousSibling();
-    while(previousChild) {
-        if(previousChild->isElementNode())
-            return to<Element>(previousChild);
-        previousChild = previousChild->previousSibling();
+    auto node = previousSibling();
+    while(node) {
+        if(auto element = to<Element>(node))
+            return element;
+        node = node->previousSibling();
     }
 
     return nullptr;
@@ -414,11 +411,11 @@ Element* Element::previousElement() const
 
 Element* Element::nextElement() const
 {
-    auto nextChild = nextSibling();
-    while(nextChild) {
-        if(nextChild->isElementNode())
-            return to<Element>(nextChild);
-        nextChild = nextChild->nextSibling();
+    auto node = nextSibling();
+    while(node) {
+        if(auto element = to<Element>(node))
+            return element;
+        node = node->nextSibling();
     }
 
     return nullptr;

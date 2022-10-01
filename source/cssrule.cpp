@@ -852,7 +852,7 @@ bool CSSRuleData::matchPseudoClassNotSelector(const Element* element, PseudoType
 
 bool CSSRuleData::matchPseudoClassLinkSelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return element->tagName() == aTag && element->hasAttribute(langAttr);
+    return element->tagName() == aTag && element->hasAttribute(hrefAttr);
 }
 
 bool CSSRuleData::matchPseudoClassEnabledSelector(const Element* element, const CSSSimpleSelector& selector)

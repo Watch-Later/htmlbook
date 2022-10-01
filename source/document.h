@@ -217,15 +217,15 @@ struct is<Element> {
 
 inline const GlobalString& Node::tagName() const
 {
-    if(isElementNode())
-        return to<Element>(this)->tagName();
+    if(auto element = to<Element>(this))
+        return element->tagName();
     return emptyGlo;
 }
 
 inline const GlobalString& Node::namespaceUri() const
 {
-    if(isElementNode())
-        return to<Element>(this)->tagName();
+    if(auto element = to<Element>(this))
+        return element->namespaceUri();
     return emptyGlo;
 }
 
