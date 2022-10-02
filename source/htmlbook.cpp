@@ -72,7 +72,7 @@ HTMLDocument* Book::document() const
     return m_document.get();
 }
 
-void Book::setResourceClient(ResourceClient *client)
+void Book::setResourceClient(ResourceClient* client)
 {
     resourceLoader()->setClient(client);
 }

@@ -1037,18 +1037,16 @@ RefPtr<CSSValue> CSSParser::consumeLengthOrNormal(CSSTokenStream& input, bool ne
 
 RefPtr<CSSValue> CSSParser::consumeLengthOrPercent(CSSTokenStream& input, bool negative, bool unitless)
 {
-    auto value = consumeLength(input, negative, unitless);
-    if(value == nullptr)
-        return consumePercent(input, negative);
-    return value;
+    if(auto value = consumeLength(input, negative, unitless))
+        return value;
+    return consumePercent(input, negative);
 }
 
 RefPtr<CSSValue> CSSParser::consumeNumberOrPercent(CSSTokenStream& input, bool negative)
 {
-    auto value = consumeNumber(input, negative);
-    if(value == nullptr)
-        return consumePercent(input, negative);
-    return value;
+    if(auto value = consumeNumber(input, negative))
+        return value;
+    return consumePercent(input, negative);
 }
 
 RefPtr<CSSValue> CSSParser::consumeIntegerOrAuto(CSSTokenStream& input, bool negative)
@@ -2961,7 +2959,6 @@ bool CSSParser::consumeFont(CSSTokenStream& input, CSSPropertyList& properties, 
     RefPtr<CSSValue> style;
     RefPtr<CSSValue> variant;
     RefPtr<CSSValue> weight;
-    RefPtr<CSSValue> lineHeight;
     for(int index = 0; index < 3; ++index) {
         if(input->type() == CSSToken::Type::Ident && equals(input->data(), "normal", false)) {
             input.consumeIncludingWhitespace();
@@ -2994,10 +2991,11 @@ bool CSSParser::consumeFont(CSSTokenStream& input, CSSPropertyList& properties, 
         auto value = consumeLengthOrPercentOrNormal(input, false, false);
         if(value == nullptr)
             return false;
-        lineHeight = value;
+        addProperty(properties, CSSPropertyID::LineHeight, important, value);
+    } else {
+        addProperty(properties, CSSPropertyID::LineHeight, important, CSSIdentValue::create(CSSValueID::Normal));
     }
 
-    addProperty(properties, CSSPropertyID::LineHeight, important, lineHeight);
     auto family = consumeFontFamily(input);
     if(family == nullptr || !input.empty())
         return false;
