@@ -2236,7 +2236,7 @@ constexpr HTMLEntity htmlentitytable[] = {
     {0x0200C, 0x00000, "zwnj;"}
 };
 
-constexpr const HTMLEntity* uppercaseoffset[] = {
+constexpr const HTMLEntity* uppercasetable[] = {
     &htmlentitytable[0],
     &htmlentitytable[27],
     &htmlentitytable[39],
@@ -2266,7 +2266,7 @@ constexpr const HTMLEntity* uppercaseoffset[] = {
     &htmlentitytable[634]
 };
 
-constexpr const HTMLEntity* lowercaseoffset[] = {
+constexpr const HTMLEntity* lowercasetable[] = {
     &htmlentitytable[634],
     &htmlentitytable[703],
     &htmlentitytable[819],
@@ -2296,21 +2296,21 @@ constexpr const HTMLEntity* lowercaseoffset[] = {
     &htmlentitytable[2231]
 };
 
-constexpr const HTMLEntity* firstcaseoffset(char cc)
+constexpr const HTMLEntity* firstentry(char cc)
 {
     if(cc >= 'A' && cc <= 'Z')
-        return uppercaseoffset[cc - 'A'];
+        return uppercasetable[cc - 'A'];
     if(cc >= 'a' && cc <= 'z')
-        return lowercaseoffset[cc - 'a'];
+        return lowercasetable[cc - 'a'];
     return nullptr;
 }
 
-constexpr const HTMLEntity* lastcaseoffset(char cc)
+constexpr const HTMLEntity* lastentry(char cc)
 {
     if(cc >= 'A' && cc <= 'Z')
-        return uppercaseoffset[cc - 'A' + 1] - 1;
+        return uppercasetable[cc - 'A' + 1] - 1;
     if(cc >= 'a' && cc <= 'z')
-        return lowercaseoffset[cc - 'a' + 1] - 1;
+        return lowercasetable[cc - 'a' + 1] - 1;
     return nullptr;
 }
 
@@ -2377,8 +2377,8 @@ constexpr const HTMLEntity* upperentry(const HTMLEntity* left, const HTMLEntity*
 bool HTMLEntitySearch::advance(char cc)
 {
     if(m_offset == 0) {
-        m_first = firstcaseoffset(cc);
-        m_last = lastcaseoffset(cc);
+        m_first = firstentry(cc);
+        m_last = lastentry(cc);
         if(m_first == nullptr || m_last == nullptr) {
             return false;
         }
