@@ -392,7 +392,6 @@ CSSPropertyID csspropertyid(const std::string_view& name)
         {"align-content", CSSPropertyID::AlignContent},
         {"align-items", CSSPropertyID::AlignItems},
         {"align-self", CSSPropertyID::AlignSelf},
-        {"all", CSSPropertyID::All},
         {"background", CSSPropertyID::Background},
         {"background-attachment", CSSPropertyID::BackgroundAttachment},
         {"background-clip", CSSPropertyID::BackgroundClip},
@@ -877,7 +876,7 @@ bool CSSRuleData::matchPseudoClassLangSelector(const Element* element, const CSS
 
 bool CSSRuleData::matchPseudoClassRootSelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return element->tagName() == htmlTag;
+    return !element->parentElement();
 }
 
 bool CSSRuleData::matchPseudoClassEmptySelector(const Element* element, const CSSSimpleSelector& selector)

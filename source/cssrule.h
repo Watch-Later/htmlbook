@@ -635,7 +635,6 @@ enum class CSSPropertyID {
     AlignContent,
     AlignItems,
     AlignSelf,
-    All,
     Background,
     BackgroundAttachment,
     BackgroundClip,

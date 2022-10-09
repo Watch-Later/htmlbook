@@ -180,23 +180,26 @@ const std::string& AttributeData::get(const GlobalString& name) const
 
 void AttributeData::set(const GlobalString& name, std::string value)
 {
-    auto attribute = find(name);
-    if(attribute == nullptr) {
-        m_attributes.emplace_back(name, std::move(value));
-        return;
+    for(auto& attribute : m_attributes) {
+        if(name == attribute.name()) {
+            attribute.setValue(std::move(value));
+            return;
+        }
     }
 
-    attribute->setValue(std::move(value));
+    m_attributes.emplace_back(name, std::move(value));
 }
 
 void AttributeData::remove(const GlobalString& name)
 {
-    auto begin = m_attributes.begin();
+    auto it = m_attributes.begin();
     auto end = m_attributes.end();
-    auto it = std::find_if(begin, end, [&name](auto& item) { return name == item.name(); });
-    if(it == end)
-        return;
-    m_attributes.erase(it);
+    for(; it != end; ++it) {
+        if(name == it->name()) {
+            m_attributes.erase(it);
+            return;
+        }
+    }
 }
 
 bool AttributeData::has(const GlobalString& name) const
