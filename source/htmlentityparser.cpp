@@ -2379,13 +2379,15 @@ bool HTMLEntitySearch::advance(char cc)
     if(m_offset == 0) {
         m_first = firstcaseoffset(cc);
         m_last = lastcaseoffset(cc);
-        if(m_first == nullptr || m_last == nullptr)
+        if(m_first == nullptr || m_last == nullptr) {
             return false;
+        }
     } else {
         m_first = lowerentry(m_first, m_last, m_offset, cc);
         m_last = upperentry(m_first, m_last, m_offset, cc);
-        if(m_first == m_last && compare(m_first, m_offset, cc) != 0)
+        if(m_first == m_last && compare(m_first, m_offset, cc) != 0) {
             return false;
+        }
     }
 
     m_offset += 1;
@@ -2476,9 +2478,11 @@ bool HTMLEntityParser::handleHex(char cc)
 
 void HTMLEntityParser::append(uint32_t cp)
 {
-    if(cp == 0 || cp >= 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF))
-        append(0xFFFD);
-    appendCodepoint(m_output, cp);
+    if(cp == 0 || cp >= 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF)) {
+        appendCodepoint(m_output, 0xFFFD);
+    } else {
+        appendCodepoint(m_output, cp);
+    }
 }
 
 } // namespace htmlbook
