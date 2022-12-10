@@ -1,6 +1,5 @@
 #include "document.h"
 #include "htmldocument.h"
-#include "htmlparser.h"
 #include "cssparser.h"
 #include "resource.h"
 #include "box.h"
@@ -333,14 +332,6 @@ void Element::parseAttribute(const GlobalString& name, const std::string_view& v
     }
 }
 
-void Element::addAttributeStyle(const std::string_view& name, const std::string& value, std::string& output)
-{
-    output += name;
-    output += ':';
-    output += value;
-    output += ';';
-}
-
 CSSPropertyList Element::inlineStyle() const
 {
     auto value = getAttribute(styleAttr);
@@ -354,14 +345,14 @@ CSSPropertyList Element::inlineStyle() const
 
 CSSPropertyList Element::presentationAttributeStyle() const
 {
-    std::string output;
-    for(auto& attribute : attributes())
-        collectAttributeStyle(attribute.name(), attribute.value(), output);
-    if(output.empty())
-        return CSSPropertyList{};
+    std::stringstream output;
+    for(auto& attribute : attributes()) {
+        collectAttributeStyle(output, attribute.name(), attribute.value());
+        output << ';';
+    }
 
     CSSPropertyList properties;
-    CSSParser::parseStyle(properties, output);
+    CSSParser::parseStyle(properties, output.str());
     return properties;
 }
 

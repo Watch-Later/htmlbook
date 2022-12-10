@@ -7,7 +7,7 @@
 namespace htmlbook {
 
 const Color Color::Transparent(0x00000000);
-const Color Color::Black(0x000000FF);
+const Color Color::Black(0xFF000000);
 const Color Color::White(0xFFFFFFFF);
 
 const Length Length::None(Length::Type::None, 0);

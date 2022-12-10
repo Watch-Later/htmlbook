@@ -1,7 +1,7 @@
 #ifndef GLOBALSTRING_H
 #define GLOBALSTRING_H
 
-#include <string>
+#include <string_view>
 #include <vector>
 #include <ostream>
 

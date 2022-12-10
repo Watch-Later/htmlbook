@@ -1035,6 +1035,7 @@ void HTMLParser::insertHeadElement(HTMLToken& token)
     auto element = createHTMLElement(token);
     append(element, false);
     m_openElements.pushHTMLHeadElement(element);
+    m_head = element;
 }
 
 void HTMLParser::insertHTMLBodyElement(HTMLToken& token)
@@ -1046,9 +1047,10 @@ void HTMLParser::insertHTMLBodyElement(HTMLToken& token)
 
 void HTMLParser::insertHTMLFormElement(HTMLToken& token)
 {
-    m_form = createHTMLElement(token);
-    append(m_form, false);
-    m_openElements.push(m_form);
+    auto element = createHTMLElement(token);
+    append(element, false);
+    m_openElements.push(element);
+    m_form = element;
 }
 
 void HTMLParser::insertSelfClosingHTMLElement(HTMLToken& token)

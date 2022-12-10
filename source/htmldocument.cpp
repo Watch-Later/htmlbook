@@ -118,16 +118,16 @@ HTMLBodyElement::HTMLBodyElement(Document* document)
 {
 }
 
-void HTMLBodyElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+void HTMLBodyElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
 {
     if(name == textAttr) {
-        addAttributeStyle("color", value, output);
+        output << "color:" << value;
     } else if(name == bgcolorAttr) {
-        addAttributeStyle("background-color", value, output);
+        output << "background-color:" << value;
     } else if(name == backgroundAttr) {
-        addAttributeStyle("background-image", "url(" + value + ")", output);
+        output << "background-image:" << "url(" << value << ')';
     } else {
-        HTMLElement::collectAttributeStyle(name, value, output);
+        HTMLElement::collectAttributeStyle(output, name, value);
     }
 }
 
@@ -136,24 +136,22 @@ HTMLImageElement::HTMLImageElement(Document* document)
 {
 }
 
-void HTMLImageElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+void HTMLImageElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
 {
     if(name == widthAttr) {
-        addAttributeStyle(name, value, output);
+        output << "width:" << value;
     } else if(name == heightAttr) {
-        addAttributeStyle(name, value, output);
+        output << "height:" << value;
     } else if(name == valignAttr) {
-        addAttributeStyle("vertical-align", value, output);
+        output << "vertical-align:" << value;
     } else if(name == borderAttr) {
-        addAttributeStyle("border-width", value, output);
+        output << "border-width:" << value;
     } else if(name == hspaceAttr) {
-        addAttributeStyle("margin-left", value, output);
-        addAttributeStyle("margin-right", value, output);
+        output << "margin-left:" << value << ';' << "margin-right:" << value;
     } else if(name == vspaceAttr) {
-        addAttributeStyle("margin-top", value, output);
-        addAttributeStyle("margin-bottom", value, output);
+        output << "margin-top:" << value << ';' << "margin-bottom:" << value;
     } else {
-        HTMLElement::collectAttributeStyle(name, value, output);
+        HTMLElement::collectAttributeStyle(output, name, value);
     }
 }
 
@@ -188,14 +186,14 @@ HTMLFontElement::HTMLFontElement(Document* document)
 {
 }
 
-void HTMLFontElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+void HTMLFontElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
 {
     if(name == colorAttr) {
-        addAttributeStyle(name, value, output);
+        output << "color:" << value;
     } else if(name == faceAttr) {
-        addAttributeStyle("font-family", value, output);
+        output << "font-family:" << value;
     } else {
-        HTMLElement::collectAttributeStyle(name, value, output);
+        HTMLElement::collectAttributeStyle(output, name, value);
     }
 }
 
@@ -204,14 +202,14 @@ HTMLHRElement::HTMLHRElement(Document* document)
 {
 }
 
-void HTMLHRElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+void HTMLHRElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
 {
     if(name == widthAttr) {
-        addAttributeStyle(name, value, output);
+        output << "width:" << value;
     } else if(name == colorAttr) {
-        addAttributeStyle("border-color", value, output);
+        output << "border-color:" << value;
     } else {
-        HTMLElement::collectAttributeStyle(name, value, output);
+        HTMLElement::collectAttributeStyle(output, name, value);
     }
 }
 
@@ -240,26 +238,26 @@ HTMLTableElement::HTMLTableElement(Document* document)
 {
 }
 
-void HTMLTableElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+void HTMLTableElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
 {
     if(name == widthAttr) {
-        addAttributeStyle(name, value, output);
+        output << "width:" << value;
     } else if(name == heightAttr) {
-        addAttributeStyle(name, value, output);
+        output << "height:" << value;
     } else if(name == valignAttr) {
-        addAttributeStyle("vertical-align", value, output);
+        output << "vertical-align:" << value;
     } else if(name == cellspacingAttr) {
-        addAttributeStyle("border-spacing", value, output);
+        output << "border-spacing:" << value;;
     } else if(name == borderAttr) {
-        addAttributeStyle("border-width", value, output);
+        output << "border-width:" << value;
     } else if(name == bordercolorAttr) {
-        addAttributeStyle("border-color", value, output);
+        output << "border-color:" << value;
     } else if(name == bgcolorAttr) {
-        addAttributeStyle("background-color", value, output);
+        output << "background-color:" << value;
     } else if(name == backgroundAttr) {
-        addAttributeStyle("background-image", "url(" + value + ")", output);
+        output << "background-image:" << "url(" << value << ')';
     } else {
-        HTMLElement::collectAttributeStyle(name, value, output);
+        HTMLElement::collectAttributeStyle(output, name, value);
     }
 }
 
@@ -268,16 +266,16 @@ HTMLTableSectionElement::HTMLTableSectionElement(Document* document, const Globa
 {
 }
 
-void HTMLTableSectionElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+void HTMLTableSectionElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
 {
     if(name == heightAttr) {
-        addAttributeStyle(name, value, output);
+        output << "height:" << value;
     } else if(name == bgcolorAttr) {
-        addAttributeStyle("background-color", value, output);
+        output << "background-color:" << value;
     } else if(name == backgroundAttr) {
-        addAttributeStyle("background-image", "url(" + value + ")", output);
+        output << "background-image:" << "url(" << value << ')';
     } else {
-        HTMLElement::collectAttributeStyle(name, value, output);
+        HTMLElement::collectAttributeStyle(output, name, value);
     }
 }
 
@@ -286,12 +284,12 @@ HTMLTableCaptionElement::HTMLTableCaptionElement(Document* document)
 {
 }
 
-void HTMLTableCaptionElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+void HTMLTableCaptionElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
 {
     if(name == widthAttr) {
-        addAttributeStyle(name, value, output);
+        output << "width:" << value;
     } else {
-        HTMLElement::collectAttributeStyle(name, value, output);
+        HTMLElement::collectAttributeStyle(output, name, value);
     }
 }
 
@@ -300,16 +298,16 @@ HTMLTableRowElement::HTMLTableRowElement(Document* document)
 {
 }
 
-void HTMLTableRowElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+void HTMLTableRowElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
 {
     if(name == heightAttr) {
-        addAttributeStyle(name, value, output);
+        output << "height:" << value;
     } else if(name == bgcolorAttr) {
-        addAttributeStyle("background-color", value, output);
+        output << "background-color:" << value;
     } else if(name == backgroundAttr) {
-        addAttributeStyle("background-image", "url(" + value + ")", output);
+        output << "background-image:" << "url(" << value << ')';
     } else {
-        HTMLElement::collectAttributeStyle(name, value, output);
+        HTMLElement::collectAttributeStyle(output, name, value);
     }
 }
 
@@ -318,18 +316,18 @@ HTMLTableColElement::HTMLTableColElement(Document* document, const GlobalString&
 {
 }
 
-void HTMLTableColElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+void HTMLTableColElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
 {
     if(name == widthAttr) {
-        addAttributeStyle(name, value, output);
+        output << "width:" << value;
     } else if(name == heightAttr) {
-        addAttributeStyle(name, value, output);
+        output << "height:" << value;
     } else if(name == bgcolorAttr) {
-        addAttributeStyle("background-color", value, output);
+        output << "background-color:" << value;
     } else if(name == backgroundAttr) {
-        addAttributeStyle("background-image", "url(" + value + ")", output);
+        output << "background-image:" << "url(" << value << ')';
     } else {
-        HTMLElement::collectAttributeStyle(name, value, output);
+        HTMLElement::collectAttributeStyle(output, name, value);
     }
 }
 
@@ -354,18 +352,18 @@ HTMLTableCellElement::HTMLTableCellElement(Document* document, const GlobalStrin
 {
 }
 
-void HTMLTableCellElement::collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const
+void HTMLTableCellElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
 {
     if(name == widthAttr) {
-        addAttributeStyle(name, value, output);
+        output << "width:" << value;
     } else if(name == heightAttr) {
-        addAttributeStyle(name, value, output);
+        output << "height:" << value;
     } else if(name == bgcolorAttr) {
-        addAttributeStyle("background-color", value, output);
+        output << "background-color:" << value;
     } else if(name == backgroundAttr) {
-        addAttributeStyle("background-image", "url(" + value + ")", output);
+        output << "background-image:" << "url(" << value << ')';
     } else {
-        HTMLElement::collectAttributeStyle(name, value, output);
+        HTMLElement::collectAttributeStyle(output, name, value);
     }
 }
 

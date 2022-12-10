@@ -6,6 +6,7 @@
 #include "url.h"
 
 #include <cassert>
+#include <sstream>
 
 namespace htmlbook {
 
@@ -186,8 +187,7 @@ public:
     void setAttribute(const GlobalString& name, std::string value);
     void removeAttribute(const GlobalString& name);
     virtual void parseAttribute(const GlobalString& name, const std::string_view& value);
-    virtual void collectAttributeStyle(const GlobalString& name, const std::string& value, std::string& output) const {}
-    static void addAttributeStyle(const std::string_view& name, const std::string& value, std::string& output);
+    virtual void collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const {}
 
     CSSPropertyList inlineStyle() const;
     CSSPropertyList presentationAttributeStyle() const;
