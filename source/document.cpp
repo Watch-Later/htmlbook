@@ -30,8 +30,8 @@ RefPtr<BoxStyle> Node::style() const
     return m_box ? m_box->style() : nullptr;
 }
 
-TextNode::TextNode(Document* document, std::string data)
-    : Node(document), m_data(std::move(data))
+TextNode::TextNode(Document* document, const HeapString& data)
+    : Node(document), m_data(data)
 {
 }
 
@@ -428,9 +428,16 @@ void Element::serialize(std::ostream& o) const
     }
 }
 
-Document::Document(const PageSize& pageSize)
-    : ContainerNode(nullptr), m_pageSize(pageSize)
+Document::Document()
+    : ContainerNode(nullptr)
+    , m_idCache(heap())
+    , m_resourceCache(heap())
 {
+}
+
+TextNode* Document::createText(const std::string_view& value)
+{
+    return new TextNode(this, m_heap.createString(value));
 }
 
 Element* Document::createElement(const GlobalString& tagName, const GlobalString& namespaceUri)
@@ -566,7 +573,7 @@ RefPtr<ResourceType> Document::fetchResource(const std::string_view& url)
     auto completeUrl = m_baseUrl.complete(url);
     if(completeUrl.empty())
         return nullptr;
-    auto it = m_resourceCache.find(completeUrl.value());
+    auto it = m_resourceCache.find(completeUrl);
     if(it != m_resourceCache.end())
         return to<ResourceType>(it->second.get());
     std::string mimeType;
@@ -575,7 +582,7 @@ RefPtr<ResourceType> Document::fetchResource(const std::string_view& url)
     if(!resourceLoader()->loadUrl(completeUrl, mimeType, textEncoding, data))
         return nullptr;
     auto resource = ResourceType::create(mimeType, textEncoding, std::move(data));
-    m_resourceCache.emplace(completeUrl.value(), resource);
+    m_resourceCache.emplace(std::move(completeUrl), resource);
     return resource;
 }
 

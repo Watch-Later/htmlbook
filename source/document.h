@@ -58,21 +58,19 @@ private:
 
 class TextNode final : public Node {
 public:
-    TextNode(Document* document, std::string data);
+    TextNode(Document* document, const HeapString& data);
 
     bool isTextNode() const final { return true; }
 
-    const std::string& data() const { return m_data; }
-    void setData(std::string data) { m_data = std::move(data); }
-    void appendData(const std::string& data) { m_data += data; }
-    void clearData() { m_data.clear(); }
+    const HeapString& data() const { return m_data; }
+    void setData(const HeapString& data) { m_data = data; }
 
     Box* createBox(const RefPtr<BoxStyle>& style) final;
     void buildBox(Counters& counters, Box* parent) final;
     void serialize(std::ostream& o) const final;
 
 private:
-    std::string m_data;
+    HeapString m_data;
 };
 
 template<>
@@ -234,10 +232,11 @@ class FontFace;
 
 class Document : public ContainerNode {
 public:
-    Document(const PageSize& pageSize);
+    Document();
 
     bool isDocumentNode() const final { return true; }
 
+    TextNode* createText(const std::string_view& value);
     Element* createElement(const GlobalString& tagName, const GlobalString& namespaceUri);
 
     const std::string& baseUrl() const { return m_baseUrl.value(); }
@@ -269,22 +268,18 @@ public:
 
     void buildBox(Counters& counters, Box* parent) override;
 
+    Heap* heap() const { return &m_heap; }
+
 private:
     template<typename ResourceType>
     RefPtr<ResourceType> fetchResource(const std::string_view& url);
-    PageSize m_pageSize;
+    mutable Heap m_heap{8196};
     Url m_baseUrl;
     CSSRuleList m_authorRules;
     CSSRuleList m_userRules;
     std::unique_ptr<CSSRuleCache> m_ruleCache;
-    std::map<GlobalString, Element*> m_idCache;
-    std::map<std::string, RefPtr<Resource>> m_resourceCache;
-    std::string m_title;
-    std::string m_subject;
-    std::string m_author;
-    std::string m_creator;
-    std::string m_creationDate;
-    std::string m_modificationDate;
+    std::pmr::map<GlobalString, Element*> m_idCache;
+    std::pmr::map<Url, RefPtr<Resource>> m_resourceCache;
 };
 
 template<>

@@ -438,7 +438,7 @@ void BlockBox::addBox(Box* box)
     BoxFrame::addBox(box);
 }
 
-BlockFlowBox::BlockFlowBox(Node *node, const RefPtr<BoxStyle>& style)
+BlockFlowBox::BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
 {
     setChildrenInline(true);

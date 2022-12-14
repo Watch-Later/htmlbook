@@ -1086,22 +1086,9 @@ void HTMLParser::insertTextNode(const std::string& data)
 {
     InsertionLocation location;
     location.parent = m_openElements.top();
+    location.child = m_document->createText(data);
     if(shouldFosterParent())
         findFosterLocation(location);
-
-    Node* previousChild = nullptr;
-    if(location.nextChild == nullptr)
-        previousChild = location.parent->lastChild();
-    else
-        previousChild = location.nextChild->previousSibling();
-
-    if(previousChild && previousChild->isTextNode()) {
-        auto textNode = to<TextNode>(previousChild);
-        textNode->appendData(data);
-        return;
-    }
-
-    location.child = new TextNode(m_document, data);
     insert(location);
 }
 

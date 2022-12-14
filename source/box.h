@@ -151,8 +151,8 @@ public:
 
     LineBoxList* lines() const final { return &m_lines; }
     const std::string& text() const { return m_text; }
-    void setText(std::string text) { m_text = std::move(text); }
-    void appendText(const std::string& text) { m_text += text; }
+    void setText(const std::string_view& text) { m_text = text; }
+    void appendText(const std::string_view& text) { m_text += text; }
     void clearText() { m_text.clear(); }
 
 private:

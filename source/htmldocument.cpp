@@ -446,7 +446,7 @@ void HTMLLinkElement::finishParsingChildren()
 }
 
 HTMLDocument::HTMLDocument(const PageSize& pageSize)
-    : Document(pageSize)
+    : m_pageSize(pageSize)
 {
 }
 

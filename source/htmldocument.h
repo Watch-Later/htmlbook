@@ -139,6 +139,15 @@ public:
     bool load(const std::string_view& content) final;
 
     Box* createBox(const RefPtr<BoxStyle>& style) final;
+
+private:
+    PageSize m_pageSize;
+    std::string m_title;
+    std::string m_subject;
+    std::string m_author;
+    std::string m_creator;
+    std::string m_creationDate;
+    std::string m_modificationDate;
 };
 
 } // namespace htmlbook

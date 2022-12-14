@@ -1,9 +1,7 @@
 #ifndef GLOBALSTRING_H
 #define GLOBALSTRING_H
 
-#include <string_view>
-#include <vector>
-#include <ostream>
+#include "heapstring.h"
 
 namespace htmlbook {
 
@@ -15,13 +13,14 @@ public:
     const char* data() const { return m_value.data(); }
     size_t length() const { return m_value.length(); }
     const char& at(size_t index) const { return m_value.at(index); }
-    const std::string_view& value() const { return m_value; }
+    const HeapString& value() const { return m_value; }
     bool empty() const { return m_value.empty(); }
-    operator std::string_view() const { return m_value; }
+    operator const std::string_view&() const { return m_value; }
+    operator const HeapString&() const { return m_value; }
 
 private:
-    static std::string_view add(const std::string_view& value);
-    std::string_view m_value;
+    static HeapString add(const std::string_view& value);
+    HeapString m_value;
 };
 
 inline std::ostream& operator<<(std::ostream& o, const GlobalString& in) { return o << in.value(); }

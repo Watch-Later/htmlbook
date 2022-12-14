@@ -1,8 +1,7 @@
 #ifndef PARSERSTRING_H
 #define PARSERSTRING_H
 
-#include <string_view>
-#include <iostream>
+#include <string>
 #include <cassert>
 
 namespace htmlbook {
@@ -28,13 +27,13 @@ public:
     ParserString operator+(size_t count) const {
         auto current = m_current + count;
         assert(m_end >= current);
-        return ParserString(current, m_begin, m_end);
+        return {current, m_begin, m_end};
     }
 
     ParserString operator-(size_t count) const {
         auto current = m_current - count;
         assert(current >= m_begin);
-        return ParserString(current, m_begin, m_end);
+        return {current, m_begin, m_end};
     }
 
     ParserString& operator+=(size_t count) {
@@ -75,11 +74,17 @@ public:
         return *m_current;
     }
 
-    std::string_view string(size_t offset, size_t count) const { return string().substr(offset, count); }
-    std::string_view substring(size_t offset, size_t count) const { return substring().substr(offset, count); }
+    std::string_view string(size_t offset = 0, size_t count = std::string_view::npos) const {
+        auto current = m_begin + offset;
+        assert(m_end >= current);
+        return {current, std::min(count, length() - offset)};
+    }
 
-    std::string_view string() const { return std::string_view(m_begin, length()); }
-    std::string_view substring() const { return std::string_view(m_current, sublength()); }
+    std::string_view substring(size_t offset = 0, size_t count = std::string_view::npos) const {
+        auto current = m_current + offset;
+        assert(m_end >= current);
+        return {current, std::min(count, sublength() - offset)};
+    }
 
     size_t offset() const { return m_current - m_begin; }
     size_t length() const { return m_end - m_begin; }
