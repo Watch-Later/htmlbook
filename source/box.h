@@ -46,8 +46,8 @@ public:
     virtual void addBox(Box* box);
     virtual void buildBox(BoxLayer* parent);
 
-    void addLine(LineBox* line);
-    void removeLine(LineBox* line);
+    LineBox* addLine(std::unique_ptr<LineBox> line);
+    std::unique_ptr<LineBox> removeLine(LineBox* line);
 
     void insertChild(Box* box, Box* nextBox);
     void appendChild(Box* box);
@@ -59,9 +59,6 @@ public:
 
     Box* firstBox() const;
     Box* lastBox() const;
-
-    LineBox* firstLine() const;
-    LineBox* lastLine() const;
 
     Node* node() const { return m_node; }
     const RefPtr<BoxStyle>& style() const { return m_style; }
@@ -133,14 +130,13 @@ class BoxModel;
 
 class BoxLayer {
 public:
-    static std::unique_ptr<BoxLayer> create(BoxModel* box, BoxLayer* parent);
+    BoxLayer(BoxModel* box, BoxLayer* parent);
 
     int index() const { return m_index; }
     BoxModel* box() const { return m_box; }
     BoxLayer* parent() const { return m_parent; }
 
 private:
-    BoxLayer(BoxModel* box, BoxLayer* parent);
     int m_index;
     BoxModel* m_box;
     BoxLayer* m_parent;
@@ -242,8 +238,8 @@ public:
 
     bool isBoxFrame() const final { return true; }
 
-    LineBox* line() const { return m_line; }
-    void setLine(LineBox* line) { m_line = line; }
+    LineBox* line() const { return m_line.get(); }
+    void setLine(std::unique_ptr<LineBox> line) { m_line = std::move(line); }
 
     float x() const { return m_x; }
     float y() const { return m_y; }
@@ -258,7 +254,7 @@ public:
     void move(float dx, float dy) { m_x += dx; m_y += dy; }
 
 private:
-    LineBox* m_line{nullptr};
+    std::unique_ptr<LineBox> m_line;
 
     float m_x{0};
     float m_y{0};

@@ -42,18 +42,27 @@ void Box::addBox(Box* box)
     appendChild(box);
 }
 
-void Box::addLine(LineBox* line)
+LineBox* Box::addLine(std::unique_ptr<LineBox> line)
 {
     auto lines = this->lines();
     assert(lines != nullptr);
-    lines->add(this, line);
+    lines->push_back(std::move(line));
+    return &*lines->back();
 }
 
-void Box::removeLine(LineBox* line)
+std::unique_ptr<LineBox> Box::removeLine(LineBox* line)
 {
     auto lines = this->lines();
     assert(lines != nullptr);
-    lines->remove(this, line);
+    for(auto it = lines->begin(); it != lines->end(); ++it) {
+        if(line == &**it) {
+            auto value = std::move(*it);
+            lines->erase(it);
+            return value;
+        }
+    }
+
+    return nullptr;
 }
 
 void Box::insertChild(Box* box, Box* nextBox)
@@ -112,20 +121,6 @@ Box* Box::lastBox() const
 {
     if(auto children = this->children())
         return children->lastBox();
-    return nullptr;
-}
-
-LineBox* Box::firstLine() const
-{
-    if(auto lines = this->lines())
-        return lines->firstLine();
-    return nullptr;
-}
-
-LineBox* Box::lastLine() const
-{
-    if(auto lines = this->lines())
-        return lines->lastLine();
     return nullptr;
 }
 
@@ -269,11 +264,6 @@ void BoxList::remove(Box* parent, Box* box)
     box->setNextBox(nullptr);
 }
 
-std::unique_ptr<BoxLayer> BoxLayer::create(BoxModel* box, BoxLayer* parent)
-{
-    return std::unique_ptr<BoxLayer>(new BoxLayer(box, parent));
-}
-
 BoxLayer::BoxLayer(BoxModel* box, BoxLayer* parent)
     : m_box(box), m_parent(parent)
 {
@@ -299,7 +289,7 @@ BoxModel::BoxModel(Node* node, const RefPtr<BoxStyle>& style)
 void BoxModel::buildBox(BoxLayer* parent)
 {
     if(parent == nullptr || requiresLayer()) {
-        m_layer = BoxLayer::create(this, parent);
+        m_layer = std::make_unique<BoxLayer>(this, parent);
         parent = m_layer.get();
     }
 

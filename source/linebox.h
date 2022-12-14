@@ -4,6 +4,8 @@
 #include "pointer.h"
 
 #include <string>
+#include <list>
+#include <memory>
 
 namespace htmlbook {
 
@@ -25,14 +27,10 @@ public:
     FlowLineBox* parentLine() const { return m_parentLine; }
     LineBox* nextOnLine() const { return m_nextOnLine; }
     LineBox* prevOnLine() const { return m_prevOnLine; }
-    LineBox* nextOnBox() const { return m_nextOnBox; }
-    LineBox* prevOnBox() const { return m_prevOnBox; }
 
     void setParentLine(FlowLineBox* line) { m_parentLine = line; }
     void setNextOnLine(LineBox* line) { m_nextOnLine = line; }
     void setPrevOnLine(LineBox* line) { m_prevOnLine = line; }
-    void setNextOnBox(LineBox* line) { m_nextOnBox = line; }
-    void setPrevOnBox(LineBox* line) { m_prevOnBox = line; }
 
     RootLineBox* rootLine() const;
 
@@ -51,8 +49,6 @@ private:
     FlowLineBox* m_parentLine{nullptr};
     LineBox* m_nextOnLine{nullptr};
     LineBox* m_prevOnLine{nullptr};
-    LineBox* m_nextOnBox{nullptr};
-    LineBox* m_prevOnBox{nullptr};
 
     float m_x{0};
     float m_y{0};
@@ -60,33 +56,15 @@ private:
     float m_height{0};
 };
 
-class LineBoxList {
-public:
-    LineBoxList() = default;
-    ~LineBoxList();
-
-    LineBox* firstLine() const { return m_firstLine; }
-    LineBox* lastLine() const { return m_lastLine; }
-
-    void add(Box* box, LineBox* line);
-    void remove(Box* box, LineBox* line);
-    bool empty() const { return !m_firstLine; }
-
-private:
-    LineBox* m_firstLine{nullptr};
-    LineBox* m_lastLine{nullptr};
-};
+using LineBoxList = std::list<std::unique_ptr<LineBox>>;
 
 class TextBox;
 
 class TextLineBox final : public LineBox {
 public:
     TextLineBox(TextBox* box, std::string text);
-    ~TextLineBox();
 
     bool isTextLineBox() const final { return true; }
-
-    TextBox* box() const;
 
     const std::string& text() const { return m_text; }
 
@@ -104,11 +82,8 @@ class BoxFrame;
 class ReplacedLineBox final : public LineBox {
 public:
     ReplacedLineBox(BoxFrame* box);
-    ~ReplacedLineBox() final;
 
     bool isReplacedLineBox() const final { return true; }
-
-    BoxFrame* box() const;
 };
 
 template<>
@@ -121,11 +96,8 @@ class BoxModel;
 class FlowLineBox : public LineBox {
 public:
     FlowLineBox(BoxModel* box);
-    ~FlowLineBox() override;
 
     bool isFlowLineBox() const final { return true; }
-
-    BoxModel* box() const;
 
     LineBox* firstLine() const { return m_firstLine; }
     LineBox* lastLine() const { return m_lastLine; }
@@ -150,8 +122,6 @@ public:
     RootLineBox(BlockFlowBox* box);
 
     bool isRootLineBox() const final { return true; }
-
-    BlockFlowBox* box() const;
 };
 
 template<>
