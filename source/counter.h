@@ -5,7 +5,7 @@
 
 namespace htmlbook {
 
-using Counter = std::map<GlobalString, int>;
+using Counter = std::map<HeapString, int>;
 
 class Counters {
 public:
@@ -21,17 +21,17 @@ public:
     void decreaseQuoteDepth() { --m_quoteDepth; }
     size_t quoteDepth() const { return m_quoteDepth; }
 
-    std::string format(const GlobalString& name, ListStyleType listStyle, std::string_view separator) const;
+    std::string format(const HeapString& name, ListStyleType listStyle, const std::string_view& separator) const;
 
-    int value(const GlobalString& name) const;
-    std::vector<int> values(const GlobalString& name) const;
+    int value(const HeapString& name) const;
+    std::vector<int> values(const HeapString& name) const;
 
-    void reset(const GlobalString& name, int value);
-    void set(const GlobalString& name, int value);
-    void increment(const GlobalString& name, int value);
+    void reset(const HeapString& name, int value);
+    void set(const HeapString& name, int value);
+    void increment(const HeapString& name, int value);
 
 private:
-    Counter* find(const GlobalString& name) const;
+    Counter* find(const HeapString& name) const;
     std::vector<std::unique_ptr<Counter>> m_counters;
     size_t m_quoteDepth{0};
 };

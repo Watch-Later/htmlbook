@@ -1068,17 +1068,17 @@ int BoxStyle::orphans() const
     return convertInteger(*value);
 }
 
-const std::string& BoxStyle::getQuote(bool open, size_t depth) const
+const HeapString& BoxStyle::getQuote(bool open, size_t depth) const
 {
     auto value = get(CSSPropertyID::Quotes);
     if(value == nullptr) {
-        static std::string defaultQuote("\"");
+        static GlobalString defaultQuote("\"");
         return defaultQuote;
     }
 
     if(auto ident = to<CSSIdentValue>(*value)) {
         assert(ident->value() == CSSValueID::None);
-        return emptyString;
+        return emptyGlo;
     }
 
     auto list = to<CSSListValue>(*value);

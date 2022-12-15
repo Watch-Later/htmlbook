@@ -2,6 +2,7 @@
 #define CSSTOKENIZER_H
 
 #include "parserstring.h"
+#include "heapstring.h"
 
 #include <vector>
 
@@ -58,14 +59,14 @@ public:
     CSSToken() = default;
     explicit CSSToken(Type type) : m_type(type) {}
     CSSToken(Type type, uint32_t delim) : m_type(type), m_delim(delim) {}
-    CSSToken(Type type, std::string_view data) : m_type(type), m_data(data) {}
-    CSSToken(Type type, HashType hashType, std::string_view data) : m_type(type), m_hashType(hashType), m_data(data) {}
+    CSSToken(Type type, const HeapString& data) : m_type(type), m_data(data) {}
+    CSSToken(Type type, HashType hashType, const HeapString& data) : m_type(type), m_hashType(hashType), m_data(data) {}
 
     CSSToken(Type type, NumberType numberType, NumberSign numberSign, double number)
         : m_type(type), m_numberType(numberType), m_numberSign(numberSign), m_number(number)
     {}
 
-    CSSToken(Type type, NumberType numberType, NumberSign numberSign, double number, std::string_view unit)
+    CSSToken(Type type, NumberType numberType, NumberSign numberSign, double number, const HeapString& unit)
         : m_type(type), m_numberType(numberType), m_numberSign(numberSign), m_number(number), m_data(unit)
     {}
 
@@ -76,7 +77,7 @@ public:
     uint32_t delim() const { return m_delim; }
     double number() const { return m_number; }
     int integer() const { return static_cast<int>(m_number); }
-    const std::string_view& data() const { return m_data; }
+    const HeapString& data() const { return m_data; }
 
     static Type closeType(Type type) {
         switch(type) {
@@ -99,7 +100,7 @@ private:
     NumberSign m_numberSign{NumberSign::None};
     uint32_t m_delim{0};
     double m_number{0};
-    std::string_view m_data;
+    HeapString m_data;
 };
 
 using CSSTokenList = std::vector<CSSToken>;
@@ -200,8 +201,8 @@ private:
 
 class CSSTokenizer {
 public:
-    CSSTokenizer(const std::string_view& input)
-        : m_input(input)
+    CSSTokenizer(const std::string_view& input, Heap* heap)
+        : m_input(input), m_heap(heap)
     {}
 
     CSSTokenStream tokenize();
@@ -216,10 +217,7 @@ private:
     bool isNumberSequence() const;
     bool isExponentSequence() const;
 
-    std::string_view substring(size_t offset, size_t count);
-    std::string_view addstring(std::string&& value);
-
-    std::string_view consumeName();
+    HeapString consumeName();
     uint32_t consumeEscape();
 
     CSSToken consumeStringToken();
@@ -241,10 +239,10 @@ private:
     CSSToken nextToken();
 
 private:
-    using StringList = std::vector<std::string>;
     ParserString m_input;
+    Heap* m_heap;
     CSSTokenList m_tokenList;
-    StringList m_stringList;
+    std::string m_characterBuffer;
 };
 
 } // namespace htmlbook

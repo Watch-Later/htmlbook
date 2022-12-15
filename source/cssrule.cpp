@@ -31,7 +31,7 @@ RefPtr<CSSIdentValue> CSSIdentValue::create(CSSValueID value)
     return it->second;
 }
 
-RefPtr<CSSCustomIdentValue> CSSCustomIdentValue::create(const GlobalString& value)
+RefPtr<CSSCustomIdentValue> CSSCustomIdentValue::create(const HeapString& value)
 {
     return adoptPtr(new CSSCustomIdentValue(value));
 }
@@ -61,19 +61,19 @@ RefPtr<CSSLengthValue> CSSLengthValue::create(double value, Unit unit)
     return adoptPtr(new CSSLengthValue(value, unit));
 }
 
-RefPtr<CSSStringValue> CSSStringValue::create(std::string value)
+RefPtr<CSSStringValue> CSSStringValue::create(const HeapString& value)
 {
-    return adoptPtr(new CSSStringValue(std::move(value)));
+    return adoptPtr(new CSSStringValue(value));
 }
 
-RefPtr<CSSUrlValue> CSSUrlValue::create(std::string value)
+RefPtr<CSSUrlValue> CSSUrlValue::create(const HeapString& value)
 {
-    return adoptPtr(new CSSUrlValue(std::move(value)));
+    return adoptPtr(new CSSUrlValue(value));
 }
 
-RefPtr<CSSImageValue> CSSImageValue::create(std::string value)
+RefPtr<CSSImageValue> CSSImageValue::create(const HeapString& value)
 {
-    return adoptPtr(new CSSImageValue(std::move(value)));
+    return adoptPtr(new CSSImageValue(value));
 }
 
 RefPtr<Image> CSSImageValue::fetch(Document* document) const
@@ -88,8 +88,8 @@ RefPtr<Image> CSSImageValue::fetch(Document* document) const
     return m_image;
 }
 
-CSSImageValue::CSSImageValue(std::string value)
-    : m_value(std::move(value))
+CSSImageValue::CSSImageValue(const HeapString& value)
+    : m_value(value)
 {
 }
 
@@ -103,9 +103,9 @@ RefPtr<CSSColorValue> CSSColorValue::create(uint8_t r, uint8_t g, uint8_t b, uin
     return adoptPtr(new CSSColorValue(a << 24 | r << 16 | g << 8 | b));
 }
 
-RefPtr<CSSCounterValue> CSSCounterValue::create(const GlobalString& identifier, ListStyleType listStyle, std::string separator)
+RefPtr<CSSCounterValue> CSSCounterValue::create(const GlobalString& identifier, ListStyleType listStyle, const HeapString& separator)
 {
-    return adoptPtr(new CSSCounterValue(identifier, listStyle, std::move(separator)));
+    return adoptPtr(new CSSCounterValue(identifier, listStyle, separator));
 }
 
 RefPtr<CSSPairValue> CSSPairValue::create(RefPtr<CSSValue> first, RefPtr<CSSValue> second)
@@ -599,17 +599,20 @@ std::unique_ptr<CSSStyleRule> CSSStyleRule::create(CSSSelectorList selectors, CS
     return std::unique_ptr<CSSStyleRule>(new CSSStyleRule(std::move(selectors), std::move(properties)));
 }
 
-std::unique_ptr<CSSImportRule> CSSImportRule::create(std::string href)
+std::unique_ptr<CSSImportRule> CSSImportRule::create(const HeapString& href)
 {
-    return std::unique_ptr<CSSImportRule>(new CSSImportRule(std::move(href)));
+    return std::unique_ptr<CSSImportRule>(new CSSImportRule(href));
 }
 
 const CSSRuleList& CSSImportRule::fetch(Document* document) const
 {
     if(!m_rules.empty())
         return m_rules;
-    if(auto textResource = document->fetchTextResource(m_href))
-        CSSParser::parseSheet(m_rules, textResource->text());
+    if(auto textResource = document->fetchTextResource(m_href)) {
+        CSSParser parser(document->heap());
+        parser.parseSheet(m_rules, textResource->text());
+    }
+
     return m_rules;
 }
 
@@ -976,12 +979,12 @@ bool CSSRuleData::matchPseudoClassNthLastOfTypeSelector(const Element* element, 
     return selector.matchnth(count);
 }
 
-RefPtr<FontFace> CSSFontFaceCache::get(const std::string& family, bool italic, bool smallCaps, int weight) const
+RefPtr<FontFace> CSSFontFaceCache::get(const std::string_view& family, bool italic, bool smallCaps, int weight) const
 {
     return nullptr;
 }
 
-void CSSFontFaceCache::add(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
+void CSSFontFaceCache::add(const HeapString& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
 {
     m_fontFaceDataMap[family].emplace_back(italic, smallCaps, weight, std::move(face));
 }
@@ -1009,7 +1012,7 @@ RefPtr<BoxStyle> CSSRuleCache::pseudoStyleForElement(Element* element, const Box
     return builder.build();
 }
 
-RefPtr<FontFace> CSSRuleCache::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight) const
+RefPtr<FontFace> CSSRuleCache::getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight) const
 {
     if(auto face = m_fontFaceCache.get(family, italic, smallCaps, weight))
         return face;

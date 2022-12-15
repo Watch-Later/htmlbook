@@ -48,6 +48,8 @@ public:
     virtual void buildBox(Counters& counters, Box* parent) {}
     virtual void serialize(std::ostream& o) const = 0;
 
+    Heap* heap() const;
+
 private:
     Document* m_document;
     ContainerNode* m_parentNode{nullptr};
@@ -254,7 +256,7 @@ public:
 
     RefPtr<BoxStyle> styleForElement(Element* element, const BoxStyle& parentStyle);
     RefPtr<BoxStyle> pseudoStyleForElement(Element* element, const BoxStyle& parentStyle, PseudoType pseudoType);
-    RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight);
+    RefPtr<FontFace> getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight);
 
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
     RefPtr<ImageResource> fetchImageResource(const std::string_view& url);
@@ -273,7 +275,7 @@ public:
 private:
     template<typename ResourceType>
     RefPtr<ResourceType> fetchResource(const std::string_view& url);
-    mutable Heap m_heap{8196};
+    mutable Heap m_heap{8192};
     Url m_baseUrl;
     CSSRuleList m_authorRules;
     CSSRuleList m_userRules;

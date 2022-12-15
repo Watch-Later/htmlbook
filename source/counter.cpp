@@ -66,13 +66,13 @@ void Counters::update(const Box* box, CSSPropertyID id)
     }
 }
 
-std::string Counters::format(const GlobalString& name, ListStyleType listStyle, std::string_view separator) const
+std::string Counters::format(const HeapString& name, ListStyleType listStyle, const std::string_view& separator) const
 {
     std::string value;
     return value;
 }
 
-int Counters::value(const GlobalString& name) const
+int Counters::value(const HeapString& name) const
 {
     auto counter = find(name);
     if(counter == nullptr)
@@ -80,7 +80,7 @@ int Counters::value(const GlobalString& name) const
     return counter->at(name);
 }
 
-std::vector<int> Counters::values(const GlobalString& name) const
+std::vector<int> Counters::values(const HeapString& name) const
 {
     std::vector<int> values;
     for(auto& counter : m_counters) {
@@ -95,7 +95,7 @@ std::vector<int> Counters::values(const GlobalString& name) const
     return values;
 }
 
-void Counters::reset(const GlobalString& name, int value)
+void Counters::reset(const HeapString& name, int value)
 {
     auto& counter = m_counters.back();
     if(counter == nullptr)
@@ -103,7 +103,7 @@ void Counters::reset(const GlobalString& name, int value)
     counter->operator[](name) = value;
 }
 
-void Counters::set(const GlobalString& name, int value)
+void Counters::set(const HeapString& name, int value)
 {
     auto counter = find(name);
     if(counter == nullptr) {
@@ -114,7 +114,7 @@ void Counters::set(const GlobalString& name, int value)
     counter->at(name) = value;
 }
 
-void Counters::increment(const GlobalString& name, int value)
+void Counters::increment(const HeapString& name, int value)
 {
     auto counter = find(name);
     if(counter == nullptr) {
@@ -125,7 +125,7 @@ void Counters::increment(const GlobalString& name, int value)
     counter->at(name) += value;
 }
 
-Counter* Counters::find(const GlobalString& name) const
+Counter* Counters::find(const HeapString& name) const
 {
     auto it = m_counters.rbegin();
     auto end = m_counters.rend();

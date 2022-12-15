@@ -292,14 +292,14 @@ struct is<CSSIdentValue> {
 
 class CSSCustomIdentValue final : public CSSValue {
 public:
-    static RefPtr<CSSCustomIdentValue> create(const GlobalString& value);
+    static RefPtr<CSSCustomIdentValue> create(const HeapString& value);
 
-    const GlobalString& value() const { return m_value; }
+    const HeapString& value() const { return m_value; }
     bool isCustomIdentValue() const final { return true; }
 
 private:
-    CSSCustomIdentValue(const GlobalString& value) : m_value(value) {}
-    GlobalString m_value;
+    CSSCustomIdentValue(const HeapString& value) : m_value(value) {}
+    HeapString m_value;
 };
 
 template<>
@@ -429,14 +429,14 @@ struct is<CSSLengthValue> {
 
 class CSSStringValue final : public CSSValue {
 public:
-    static RefPtr<CSSStringValue> create(std::string value);
+    static RefPtr<CSSStringValue> create(const HeapString& value);
 
-    const std::string& value() const { return m_value; }
+    const HeapString& value() const { return m_value; }
     bool isStringValue() const final { return true; }
 
 private:
-    CSSStringValue(std::string value) : m_value(std::move(value)) {}
-    std::string m_value;
+    CSSStringValue(const HeapString& value) : m_value(value) {}
+    HeapString m_value;
 };
 
 template<>
@@ -446,14 +446,14 @@ struct is<CSSStringValue> {
 
 class CSSUrlValue final : public CSSValue {
 public:
-    static RefPtr<CSSUrlValue> create(std::string value);
+    static RefPtr<CSSUrlValue> create(const HeapString& value);
 
-    const std::string& value() const { return m_value; }
+    const HeapString& value() const { return m_value; }
     bool isUrlValue() const final { return true; }
 
 private:
-    CSSUrlValue(std::string value) : m_value(std::move(value)) {}
-    std::string m_value;
+    CSSUrlValue(const HeapString& value) : m_value(value) {}
+    HeapString m_value;
 };
 
 template<>
@@ -465,16 +465,16 @@ class Image;
 
 class CSSImageValue final : public CSSValue {
 public:
-    static RefPtr<CSSImageValue> create(std::string value);
+    static RefPtr<CSSImageValue> create(const HeapString& value);
 
-    const std::string& value() const { return m_value; }
+    const HeapString& value() const { return m_value; }
     const RefPtr<Image>& image() const { return m_image; }
     RefPtr<Image> fetch(Document* document) const;
     bool isImageValue() const final { return true; }
 
 private:
-    CSSImageValue(std::string value);
-    std::string m_value;
+    CSSImageValue(const HeapString& value);
+    HeapString m_value;
     mutable RefPtr<Image> m_image;
 };
 
@@ -518,21 +518,21 @@ enum class ListStyleType : uint8_t {
 
 class CSSCounterValue final : public CSSValue {
 public:
-    static RefPtr<CSSCounterValue> create(const GlobalString& identifier, ListStyleType listStyle, std::string separator);
+    static RefPtr<CSSCounterValue> create(const GlobalString& identifier, ListStyleType listStyle, const HeapString& separator);
 
     const GlobalString& identifier() const { return m_identifier; }
     ListStyleType listStyle() const { return m_listStyle; }
-    const std::string& separator() const { return m_separator; }
+    const HeapString& separator() const { return m_separator; }
     bool isCounterValue() const final { return true; }
 
 private:
-    CSSCounterValue(const GlobalString& identifier, ListStyleType listStyle, std::string separator)
-        : m_identifier(identifier), m_listStyle(listStyle), m_separator(std::move(separator))
+    CSSCounterValue(const GlobalString& identifier, ListStyleType listStyle, const HeapString& separator)
+        : m_identifier(identifier), m_listStyle(listStyle), m_separator(separator)
     {}
 
     GlobalString m_identifier;
     ListStyleType m_listStyle;
-    std::string m_separator;
+    HeapString m_separator;
 };
 
 template<>
@@ -857,11 +857,11 @@ private:
 class CSSSimpleSelector;
 class CSSComplexSelector;
 
-using CSSCompoundSelector = std::list<CSSSimpleSelector>;
-using CSSSelector = std::list<CSSComplexSelector>;
+using CSSCompoundSelector = std::pmr::list<CSSSimpleSelector>;
+using CSSSelector = std::pmr::list<CSSComplexSelector>;
 
-using CSSCompoundSelectorList = std::list<CSSCompoundSelector>;
-using CSSSelectorList = std::list<CSSSelector>;
+using CSSCompoundSelectorList = std::pmr::list<CSSCompoundSelector>;
+using CSSSelectorList = std::pmr::list<CSSSelector>;
 
 using CSSPageSelector = CSSCompoundSelector;
 using CSSPageSelectorList = CSSCompoundSelectorList;
@@ -919,23 +919,25 @@ public:
 
     CSSSimpleSelector(MatchType matchType) : m_matchType(matchType) {}
     CSSSimpleSelector(MatchType matchType, const GlobalString& name) : m_matchType(matchType), m_name(name) {}
+    CSSSimpleSelector(MatchType matchType, const HeapString& value) : m_matchType(matchType), m_value(value) {}
     CSSSimpleSelector(MatchType matchType, const MatchPattern& matchPattern) : m_matchType(matchType), m_matchPattern(matchPattern) {}
 
-    CSSSimpleSelector(MatchType matchType, std::unique_ptr<CSSCompoundSelectorList> subSelectors)
+    CSSSimpleSelector(MatchType matchType, CSSCompoundSelectorList subSelectors)
         : m_matchType(matchType), m_subSelectors(std::move(subSelectors))
     {}
 
-    CSSSimpleSelector(MatchType matchType, AttributeCaseType attributeCaseType, const GlobalString& name, std::unique_ptr<std::string> value)
-        : m_matchType(matchType), m_attributeCaseType(attributeCaseType), m_name(name), m_value(std::move(value))
+    CSSSimpleSelector(MatchType matchType, AttributeCaseType attributeCaseType, const GlobalString& name, const HeapString& value)
+        : m_matchType(matchType), m_attributeCaseType(attributeCaseType), m_name(name), m_value(value)
     {}
 
     MatchType matchType() const { return m_matchType; }
     AttributeCaseType attributeCaseType() const { return m_attributeCaseType; }
     const MatchPattern& matchPattern() const { return m_matchPattern; }
     const GlobalString& name() const { return m_name; }
-    const std::string& value() const { return *m_value; }
-    const CSSCompoundSelectorList& subSelectors() const { return *m_subSelectors; }
+    const HeapString& value() const { return m_value; }
+    const CSSCompoundSelectorList& subSelectors() const { return m_subSelectors; }
     bool isCaseSensitive() const { return m_attributeCaseType == AttributeCaseType::Sensitive; }
+
     bool matchnth(int count) const;
 
 private:
@@ -943,8 +945,8 @@ private:
     AttributeCaseType m_attributeCaseType;
     MatchPattern m_matchPattern;
     GlobalString m_name;
-    std::unique_ptr<std::string> m_value;
-    std::unique_ptr<CSSCompoundSelectorList> m_subSelectors;
+    HeapString m_value;
+    CSSCompoundSelectorList m_subSelectors;
 };
 
 class CSSComplexSelector {
@@ -1012,15 +1014,15 @@ struct is<CSSStyleRule> {
 
 class CSSImportRule final : public CSSRule {
 public:
-    static std::unique_ptr<CSSImportRule> create(std::string href);
+    static std::unique_ptr<CSSImportRule> create(const HeapString& href);
 
-    const std::string& href() const { return m_href; }
+    const HeapString& href() const { return m_href; }
     Type type() const final { return Type::Import; }
     const CSSRuleList& fetch(Document* document) const;
 
 private:
-    CSSImportRule(std::string href) : m_href(std::move(href)) {}
-    std::string m_href;
+    CSSImportRule(const HeapString& href) : m_href(href) {}
+    HeapString m_href;
     mutable CSSRuleList m_rules;
 };
 
@@ -1251,13 +1253,13 @@ class FontFace;
 class CSSFontFaceCache {
 public:
     CSSFontFaceCache() = default;
-    RefPtr<FontFace> get(const std::string& family, bool italic, bool smallCaps, int weight) const;
-    void add(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
+    RefPtr<FontFace> get(const std::string_view& family, bool italic, bool smallCaps, int weight) const;
+    void add(const HeapString& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
 
 private:
     using FontFaceData = std::tuple<bool, bool, int, RefPtr<FontFace>>;
     using FontFaceDataList = std::vector<FontFaceData>;
-    using FontFaceDataMap = std::map<std::string, FontFaceDataList>;
+    using FontFaceDataMap = std::map<HeapString, FontFaceDataList, std::less<>>;
     FontFaceDataMap m_fontFaceDataMap;
 };
 
@@ -1269,7 +1271,7 @@ public:
 
     RefPtr<BoxStyle> styleForElement(Element* element, const BoxStyle& parentStyle) const;
     RefPtr<BoxStyle> pseudoStyleForElement(Element* element, const BoxStyle& parentStyle, PseudoType pseudoType) const;
-    RefPtr<FontFace> getFontFace(const std::string& family, bool italic, bool smallCaps, int weight) const;
+    RefPtr<FontFace> getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight) const;
 
 private:
     CSSRuleCache(Document* document);
@@ -1279,8 +1281,8 @@ private:
     void addPageRule(uint32_t position, const CSSPageRule* rule);
     void addFontFaceRule(Document* document, const CSSFontFaceRule* rule);
 
-    CSSRuleDataMap<GlobalString> m_idRules;
-    CSSRuleDataMap<GlobalString> m_classRules;
+    CSSRuleDataMap<HeapString> m_idRules;
+    CSSRuleDataMap<HeapString> m_classRules;
     CSSRuleDataMap<GlobalString> m_tagRules;
     CSSRuleDataMap<PseudoType> m_pseudoRules;
 

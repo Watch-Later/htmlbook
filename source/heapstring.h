@@ -43,7 +43,7 @@ using HeapBase = std::pmr::monotonic_buffer_resource;
 
 class Heap : public HeapBase {
 public:
-    Heap(size_t capacity) : HeapBase(capacity) {}
+    explicit Heap(size_t capacity) : HeapBase(capacity) {}
 
     HeapString createString(const char* data) { return createString(data, std::strlen(data)); }
     HeapString createString(const std::string_view& value) { return createString(value.data(), value.length()); }

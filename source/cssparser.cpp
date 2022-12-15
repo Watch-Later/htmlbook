@@ -8,7 +8,7 @@ namespace htmlbook {
 
 void CSSParser::parseSheet(CSSRuleList& rules, const std::string_view& content)
 {
-    CSSTokenizer tokenizer(content);
+    CSSTokenizer tokenizer(content, m_heap);
     auto input = tokenizer.tokenize();
     while(!input.empty()) {
         input.consumeWhitespace();
@@ -27,8 +27,10 @@ void CSSParser::parseSheet(CSSRuleList& rules, const std::string_view& content)
 
 void CSSParser::parseStyle(CSSPropertyList& properties, const std::string_view& content)
 {
-    CSSTokenizer tokenizer(content);
+    CSSTokenizer tokenizer(content, m_heap);
     auto input = tokenizer.tokenize();
+    if(input.empty())
+        return;
     consumeDeclaractionList(input, properties);
 }
 
@@ -92,7 +94,7 @@ std::unique_ptr<CSSRule> CSSParser::consumeAtRule(CSSTokenStream& input)
 
 std::unique_ptr<CSSRule> CSSParser::consumeImportRule(CSSTokenStream& input)
 {
-    std::string href;
+    HeapString href;
     input.consumeWhitespace();
     switch(input->type()) {
     case CSSToken::Type::Url:
@@ -117,7 +119,7 @@ std::unique_ptr<CSSRule> CSSParser::consumeImportRule(CSSTokenStream& input)
         return nullptr;
     }
 
-    return CSSImportRule::create(std::move(href));
+    return CSSImportRule::create(href);
 }
 
 std::unique_ptr<CSSRule> CSSParser::consumeFontFaceRule(CSSTokenStream& prelude, CSSTokenStream& block)
@@ -345,7 +347,8 @@ bool CSSParser::consumeSimpleSelector(CSSTokenStream& input, CSSCompoundSelector
 bool CSSParser::consumeTagSelector(CSSTokenStream& input, CSSCompoundSelector& selector)
 {
     if(input->type() == CSSToken::Type::Ident) {
-        selector.emplace_back(CSSSimpleSelector::MatchType::Tag, input->data());
+        GlobalString name(input->data());
+        selector.emplace_back(CSSSimpleSelector::MatchType::Tag, name);
         input.consume();
         return true;
     }
@@ -391,7 +394,7 @@ bool CSSParser::consumeAttributeSelector(CSSTokenStream& input, CSSCompoundSelec
     if(block->type() != CSSToken::Type::Ident)
         return false;
 
-    auto name = block->data();
+    GlobalString name(block->data());
     block.consumeIncludingWhitespace();
     if(block.empty()) {
         selector.emplace_back(CSSSimpleSelector::MatchType::AttributeHas, name);
@@ -435,7 +438,7 @@ bool CSSParser::consumeAttributeSelector(CSSTokenStream& input, CSSCompoundSelec
     if(block->type() != CSSToken::Type::Ident && block->type() != CSSToken::Type::String)
         return false;
 
-    auto value = std::make_unique<std::string>(block->data());
+    auto value = block->data();
     block.consumeIncludingWhitespace();
 
     auto caseType = CSSSimpleSelector::AttributeCaseType::Sensitive;
@@ -445,7 +448,7 @@ bool CSSParser::consumeAttributeSelector(CSSTokenStream& input, CSSCompoundSelec
     }
 
     if(block.empty()) {
-        selector.emplace_back(matchType, caseType, name, std::move(value));
+        selector.emplace_back(matchType, caseType, name, value);
         return true;
     }
 
@@ -531,8 +534,8 @@ bool CSSParser::consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector
         switch(it->value) {
         case CSSSimpleSelector::MatchType::PseudoClassIs:
         case CSSSimpleSelector::MatchType::PseudoClassNot: {
-            auto subSelectors = std::make_unique<CSSCompoundSelectorList>();
-            if(!consumeCompoundSelectorList(block, *subSelectors))
+            CSSCompoundSelectorList subSelectors;
+            if(!consumeCompoundSelectorList(block, subSelectors))
                 return false;
             selector.emplace_back(it->value, std::move(subSelectors));
             break;
@@ -638,7 +641,7 @@ bool CSSParser::consumeMatchPattern(CSSTokenStream& input, CSSSimpleSelector::Ma
         input.consume();
         if(ident.front() == '-') {
             pattern.first = -1;
-            ss << ident.substr(1);
+            ss << ident.substring(1);
         } else {
             pattern.first = 1;
             ss << ident;
@@ -1087,9 +1090,9 @@ RefPtr<CSSValue> CSSParser::consumeLengthOrPercentOrNormal(CSSTokenStream& input
 RefPtr<CSSValue> CSSParser::consumeString(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::String) {
-        std::string value(input->data());
+        auto value = input->data();
         input.consumeIncludingWhitespace();
-        return CSSStringValue::create(std::move(value));
+        return CSSStringValue::create(value);
     }
 
     return nullptr;
@@ -1108,7 +1111,7 @@ RefPtr<CSSValue> CSSParser::consumeCustomIdent(CSSTokenStream& input)
 
 RefPtr<CSSValue> CSSParser::consumeUrl(CSSTokenStream& input, bool image)
 {
-    std::string value;
+    HeapString value;
     switch(input->type()) {
     case CSSToken::Type::Url:
     case CSSToken::Type::String:
@@ -1135,8 +1138,8 @@ RefPtr<CSSValue> CSSParser::consumeUrl(CSSTokenStream& input, bool image)
     }
 
     if(!image)
-        return CSSUrlValue::create(std::move(value));
-    return CSSImageValue::create(std::move(value));
+        return CSSUrlValue::create(value);
+    return CSSImageValue::create(value);
 }
 
 RefPtr<CSSValue> CSSParser::consumeUrlOrNone(CSSTokenStream& input, bool image)
@@ -1510,9 +1513,9 @@ RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool co
     if(input->type() != CSSToken::Type::Ident)
         return nullptr;
 
-    auto identifier = input->data();
+    GlobalString identifier(input->data());
     input.consumeIncludingWhitespace();
-    std::string separator;
+    HeapString separator;
     if(counters) {
         if(input->type() != CSSToken::Type::Comma)
             return nullptr;
@@ -1555,7 +1558,7 @@ RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool co
 
     if(!input.empty())
         return nullptr;
-    return CSSCounterValue::create(identifier, listStyle, std::move(separator));
+    return CSSCounterValue::create(identifier, listStyle, separator);
 }
 
 RefPtr<CSSValue> CSSParser::consumeCounter(CSSTokenStream& input, bool increment)
@@ -1685,7 +1688,7 @@ RefPtr<CSSValue> CSSParser::consumeFontSize(CSSTokenStream& input, bool unitless
 RefPtr<CSSValue> CSSParser::consumeFontFamilyValue(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::String) {
-        std::string value(input->data());
+        auto value = input->data();
         input.consumeIncludingWhitespace();
         return CSSStringValue::create(std::move(value));
     }
@@ -1700,7 +1703,7 @@ RefPtr<CSSValue> CSSParser::consumeFontFamilyValue(CSSTokenStream& input)
 
     if(value.empty())
         return nullptr;
-    return CSSStringValue::create(std::move(value));
+    return CSSStringValue::create(m_heap->createString(value));
 }
 
 RefPtr<CSSValue> CSSParser::consumeFontFamily(CSSTokenStream& input)

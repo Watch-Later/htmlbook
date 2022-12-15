@@ -86,47 +86,22 @@ bool CSSTokenizer::isExponentSequence() const
     return isdigit(m_input.peek(1));
 }
 
-std::string_view CSSTokenizer::substring(size_t offset, size_t count)
+HeapString CSSTokenizer::consumeName()
 {
-    return m_input.string(offset, count);
-}
-
-std::string_view CSSTokenizer::addstring(std::string&& value)
-{
-    m_stringList.push_back(std::move(value));
-    return m_stringList.back();
-}
-
-std::string_view CSSTokenizer::consumeName()
-{
-    size_t count = 0;
-    while(true) {
-        auto cc = m_input.peek(count);
-        if(cc == 0 || cc == '\\')
-            break;
-        if(!isNameChar(cc)) {
-            auto offset = m_input.offset();
-            m_input.advance(count);
-            return substring(offset, count);
-        }
-
-        count += 1;
-    }
-
-    std::string output;
+    m_characterBuffer.clear();
     while(true) {
         auto cc = m_input.peek();
         if(isNameChar(cc)) {
-            output += cc;
+            m_characterBuffer += cc;
             m_input.advance();
         } else if(isEscapeSequence()) {
-            appendCodepoint(output, consumeEscape());
+            appendCodepoint(m_characterBuffer, consumeEscape());
         } else {
             break;
         }
     }
 
-    return addstring(std::move(output));
+    return m_heap->createString(m_characterBuffer);
 }
 
 uint32_t CSSTokenizer::consumeEscape()
@@ -164,27 +139,7 @@ CSSToken CSSTokenizer::consumeStringToken()
     auto endingCodePoint = m_input.peek();
     assert(endingCodePoint == '\"' || endingCodePoint == '\'');
     m_input.advance();
-    size_t count = 0;
-    while(true) {
-        auto cc = m_input.peek(count);
-        if(cc == 0 || cc == '\\')
-            break;
-        if(cc == endingCodePoint) {
-            auto offset = m_input.offset();
-            m_input.advance(count);
-            m_input.advance();
-            return CSSToken(CSSToken::Type::String, substring(offset, count));
-        }
-
-        if(isNewLine(cc)) {
-            m_input.advance(count);
-            return CSSToken(CSSToken::Type::BadString);
-        }
-
-        count += 1;
-    }
-
-    std::string output;
+    m_characterBuffer.clear();
     while(true) {
         auto cc = m_input.peek();
         if(cc == 0)
@@ -206,17 +161,17 @@ CSSToken CSSTokenizer::consumeStringToken()
                     m_input.advance();
                 m_input.advance(2);
             } else {
-                appendCodepoint(output, consumeEscape());
+                appendCodepoint(m_characterBuffer, consumeEscape());
             }
         } else {
-            output += cc;
+            m_characterBuffer += cc;
             m_input.advance();
         }
     }
 
-    if(output.empty())
+    if(m_characterBuffer.empty())
         return CSSToken(CSSToken::Type::String);
-    return CSSToken(CSSToken::Type::String, addstring(std::move(output)));
+    return CSSToken(CSSToken::Type::String, m_heap->createString(m_characterBuffer));
 }
 
 CSSToken CSSTokenizer::consumeNumericToken()
@@ -320,27 +275,7 @@ CSSToken CSSTokenizer::consumeUrlToken()
         cc = m_input.advance();
     }
 
-    size_t count = 0;
-    while(true) {
-        auto cc = m_input.peek(count);
-        if(cc == 0 || cc == '\\' || isspace(cc))
-            break;
-        if(cc == ')') {
-            auto offset = m_input.offset();
-            m_input.advance(count);
-            m_input.advance();
-            return CSSToken(CSSToken::Type::Url, substring(offset, count));
-        }
-
-        if(cc == '"' || cc == '\'' || cc == '(' || isNonPrintable(cc)) {
-            m_input.advance(count);
-            return consumeBadUrlRemnants();
-        }
-
-        count += 1;
-    }
-
-    std::string output;
+    m_characterBuffer.clear();
     while(true) {
         auto cc = m_input.peek();
         if(cc == 0)
@@ -352,7 +287,7 @@ CSSToken CSSTokenizer::consumeUrlToken()
 
         if(cc == '\\') {
             if(isEscapeSequence()) {
-                appendCodepoint(output, consumeEscape());
+                appendCodepoint(m_characterBuffer, consumeEscape());
                 continue;
             }
 
@@ -377,11 +312,11 @@ CSSToken CSSTokenizer::consumeUrlToken()
         if(cc == '"' || cc == '\'' || cc == '(' || isNonPrintable(cc))
             return consumeBadUrlRemnants();
 
-        output += cc;
+        m_characterBuffer += cc;
         m_input.advance();
     }
 
-    return CSSToken(CSSToken::Type::Url, addstring(std::move(output)));
+    return CSSToken(CSSToken::Type::Url, m_heap->createString(m_characterBuffer));
 }
 
 CSSToken CSSTokenizer::consumeBadUrlRemnants()
@@ -556,9 +491,10 @@ CSSToken CSSTokenizer::nextToken()
         return consumeStringToken();
     case '\'':
         return consumeStringToken();
+    default:
+        m_input.advance();
     }
 
-    m_input.advance();
     switch(cc) {
     case '(':
         return CSSToken(CSSToken::Type::LeftParenthesis);
@@ -578,9 +514,9 @@ CSSToken CSSTokenizer::nextToken()
         return CSSToken(CSSToken::Type::Colon);
     case ';':
         return CSSToken(CSSToken::Type::Semicolon);
+    default:
+        return CSSToken(CSSToken::Type::Delim, cc);
     }
-
-    return CSSToken(CSSToken::Type::Delim, cc);
 }
 
 } // namespace htmlbook

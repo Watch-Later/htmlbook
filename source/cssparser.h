@@ -8,107 +8,114 @@ namespace htmlbook {
 
 class CSSParser {
 public:
-    static void parseSheet(CSSRuleList& rules, const std::string_view& content);
-    static void parseStyle(CSSPropertyList& properties, const std::string_view& content);
+    explicit CSSParser(Heap* heap)
+        : m_heap(heap)
+    {}
+
+    void parseSheet(CSSRuleList& rules, const std::string_view& content);
+    void parseStyle(CSSPropertyList& properties, const std::string_view& content);
 
 private:
-    static std::unique_ptr<CSSRule> consumeRule(CSSTokenStream& input);
-    static std::unique_ptr<CSSRule> consumeStyleRule(CSSTokenStream& input);
-    static std::unique_ptr<CSSRule> consumeAtRule(CSSTokenStream& input);
-    static std::unique_ptr<CSSRule> consumeImportRule(CSSTokenStream& input);
-    static std::unique_ptr<CSSRule> consumeFontFaceRule(CSSTokenStream& prelude, CSSTokenStream& block);
-    static std::unique_ptr<CSSRule> consumePageRule(CSSTokenStream& prelude, CSSTokenStream& block);
-    static std::unique_ptr<CSSPageMarginRule> consumePageMarginRule(CSSTokenStream& input);
+    std::unique_ptr<CSSRule> consumeRule(CSSTokenStream& input);
+    std::unique_ptr<CSSRule> consumeStyleRule(CSSTokenStream& input);
+    std::unique_ptr<CSSRule> consumeAtRule(CSSTokenStream& input);
+    std::unique_ptr<CSSRule> consumeImportRule(CSSTokenStream& input);
+    std::unique_ptr<CSSRule> consumeFontFaceRule(CSSTokenStream& prelude, CSSTokenStream& block);
+    std::unique_ptr<CSSRule> consumePageRule(CSSTokenStream& prelude, CSSTokenStream& block);
+    std::unique_ptr<CSSPageMarginRule> consumePageMarginRule(CSSTokenStream& input);
 
-    static bool consumePageSelector(CSSTokenStream& input, CSSPageSelector& selector);
-    static bool consumePageSelectorList(CSSTokenStream& input, CSSPageSelectorList& selectors);
-    static bool consumeSelector(CSSTokenStream& input, CSSSelector& selector);
-    static bool consumeSelectorList(CSSTokenStream& input, CSSSelectorList& selectors);
-    static bool consumeCompoundSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
-    static bool consumeCompoundSelectorList(CSSTokenStream& input, CSSCompoundSelectorList& selectors);
+    bool consumePageSelector(CSSTokenStream& input, CSSPageSelector& selector);
+    bool consumePageSelectorList(CSSTokenStream& input, CSSPageSelectorList& selectors);
+    bool consumeSelector(CSSTokenStream& input, CSSSelector& selector);
+    bool consumeSelectorList(CSSTokenStream& input, CSSSelectorList& selectors);
+    bool consumeCompoundSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
+    bool consumeCompoundSelectorList(CSSTokenStream& input, CSSCompoundSelectorList& selectors);
 
-    static bool consumeSimpleSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
-    static bool consumeTagSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
-    static bool consumeIdSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
-    static bool consumeClassSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
-    static bool consumeAttributeSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
-    static bool consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
+    bool consumeSimpleSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
+    bool consumeTagSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
+    bool consumeIdSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
+    bool consumeClassSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
+    bool consumeAttributeSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
+    bool consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
 
-    static bool consumeCombinator(CSSTokenStream& input, CSSComplexSelector::Combinator& combinator);
-    static bool consumeMatchPattern(CSSTokenStream& input, CSSSimpleSelector::MatchPattern& pattern);
+    bool consumeCombinator(CSSTokenStream& input, CSSComplexSelector::Combinator& combinator);
+    bool consumeMatchPattern(CSSTokenStream& input, CSSSimpleSelector::MatchPattern& pattern);
 
-    static void consumeDeclaractionList(CSSTokenStream& input, CSSPropertyList& properties);
-    static bool consumeDeclaraction(CSSTokenStream& input, CSSPropertyList& properties);
-    static bool consumeDeclaractionValue(CSSTokenStream& input, CSSPropertyList& properties, CSSPropertyID id, bool important);
+    void consumeDeclaractionList(CSSTokenStream& input, CSSPropertyList& properties);
+    bool consumeDeclaraction(CSSTokenStream& input, CSSPropertyList& properties);
+    bool consumeDeclaractionValue(CSSTokenStream& input, CSSPropertyList& properties, CSSPropertyID id, bool important);
 
-    static void addProperty(CSSPropertyList& properties, CSSPropertyID id, bool important, RefPtr<CSSValue> value);
-    static void addExpandedProperty(CSSPropertyList& properties, CSSPropertyID id, bool important, RefPtr<CSSValue> value);
+    void addProperty(CSSPropertyList& properties, CSSPropertyID id, bool important, RefPtr<CSSValue> value);
+    void addExpandedProperty(CSSPropertyList& properties, CSSPropertyID id, bool important, RefPtr<CSSValue> value);
 
-    static RefPtr<CSSValue> consumeNone(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeAuto(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeNormal(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeNoneOrAuto(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeNoneOrNormal(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeNone(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeAuto(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeNormal(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeNoneOrAuto(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeNoneOrNormal(CSSTokenStream& input);
 
-    static RefPtr<CSSValue> consumeInteger(CSSTokenStream& input, bool negative);
-    static RefPtr<CSSValue> consumePositiveInteger(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumePercent(CSSTokenStream& input, bool negative);
-    static RefPtr<CSSValue> consumeNumber(CSSTokenStream& input, bool negative);
-    static RefPtr<CSSValue> consumeLength(CSSTokenStream& input, bool negative, bool unitless);
-    static RefPtr<CSSValue> consumeLengthOrAuto(CSSTokenStream& input, bool negative, bool unitless);
-    static RefPtr<CSSValue> consumeLengthOrNormal(CSSTokenStream& input, bool negative, bool unitless);
-    static RefPtr<CSSValue> consumeLengthOrPercent(CSSTokenStream& input, bool negative, bool unitless);
-    static RefPtr<CSSValue> consumeNumberOrPercent(CSSTokenStream& input, bool negative);
-    static RefPtr<CSSValue> consumeIntegerOrAuto(CSSTokenStream& input, bool negative);
-    static RefPtr<CSSValue> consumePositiveIntegerOrAuto(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeLengthOrPercentOrAuto(CSSTokenStream& input, bool negative, bool unitless);
-    static RefPtr<CSSValue> consumeLengthOrPercentOrNone(CSSTokenStream& input, bool negative, bool unitless);
-    static RefPtr<CSSValue> consumeLengthOrPercentOrNormal(CSSTokenStream& input, bool negative, bool unitless);
+    RefPtr<CSSValue> consumeInteger(CSSTokenStream& input, bool negative);
+    RefPtr<CSSValue> consumePositiveInteger(CSSTokenStream& input);
+    RefPtr<CSSValue> consumePercent(CSSTokenStream& input, bool negative);
+    RefPtr<CSSValue> consumeNumber(CSSTokenStream& input, bool negative);
+    RefPtr<CSSValue> consumeLength(CSSTokenStream& input, bool negative, bool unitless);
+    RefPtr<CSSValue> consumeLengthOrAuto(CSSTokenStream& input, bool negative, bool unitless);
+    RefPtr<CSSValue> consumeLengthOrNormal(CSSTokenStream& input, bool negative, bool unitless);
+    RefPtr<CSSValue> consumeLengthOrPercent(CSSTokenStream& input, bool negative, bool unitless);
+    RefPtr<CSSValue> consumeNumberOrPercent(CSSTokenStream& input, bool negative);
+    RefPtr<CSSValue> consumeIntegerOrAuto(CSSTokenStream& input, bool negative);
+    RefPtr<CSSValue> consumePositiveIntegerOrAuto(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeLengthOrPercentOrAuto(CSSTokenStream& input, bool negative, bool unitless);
+    RefPtr<CSSValue> consumeLengthOrPercentOrNone(CSSTokenStream& input, bool negative, bool unitless);
+    RefPtr<CSSValue> consumeLengthOrPercentOrNormal(CSSTokenStream& input, bool negative, bool unitless);
 
-    static RefPtr<CSSValue> consumeString(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeCustomIdent(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeUrl(CSSTokenStream& input, bool image);
-    static RefPtr<CSSValue> consumeUrlOrNone(CSSTokenStream& input, bool image);
-    static RefPtr<CSSValue> consumeColor(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeRgb(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeString(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeCustomIdent(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeUrl(CSSTokenStream& input, bool image);
+    RefPtr<CSSValue> consumeUrlOrNone(CSSTokenStream& input, bool image);
+    RefPtr<CSSValue> consumeColor(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeRgb(CSSTokenStream& input);
 
-    static RefPtr<CSSValue> consumeFillOrStroke(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeQuotes(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeContent(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeContentAttr(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeContentCounter(CSSTokenStream& input, bool counters);
-    static RefPtr<CSSValue> consumeCounter(CSSTokenStream& input, bool increment);
-    static RefPtr<CSSValue> consumePage(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeSize(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeFontWeight(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeFontSize(CSSTokenStream& input, bool unitless);
-    static RefPtr<CSSValue> consumeFontFamilyValue(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeFontFamily(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeFontFaceSourceValue(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeFontFaceSource(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeLineWidth(CSSTokenStream& input, bool unitless);
-    static RefPtr<CSSValue> consumeBorderRadiusValue(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeClip(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeDashList(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeVerticalAlign(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeTextDecorationLine(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeBackgroundPosition(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeBackgroundSize(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeAngle(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeTransformValue(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeTransform(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumePaintOrder(CSSTokenStream& input);
-    static RefPtr<CSSValue> consumeLonghand(CSSTokenStream& input, CSSPropertyID id);
+    RefPtr<CSSValue> consumeFillOrStroke(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeQuotes(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeContent(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeContentAttr(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeContentCounter(CSSTokenStream& input, bool counters);
+    RefPtr<CSSValue> consumeCounter(CSSTokenStream& input, bool increment);
+    RefPtr<CSSValue> consumePage(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeSize(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeFontWeight(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeFontSize(CSSTokenStream& input, bool unitless);
+    RefPtr<CSSValue> consumeFontFamilyValue(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeFontFamily(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeFontFaceSourceValue(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeFontFaceSource(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeLineWidth(CSSTokenStream& input, bool unitless);
+    RefPtr<CSSValue> consumeBorderRadiusValue(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeClip(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeDashList(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeVerticalAlign(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeTextDecorationLine(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeBackgroundPosition(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeBackgroundSize(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeAngle(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeTransformValue(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeTransform(CSSTokenStream& input);
+    RefPtr<CSSValue> consumePaintOrder(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeLonghand(CSSTokenStream& input, CSSPropertyID id);
 
-    static bool consumeFlex(CSSTokenStream& input, CSSPropertyList& properties, bool important);
-    static bool consumeBackground(CSSTokenStream& input, CSSPropertyList& properties, bool important);
-    static bool consumeColumns(CSSTokenStream& input, CSSPropertyList& properties, bool important);
-    static bool consumeFont(CSSTokenStream& input, CSSPropertyList& properties, bool important);
-    static bool consumeBorder(CSSTokenStream& input, CSSPropertyList& properties, bool important);
-    static bool consumeBorderRadius(CSSTokenStream& input, CSSPropertyList& properties, bool important);
-    static bool consume2Shorthand(CSSTokenStream& input, CSSPropertyList& properties, CSSPropertyID id, bool important);
-    static bool consume4Shorthand(CSSTokenStream& input, CSSPropertyList& properties, CSSPropertyID id, bool important);
-    static bool consumeShorthand(CSSTokenStream& input, CSSPropertyList& properties, CSSPropertyID id, bool important);
+    bool consumeFlex(CSSTokenStream& input, CSSPropertyList& properties, bool important);
+    bool consumeBackground(CSSTokenStream& input, CSSPropertyList& properties, bool important);
+    bool consumeColumns(CSSTokenStream& input, CSSPropertyList& properties, bool important);
+    bool consumeFont(CSSTokenStream& input, CSSPropertyList& properties, bool important);
+    bool consumeBorder(CSSTokenStream& input, CSSPropertyList& properties, bool important);
+    bool consumeBorderRadius(CSSTokenStream& input, CSSPropertyList& properties, bool important);
+    bool consume2Shorthand(CSSTokenStream& input, CSSPropertyList& properties, CSSPropertyID id, bool important);
+    bool consume4Shorthand(CSSTokenStream& input, CSSPropertyList& properties, CSSPropertyID id, bool important);
+    bool consumeShorthand(CSSTokenStream& input, CSSPropertyList& properties, CSSPropertyID id, bool important);
+
+private:
+    Heap* m_heap;
 };
 
 } // namespace htmlbook

@@ -43,6 +43,18 @@ inline bool operator>(const GlobalString& a, const std::string_view& b) { return
 inline bool operator<(const std::string_view& a, const GlobalString& b) { return a < b.value(); }
 inline bool operator>(const std::string_view& a, const GlobalString& b) { return a > b.value(); }
 
+inline bool operator==(const GlobalString& a, const HeapString& b) { return a.value() == b; }
+inline bool operator!=(const GlobalString& a, const HeapString& b) { return a.value() != b; }
+
+inline bool operator==(const HeapString& a, const GlobalString& b) { return a == b.value(); }
+inline bool operator!=(const HeapString& a, const GlobalString& b) { return a != b.value(); }
+
+inline bool operator<(const GlobalString& a, const HeapString& b) { return a.value() < b; }
+inline bool operator>(const GlobalString& a, const HeapString& b) { return a.value() > b; }
+
+inline bool operator<(const HeapString& a, const GlobalString& b) { return a < b.value(); }
+inline bool operator>(const HeapString& a, const GlobalString& b) { return a > b.value(); }
+
 using GlobalStringList = std::vector<GlobalString>;
 
 extern const std::string emptyString;

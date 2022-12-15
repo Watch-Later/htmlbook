@@ -169,8 +169,8 @@ private:
 
 class FontCache {
 public:
-    void addFace(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
-    RefPtr<FontFace> getFace(const std::string& family, bool italic, bool smallCaps, int weight) const;
+    void addFace(const std::string_view& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face);
+    RefPtr<FontFace> getFace(const std::string_view& family, bool italic, bool smallCaps, int weight) const;
     RefPtr<Glyph> findGlyph(const FontFace* face, uint32_t codepoint) const;
     uint32_t version() const { return m_version; }
 
@@ -192,7 +192,7 @@ class Url;
 class ResourceLoader {
 public:
     bool loadUrl(const Url& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data) const;
-    RefPtr<FontFace> loadFont(const std::string& family, bool italic, bool smallCaps, int weight) const;
+    RefPtr<FontFace> loadFont(const std::string_view& family, bool italic, bool smallCaps, int weight) const;
 
     void setClient(ResourceClient* client) { m_client = client; }
     ResourceClient* client() const { return m_client; }

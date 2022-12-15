@@ -30,6 +30,11 @@ RefPtr<BoxStyle> Node::style() const
     return m_box ? m_box->style() : nullptr;
 }
 
+Heap* Node::heap() const
+{
+    return m_document->heap();
+}
+
 TextNode::TextNode(Document* document, const HeapString& data)
     : Node(document), m_data(data)
 {
@@ -339,7 +344,8 @@ CSSPropertyList Element::inlineStyle() const
         return CSSPropertyList{};
 
     CSSPropertyList properties;
-    CSSParser::parseStyle(properties, value);
+    CSSParser parser(heap());
+    parser.parseStyle(properties, value);
     return properties;
 }
 
@@ -352,7 +358,8 @@ CSSPropertyList Element::presentationAttributeStyle() const
     }
 
     CSSPropertyList properties;
-    CSSParser::parseStyle(properties, output.str());
+    CSSParser parser(heap());
+    parser.parseStyle(properties, output.str());
     return properties;
 }
 
@@ -479,20 +486,16 @@ Element* Document::createElement(const GlobalString& tagName, const GlobalString
 
 void Document::addAuthorStyleSheet(const std::string_view& content)
 {
-    CSSParser::parseSheet(m_authorRules, content);
-    m_ruleCache.reset();
+    assert(m_ruleCache == nullptr);
+    CSSParser parser(heap());
+    parser.parseSheet(m_authorRules, content);
 }
 
 void Document::addUserStyleSheet(const std::string_view& content)
 {
-    CSSParser::parseSheet(m_userRules, content);
-    m_ruleCache.reset();
-}
-
-void Document::clearUserStyleSheet()
-{
-    m_userRules.clear();
-    m_ruleCache.reset();
+    assert(m_ruleCache == nullptr);
+    CSSParser parser(heap());
+    parser.parseSheet(m_userRules, content);
 }
 
 const CSSRuleCache* Document::ruleCache()
@@ -512,7 +515,7 @@ RefPtr<BoxStyle> Document::pseudoStyleForElement(Element* element, const BoxStyl
     return ruleCache()->pseudoStyleForElement(element, parentStyle, pseudoType);
 }
 
-RefPtr<FontFace> Document::getFontFace(const std::string& family, bool italic, bool smallCaps, int weight)
+RefPtr<FontFace> Document::getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight)
 {
     return ruleCache()->getFontFace(family, italic, smallCaps, weight);
 }

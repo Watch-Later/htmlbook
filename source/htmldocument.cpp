@@ -87,10 +87,12 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
         } else {
             auto function = to<CSSFunctionValue>(*value);
             auto name = to<CSSCustomIdentValue>(*function->front());
-            auto attribute = findAttribute(name->value());
-            if(attribute == nullptr)
-                continue;
-            addText(attribute->value());
+            for(auto& attribute : attributes()) {
+                if(attribute.name() == name->value()) {
+                    addText(attribute.value());
+                    break;
+                }
+            }
         }
     }
 }

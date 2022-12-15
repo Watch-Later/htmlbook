@@ -156,14 +156,14 @@ FontFace::FontFace(const stbtt_fontinfo& info, std::vector<char> data)
     stbtt_GetFontBoundingBox(&info, &m_x1, &m_y1, &m_x2, &m_y2);
 }
 
-void FontCache::addFace(const std::string& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
+void FontCache::addFace(const std::string_view& family, bool italic, bool smallCaps, int weight, RefPtr<FontFace> face)
 {
     auto description = std::tie(family, italic, smallCaps, weight);
     m_fontFaceMap.emplace(description, std::move(face));
     m_version += 1;
 }
 
-RefPtr<FontFace> FontCache::getFace(const std::string& family, bool italic, bool smallCaps, int weight) const
+RefPtr<FontFace> FontCache::getFace(const std::string_view& family, bool italic, bool smallCaps, int weight) const
 {
     auto description = std::tie(family, italic, smallCaps, weight);
     auto it = m_fontFaceMap.find(description);
@@ -200,7 +200,7 @@ bool ResourceLoader::loadUrl(const Url& url, std::string& mimeType, std::string&
     return m_client->loadUrl(url.value(), mimeType, textEncoding, data);
 }
 
-RefPtr<FontFace> ResourceLoader::loadFont(const std::string& family, bool italic, bool smallCaps, int weight) const
+RefPtr<FontFace> ResourceLoader::loadFont(const std::string_view& family, bool italic, bool smallCaps, int weight) const
 {
     if(auto face = fontCache()->getFace(family, italic, smallCaps, weight))
         return face;
