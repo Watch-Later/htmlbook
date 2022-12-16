@@ -375,7 +375,7 @@ public:
     const std::string& alternativeText() const { return m_alternativeText; }
 
     void setImage(RefPtr<Image> image);
-    void setAlternativeText(std::string text) { m_alternativeText = std::move(text); }
+    void setAlternativeText(const std::string_view& text) { m_alternativeText = std::move(text); }
 
 private:
     RefPtr<Image> m_image;

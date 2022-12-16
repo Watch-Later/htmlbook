@@ -1082,7 +1082,7 @@ const HeapString& BoxStyle::getQuote(bool open, size_t depth) const
     }
 
     auto list = to<CSSListValue>(*value);
-    auto pair = to<CSSPairValue>(*list->at(std::min(depth, list->length() - 1)));
+    auto pair = to<CSSPairValue>(*list->at(std::min(depth, list->size() - 1)));
     auto quote = open ? pair->first() : pair->second();
     return to<CSSStringValue>(*quote)->value();
 }

@@ -64,7 +64,7 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
         }
 
         static const GlobalString listItem("list-item");
-        addText(counters.format(listItem, style->listStyleType(), emptyString));
+        addText(counters.format(listItem, style->listStyleType(), emptyGlo));
         return;
     }
 
@@ -120,7 +120,7 @@ HTMLBodyElement::HTMLBodyElement(Document* document)
 {
 }
 
-void HTMLBodyElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
+void HTMLBodyElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const
 {
     if(name == textAttr) {
         output << "color:" << value;
@@ -138,7 +138,7 @@ HTMLImageElement::HTMLImageElement(Document* document)
 {
 }
 
-void HTMLImageElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
+void HTMLImageElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const
 {
     if(name == widthAttr) {
         output << "width:" << value;
@@ -157,12 +157,12 @@ void HTMLImageElement::collectAttributeStyle(std::stringstream& output, const Gl
     }
 }
 
-const std::string& HTMLImageElement::src() const
+const HeapString& HTMLImageElement::src() const
 {
     return getAttribute(srcAttr);
 }
 
-const std::string& HTMLImageElement::altText() const
+const HeapString& HTMLImageElement::altText() const
 {
     return getAttribute(altAttr);
 }
@@ -188,7 +188,7 @@ HTMLFontElement::HTMLFontElement(Document* document)
 {
 }
 
-void HTMLFontElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
+void HTMLFontElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const
 {
     if(name == colorAttr) {
         output << "color:" << value;
@@ -204,7 +204,7 @@ HTMLHRElement::HTMLHRElement(Document* document)
 {
 }
 
-void HTMLHRElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
+void HTMLHRElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const
 {
     if(name == widthAttr) {
         output << "width:" << value;
@@ -240,7 +240,7 @@ HTMLTableElement::HTMLTableElement(Document* document)
 {
 }
 
-void HTMLTableElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
+void HTMLTableElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const
 {
     if(name == widthAttr) {
         output << "width:" << value;
@@ -268,7 +268,7 @@ HTMLTableSectionElement::HTMLTableSectionElement(Document* document, const Globa
 {
 }
 
-void HTMLTableSectionElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
+void HTMLTableSectionElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const
 {
     if(name == heightAttr) {
         output << "height:" << value;
@@ -286,7 +286,7 @@ HTMLTableCaptionElement::HTMLTableCaptionElement(Document* document)
 {
 }
 
-void HTMLTableCaptionElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
+void HTMLTableCaptionElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const
 {
     if(name == widthAttr) {
         output << "width:" << value;
@@ -300,7 +300,7 @@ HTMLTableRowElement::HTMLTableRowElement(Document* document)
 {
 }
 
-void HTMLTableRowElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
+void HTMLTableRowElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const
 {
     if(name == heightAttr) {
         output << "height:" << value;
@@ -318,7 +318,7 @@ HTMLTableColElement::HTMLTableColElement(Document* document, const GlobalString&
 {
 }
 
-void HTMLTableColElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
+void HTMLTableColElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const
 {
     if(name == widthAttr) {
         output << "width:" << value;
@@ -354,7 +354,7 @@ HTMLTableCellElement::HTMLTableCellElement(Document* document, const GlobalStrin
 {
 }
 
-void HTMLTableCellElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const
+void HTMLTableCellElement::collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const
 {
     if(name == widthAttr) {
         output << "width:" << value;
@@ -396,7 +396,7 @@ HTMLStyleElement::HTMLStyleElement(Document* document)
 {
 }
 
-const std::string& HTMLStyleElement::type() const
+const HeapString& HTMLStyleElement::type() const
 {
     return getAttribute(typeAttr);
 }
@@ -422,17 +422,17 @@ HTMLLinkElement::HTMLLinkElement(Document* document)
 {
 }
 
-const std::string& HTMLLinkElement::href() const
+const HeapString& HTMLLinkElement::href() const
 {
     return getAttribute(hrefAttr);
 }
 
-const std::string& HTMLLinkElement::type() const
+const HeapString& HTMLLinkElement::type() const
 {
     return getAttribute(typeAttr);
 }
 
-const std::string& HTMLLinkElement::rel() const
+const HeapString& HTMLLinkElement::rel() const
 {
     return getAttribute(relAttr);
 }

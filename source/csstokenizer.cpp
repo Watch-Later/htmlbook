@@ -20,9 +20,7 @@ CSSTokenStream CSSTokenizer::tokenize()
         m_tokenList.push_back(token);
     }
 
-    auto begin = m_tokenList.data();
-    auto end = begin + m_tokenList.size();
-    return CSSTokenStream(begin, end);
+    return CSSTokenStream(m_tokenList.data(), m_tokenList.size());
 }
 
 bool CSSTokenizer::isEscapeSequence(char first, char second)

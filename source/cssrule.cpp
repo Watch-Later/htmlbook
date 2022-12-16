@@ -1229,7 +1229,7 @@ void CSSRuleCache::addFontFaceRule(Document* document, const CSSFontFaceRule* ru
         }
 
         auto url = to<CSSUrlValue>(*source->front());
-        if(source->length() == 2) {
+        if(source->size() == 2) {
             auto function = to<CSSFunctionValue>(*source->back());
             auto format = to<CSSStringValue>(*function->front());
             if(!equals(format->value(), "truetype", false) && !equals(format->value(), "opentype", false)) {

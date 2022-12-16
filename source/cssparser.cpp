@@ -53,11 +53,11 @@ std::unique_ptr<CSSRule> CSSParser::consumeStyleRule(CSSTokenStream& input)
         return nullptr;
 
     auto block = input.consumeBlock();
-    CSSSelectorList selectors;
+    CSSSelectorList selectors(m_heap);
     if(!consumeSelectorList(prelude, selectors))
         return nullptr;
 
-    CSSPropertyList properties;
+    CSSPropertyList properties(m_heap);
     consumeDeclaractionList(block, properties);
     return CSSStyleRule::create(std::move(selectors), std::move(properties));
 }
@@ -128,19 +128,19 @@ std::unique_ptr<CSSRule> CSSParser::consumeFontFaceRule(CSSTokenStream& prelude,
     if(!prelude.empty())
         return nullptr;
 
-    CSSPropertyList properties;
+    CSSPropertyList properties(m_heap);
     consumeDeclaractionList(block, properties);
     return CSSFontFaceRule::create(std::move(properties));
 }
 
 std::unique_ptr<CSSRule> CSSParser::consumePageRule(CSSTokenStream& prelude, CSSTokenStream& block)
 {
-    CSSPageSelectorList selectors;
+    CSSPageSelectorList selectors(m_heap);
     if(!consumePageSelectorList(prelude, selectors))
         return nullptr;
 
-    CSSPageMarginRuleList margins;
-    CSSPropertyList properties;
+    CSSPageMarginRuleList margins(m_heap);
+    CSSPropertyList properties(m_heap);
     while(!block.empty()) {
         switch(block->type()) {
         case CSSToken::Type::Whitespace:
@@ -209,7 +209,7 @@ std::unique_ptr<CSSPageMarginRule> CSSParser::consumePageMarginRule(CSSTokenStre
     if(it == std::end(table))
         return nullptr;
 
-    CSSPropertyList properties;
+    CSSPropertyList properties(m_heap);
     consumeDeclaractionList(block, properties);
     return CSSPageMarginRule::create(it->value, std::move(properties));
 }
@@ -253,7 +253,7 @@ bool CSSParser::consumePageSelector(CSSTokenStream& input, CSSPageSelector& sele
 
 bool CSSParser::consumePageSelectorList(CSSTokenStream& input, CSSPageSelectorList& selectors)
 {
-    CSSPageSelector selector;
+    CSSPageSelector selector(m_heap);
     input.consumeWhitespace();
     if(!consumePageSelector(input, selector))
         return false;
@@ -275,7 +275,7 @@ bool CSSParser::consumeSelector(CSSTokenStream& input, CSSSelector& selector)
 {
     auto combinator = CSSComplexSelector::Combinator::None;
     do {
-        CSSCompoundSelector sel;
+        CSSCompoundSelector sel(m_heap);
         if(!consumeCompoundSelector(input, sel))
             return combinator == CSSComplexSelector::Combinator::Descendant;
         selector.emplace_back(combinator, std::move(sel));
@@ -285,7 +285,7 @@ bool CSSParser::consumeSelector(CSSTokenStream& input, CSSSelector& selector)
 
 bool CSSParser::consumeSelectorList(CSSTokenStream& input, CSSSelectorList& selectors)
 {
-    CSSSelector selector;
+    CSSSelector selector(m_heap);
     input.consumeWhitespace();
     if(!consumeSelector(input, selector))
         return false;
@@ -314,7 +314,7 @@ bool CSSParser::consumeCompoundSelector(CSSTokenStream& input, CSSCompoundSelect
 
 bool CSSParser::consumeCompoundSelectorList(CSSTokenStream& input, CSSCompoundSelectorList& selectors)
 {
-    CSSCompoundSelector selector;
+    CSSCompoundSelector selector(m_heap);
     if(!consumeCompoundSelector(input, selector))
         return false;
 
@@ -534,7 +534,7 @@ bool CSSParser::consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector
         switch(it->value) {
         case CSSSimpleSelector::MatchType::PseudoClassIs:
         case CSSSimpleSelector::MatchType::PseudoClassNot: {
-            CSSCompoundSelectorList subSelectors;
+            CSSCompoundSelectorList subSelectors(m_heap);
             if(!consumeCompoundSelectorList(block, subSelectors))
                 return false;
             selector.emplace_back(it->value, std::move(subSelectors));
@@ -851,7 +851,7 @@ void CSSParser::addProperty(CSSPropertyList& properties, CSSPropertyID id, bool 
         }
     }
 
-    properties.emplace_back(id, important, value);
+    properties.emplace_back(id, important, std::move(value));
 }
 
 void CSSParser::addExpandedProperty(CSSPropertyList& properties, CSSPropertyID id, bool important, RefPtr<CSSValue> value)
@@ -1443,7 +1443,7 @@ RefPtr<CSSValue> CSSParser::consumeQuotes(CSSTokenStream& input)
     if(auto value = consumeNoneOrAuto(input))
         return value;
 
-    CSSValueList values;
+    CSSValueList values(m_heap);
     while(!input.empty()) {
         auto value = consumeString(input);
         if(value == nullptr)
@@ -1461,7 +1461,7 @@ RefPtr<CSSValue> CSSParser::consumeContent(CSSTokenStream& input)
     if(auto value = consumeNoneOrNormal(input))
         return value;
 
-    CSSValueList values;
+    CSSValueList values(m_heap);
     while(!input.empty()) {
         auto value = consumeString(input);
         if(value == nullptr)
@@ -1492,7 +1492,7 @@ RefPtr<CSSValue> CSSParser::consumeContent(CSSTokenStream& input)
 
         if(value == nullptr)
             return nullptr;
-        values.push_back(value);
+        values.push_back(std::move(value));
     }
 
     if(values.empty())
@@ -1529,7 +1529,7 @@ RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool co
     auto listStyle = ListStyleType::Decimal;
     if(input->type() == CSSToken::Type::Comma) {
         input.consumeIncludingWhitespace();
-        if(input->type() == CSSToken::Type::Ident)
+        if(input->type() != CSSToken::Type::Ident)
             return nullptr;
         static const struct {
             std::string_view name;
@@ -1566,7 +1566,7 @@ RefPtr<CSSValue> CSSParser::consumeCounter(CSSTokenStream& input, bool increment
     if(auto value = consumeNone(input))
         return value;
 
-    CSSValueList values;
+    CSSValueList values(m_heap);
     while(!input.empty()) {
         auto name = consumeCustomIdent(input);
         if(name == nullptr)
@@ -1708,12 +1708,12 @@ RefPtr<CSSValue> CSSParser::consumeFontFamilyValue(CSSTokenStream& input)
 
 RefPtr<CSSValue> CSSParser::consumeFontFamily(CSSTokenStream& input)
 {
-    CSSValueList values;
+    CSSValueList values(m_heap);
     while(!input.empty()) {
         auto value = consumeFontFamilyValue(input);
         if(value == nullptr)
             return nullptr;
-        values.push_back(value);
+        values.push_back(std::move(value));
     }
 
     return CSSListValue::create(std::move(values));
@@ -1721,7 +1721,7 @@ RefPtr<CSSValue> CSSParser::consumeFontFamily(CSSTokenStream& input)
 
 RefPtr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& input)
 {
-    CSSValueList values;
+    CSSValueList values(m_heap);
     if(input->type() == CSSToken::Type::Function && equals(input->data(), "local", false)) {
         auto block = input.consumeBlock();
         block.consumeWhitespace();
@@ -1751,18 +1751,18 @@ RefPtr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& input)
 
 RefPtr<CSSValue> CSSParser::consumeFontFaceSource(CSSTokenStream& input)
 {
-    CSSValueList values;
+    CSSValueList values(m_heap);
     auto value = consumeFontFaceSourceValue(input);
     if(value == nullptr)
         return nullptr;
 
-    values.push_back(value);
+    values.push_back(std::move(value));
     while(input->type() == CSSToken::Type::Comma) {
         input.consumeIncludingWhitespace();
         auto value = consumeFontFaceSourceValue(input);
         if(value == nullptr)
             return nullptr;
-        values.push_back(value);
+        values.push_back(std::move(value));
     }
 
     return CSSListValue::create(std::move(values));
@@ -1835,18 +1835,18 @@ RefPtr<CSSValue> CSSParser::consumeDashList(CSSTokenStream& input)
     if(auto value = consumeNone(input))
         return value;
 
-    CSSValueList values;
+    CSSValueList values(m_heap);
     auto value = consumeLengthOrPercent(input, false, true);
     if(value == nullptr)
         return nullptr;
 
-    values.push_back(value);
+    values.push_back(std::move(value));
     while(input->type() == CSSToken::Type::Comma) {
         input.consumeIncludingWhitespace();
         auto value = consumeLengthOrPercent(input, false, true);
         if(value == nullptr)
             return nullptr;
-        values.push_back(value);
+        values.push_back(std::move(value));
     }
 
     if(!input.empty())
@@ -1881,12 +1881,12 @@ RefPtr<CSSValue> CSSParser::consumeTextDecorationLine(CSSTokenStream& input)
         {"line-through", CSSValueID::LineThrough}
     };
 
-    CSSValueList values;
+    CSSValueList values(m_heap);
     while(!input.empty()) {
         auto value = consumeIdent(input, table);
         if(value == nullptr)
             return nullptr;
-        values.push_back(value);
+        values.push_back(std::move(value));
     }
 
     return CSSListValue::create(std::move(values));
@@ -2007,7 +2007,7 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
     if(it == std::end(table))
         return nullptr;
 
-    CSSValueList values;
+    CSSValueList values(m_heap);
     auto block = input.consumeBlock();
     block.consumeWhitespace();
     switch(it->value) {
@@ -2020,13 +2020,13 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
         auto value = consumeAngle(block);
         if(value == nullptr)
             return nullptr;
-        values.push_back(value);
+        values.push_back(std::move(value));
         if(it->value == CSSValueID::Skew && block->type() == CSSToken::Type::Comma) {
             block.consumeIncludingWhitespace();
             auto value = consumeAngle(block);
             if(value == nullptr)
                 return nullptr;
-            values.push_back(value);
+            values.push_back(std::move(value));
         }
 
         break;
@@ -2038,13 +2038,13 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
         auto value = consumeNumberOrPercent(block, true);
         if(value == nullptr)
             return nullptr;
-        values.push_back(value);
+        values.push_back(std::move(value));
         if(it->value == CSSValueID::Scale && block->type() == CSSToken::Type::Comma) {
             block.consumeIncludingWhitespace();
             auto value = consumeNumberOrPercent(block, true);
             if(value == nullptr)
                 return nullptr;
-            values.push_back(value);
+            values.push_back(std::move(value));
         }
 
         break;
@@ -2056,13 +2056,13 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
         auto value = consumeLengthOrPercent(block, true, false);
         if(value == nullptr)
             return nullptr;
-        values.push_back(value);
+        values.push_back(std::move(value));
         if(it->value == CSSValueID::Translate && block->type() == CSSToken::Type::Comma) {
             block.consumeIncludingWhitespace();
             auto value = consumeLengthOrPercent(block, true, false);
             if(value == nullptr)
                 return nullptr;
-            values.push_back(value);
+            values.push_back(std::move(value));
         }
 
         break;
@@ -2077,7 +2077,7 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
             count -= 1;
             if(count > 0 && block->type() == CSSToken::Type::Comma)
                 block.consumeIncludingWhitespace();
-            values.push_back(value);
+            values.push_back(std::move(value));
         }
 
         break;
@@ -2098,12 +2098,12 @@ RefPtr<CSSValue> CSSParser::consumeTransform(CSSTokenStream& input)
     if(auto value = consumeNone(input))
         return value;
 
-    CSSValueList values;
+    CSSValueList values(m_heap);
     while(!input.empty()) {
         auto value = consumeTransformValue(input);
         if(value == nullptr)
             return nullptr;
-        values.push_back(value);
+        values.push_back(std::move(value));
     }
 
     return CSSListValue::create(std::move(values));
@@ -2120,12 +2120,12 @@ RefPtr<CSSValue> CSSParser::consumePaintOrder(CSSTokenStream& input)
         {"markers", CSSValueID::Markers}
     };
 
-    CSSValueList values;
+    CSSValueList values(m_heap);
     while(!input.empty()) {
         auto value = consumeIdent(input, table);
         if(value == nullptr)
             return nullptr;
-        values.push_back(value);
+        values.push_back(std::move(value));
     }
 
     return CSSListValue::create(std::move(values));

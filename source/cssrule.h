@@ -39,7 +39,7 @@ protected:
     CSSValue() = default;
 };
 
-using CSSValueList = std::vector<RefPtr<CSSValue>>;
+using CSSValueList = std::pmr::vector<RefPtr<CSSValue>>;
 
 class CSSInitialValue final : public CSSValue {
 public:
@@ -592,7 +592,7 @@ class CSSListValue : public CSSValue {
 public:
     static RefPtr<CSSListValue> create(CSSValueList values);
 
-    size_t length() const { return m_values.size(); }
+    size_t size() const { return m_values.size(); }
     const RefPtr<CSSValue>& front() const { return m_values.front(); }
     const RefPtr<CSSValue>& back() const { return m_values.back(); }
     const RefPtr<CSSValue>& at(size_t index) const { return m_values.at(index); }
@@ -833,7 +833,7 @@ private:
     RefPtr<CSSValue> m_value;
 };
 
-using CSSPropertyList = std::vector<CSSProperty>;
+using CSSPropertyList = std::pmr::list<CSSProperty>;
 using CSSPropertyMap = std::map<CSSPropertyID, RefPtr<CSSValue>>;
 
 class CSSShorthand {
@@ -1092,7 +1092,7 @@ struct is<CSSPageMarginRule> {
     static bool check(const CSSRule& value) { return value.type() == CSSRule::Type::PageMargin; }
 };
 
-using CSSPageMarginRuleList = std::vector<std::unique_ptr<CSSPageMarginRule>>;
+using CSSPageMarginRuleList = std::pmr::list<std::unique_ptr<CSSPageMarginRule>>;
 
 class CSSPageRule : public CSSRule {
 public:
@@ -1140,6 +1140,7 @@ public:
     const CSSPropertyList& properties() const { return m_rule->properties(); }
     const uint32_t& specificity() const { return m_specificity; }
     const uint32_t& position() const { return m_position; }
+
     bool match(const Element* element, PseudoType pseudoType) const;
 
 private:

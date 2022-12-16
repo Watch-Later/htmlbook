@@ -171,42 +171,32 @@ void ContainerNode::serialize(std::ostream& o) const
     }
 }
 
-const std::string& AttributeData::get(const GlobalString& name) const
+Element::Element(Document* document, const GlobalString& tagName, const GlobalString& namespaceUri)
+    : ContainerNode(document)
+    , m_tagName(tagName)
+    , m_namespaceUri(namespaceUri)
+    , m_classNames(document->heap())
+    , m_attributes(document->heap())
+{
+}
+
+const HeapString& Element::lang() const
+{
+    return getAttribute(langAttr);
+}
+
+const Attribute* Element::findAttribute(const GlobalString& name) const
 {
     for(auto& attribute : m_attributes) {
         if(name == attribute.name()) {
-            return attribute.value();
+            return &attribute;
         }
     }
 
-    return emptyString;
+    return nullptr;
 }
 
-void AttributeData::set(const GlobalString& name, std::string value)
-{
-    for(auto& attribute : m_attributes) {
-        if(name == attribute.name()) {
-            attribute.setValue(std::move(value));
-            return;
-        }
-    }
-
-    m_attributes.emplace_back(name, std::move(value));
-}
-
-void AttributeData::remove(const GlobalString& name)
-{
-    auto it = m_attributes.begin();
-    auto end = m_attributes.end();
-    for(; it != end; ++it) {
-        if(name == it->name()) {
-            m_attributes.erase(it);
-            return;
-        }
-    }
-}
-
-bool AttributeData::has(const GlobalString& name) const
+bool Element::hasAttribute(const GlobalString& name) const
 {
     for(auto& attribute : m_attributes) {
         if(name == attribute.name()) {
@@ -217,92 +207,15 @@ bool AttributeData::has(const GlobalString& name) const
     return false;
 }
 
-const Attribute* AttributeData::find(const GlobalString& name) const
+const HeapString& Element::getAttribute(const GlobalString& name) const
 {
     for(auto& attribute : m_attributes) {
         if(name == attribute.name()) {
-            return &attribute;
+            return attribute.value();
         }
     }
 
-    return nullptr;
-}
-
-Attribute* AttributeData::find(const GlobalString& name)
-{
-    for(auto& attribute : m_attributes) {
-        if(name == attribute.name()) {
-            return &attribute;
-        }
-    }
-
-    return nullptr;
-}
-
-void AttributeData::setClass(const std::string_view& value)
-{
-    m_classNames.clear();
-    if(value.empty())
-        return;
-
-    auto it = value.data();
-    auto end = it + value.length();
-    while(true) {
-        while(it != end && isspace(*it))
-            ++it;
-        if(it == end)
-            break;
-        size_t count = 0;
-        auto begin = it;
-        do {
-            ++count;
-            ++it;
-        } while(it != end && !isspace(*it));
-
-        std::string_view name(begin, count);
-        assert(!name.empty());
-        m_classNames.emplace_back(name);
-    }
-}
-
-Element::Element(Document* document, const GlobalString& tagName, const GlobalString& namespaceUri)
-    : ContainerNode(document), m_tagName(tagName), m_namespaceUri(namespaceUri)
-{
-}
-
-const AttributeList& Element::attributes() const
-{
-    return attributeData()->attributes();
-}
-
-const std::string& Element::lang() const
-{
-    return attributeData()->get(langAttr);
-}
-
-const GlobalString& Element::id() const
-{
-    return attributeData()->id();
-}
-
-const GlobalStringList& Element::classNames() const
-{
-    return attributeData()->classNames();
-}
-
-const Attribute* Element::findAttribute(const GlobalString& name) const
-{
-    return attributeData()->find(name);
-}
-
-bool Element::hasAttribute(const GlobalString& name) const
-{
-    return attributeData()->has(name);
-}
-
-const std::string& Element::getAttribute(const GlobalString& name) const
-{
-    return attributeData()->get(name);
+    return emptyGlo;
 }
 
 void Element::setAttributeList(const AttributeList& attributes)
@@ -316,24 +229,52 @@ void Element::setAttribute(const Attribute& attribute)
     setAttribute(attribute.name(), attribute.value());
 }
 
-void Element::setAttribute(const GlobalString& name, std::string value)
+void Element::setAttribute(const GlobalString& name, const HeapString& value)
 {
     parseAttribute(name, value);
-    attributeData()->set(name, std::move(value));
+    for(auto& attribute : m_attributes) {
+        if(name == attribute.name()) {
+            attribute.setValue(value);
+            return;
+        }
+    }
+
+    m_attributes.emplace_back(name, value);
 }
 
 void Element::removeAttribute(const GlobalString& name)
 {
-    parseAttribute(name, emptyString);
-    attributeData()->remove(name);
+    parseAttribute(name, emptyGlo);
+    auto it = m_attributes.begin();
+    auto end = m_attributes.end();
+    for(; it != end; ++it) {
+        if(name == it->name()) {
+            m_attributes.erase(it);
+            return;
+        }
+    }
 }
 
-void Element::parseAttribute(const GlobalString& name, const std::string_view& value)
+void Element::parseAttribute(const GlobalString& name, const HeapString& value)
 {
     if(name == idAttr) {
-        attributeData()->setId(value);
+        m_id = value;
     } else if(name == classAttr) {
-        attributeData()->setClass(value);
+        m_classNames.clear();
+        if(value.empty())
+            return;
+        size_t begin = 0;
+        while(true) {
+            while(begin < value.length() && isspace(value[begin]))
+                ++begin;
+            if(begin >= value.length())
+                break;
+            size_t end = begin + 1;
+            while(end < value.length() && !isspace(value[end]))
+                ++end;
+            m_classNames.push_back(value.substring(begin, end - begin));
+            begin = end + 1;
+        }
     }
 }
 
@@ -343,7 +284,7 @@ CSSPropertyList Element::inlineStyle() const
     if(value.empty())
         return CSSPropertyList{};
 
-    CSSPropertyList properties;
+    CSSPropertyList properties(heap());
     CSSParser parser(heap());
     parser.parseStyle(properties, value);
     return properties;
@@ -357,27 +298,10 @@ CSSPropertyList Element::presentationAttributeStyle() const
         output << ';';
     }
 
-    CSSPropertyList properties;
+    CSSPropertyList properties(heap());
     CSSParser parser(heap());
     parser.parseStyle(properties, output.str());
     return properties;
-}
-
-const AttributeData* Element::attributeData() const
-{
-    if(m_attributeData == nullptr) {
-        static AttributeData attributeData;
-        return &attributeData;
-    }
-
-    return m_attributeData.get();
-}
-
-AttributeData* Element::attributeData()
-{
-    if(m_attributeData == nullptr)
-        m_attributeData = std::make_unique<AttributeData>();
-    return m_attributeData.get();
 }
 
 Element* Element::parentElement() const

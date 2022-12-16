@@ -8,7 +8,7 @@ namespace htmlbook {
 class GlobalString {
 public:
     GlobalString() = default;
-    GlobalString(const std::string_view& value);
+    explicit GlobalString(const std::string_view& value);
 
     const char* data() const { return m_value.data(); }
     size_t length() const { return m_value.length(); }
@@ -57,8 +57,6 @@ inline bool operator>(const HeapString& a, const GlobalString& b) { return a > b
 
 using GlobalStringList = std::vector<GlobalString>;
 
-extern const std::string emptyString;
-
 extern const GlobalString nullGlo;
 extern const GlobalString emptyGlo;
 extern const GlobalString starGlo;
@@ -70,6 +68,42 @@ extern const GlobalString mathml;
 extern const GlobalString svg;
 
 } // namespace namespaceuri
+
+extern const GlobalString altGlyphTag;
+extern const GlobalString altGlyphDefTag;
+extern const GlobalString altGlyphItemTag;
+extern const GlobalString animateColorTag;
+extern const GlobalString animateMotionTag;
+extern const GlobalString animateTransformTag;
+extern const GlobalString clipPathTag;
+extern const GlobalString feBlendTag;
+extern const GlobalString feColorMatrixTag;
+extern const GlobalString feComponentTransferTag;
+extern const GlobalString feCompositeTag;
+extern const GlobalString feConvolveMatrixTag;
+extern const GlobalString feDiffuseLightingTag;
+extern const GlobalString feDisplacementMapTag;
+extern const GlobalString feDistantLightTag;
+extern const GlobalString feDropShadowTag;
+extern const GlobalString feFloodTag;
+extern const GlobalString feFuncATag;
+extern const GlobalString feFuncBTag;
+extern const GlobalString feFuncGTag;
+extern const GlobalString feFuncRTag;
+extern const GlobalString feGaussianBlurTag;
+extern const GlobalString feImageTag;
+extern const GlobalString feMergeTag;
+extern const GlobalString feMergeNodeTag;
+extern const GlobalString feMorphologyTag;
+extern const GlobalString feOffsetTag;
+extern const GlobalString fePointLightTag;
+extern const GlobalString feSpecularLightingTag;
+extern const GlobalString feSpotLightTag;
+extern const GlobalString glyphRefTag;
+extern const GlobalString linearGradientTag;
+extern const GlobalString radialGradientTag;
+extern const GlobalString textPathTag;
+extern const GlobalString definitionUrlTag;
 
 extern const GlobalString aTag;
 extern const GlobalString abbrTag;
@@ -229,6 +263,62 @@ extern const GlobalString moTag;
 extern const GlobalString msTag;
 extern const GlobalString mtextTag;
 
+extern const GlobalString attributeNameAttr;
+extern const GlobalString attributeTypeAttr;
+extern const GlobalString baseFrequencyAttr;
+extern const GlobalString baseProfileAttr;
+extern const GlobalString calcModeAttr;
+extern const GlobalString clipPathUnitsAttr;
+extern const GlobalString diffuseConstantAttr;
+extern const GlobalString edgeModeAttr;
+extern const GlobalString filterUnitsAttr;
+extern const GlobalString glyphRefAttr;
+extern const GlobalString gradientTransformAttr;
+extern const GlobalString gradientUnitsAttr;
+extern const GlobalString kernelMatrixAttr;
+extern const GlobalString kernelUnitLengthAttr;
+extern const GlobalString keyPointsAttr;
+extern const GlobalString keySplinesAttr;
+extern const GlobalString keyTimesAttr;
+extern const GlobalString lengthAdjustAttr;
+extern const GlobalString limitingConeAngleAttr;
+extern const GlobalString markerHeightAttr;
+extern const GlobalString markerUnitsAttr;
+extern const GlobalString numOctavesAttr;
+extern const GlobalString pathLengthAttr;
+extern const GlobalString patternContentUnitsAttr;
+extern const GlobalString patternTransformAttr;
+extern const GlobalString patternUnitsAttr;
+extern const GlobalString pointsAtXAttr;
+extern const GlobalString pointsAtYAttr;
+extern const GlobalString pointsAtZAttr;
+extern const GlobalString preserveAlphaAttr;
+extern const GlobalString preserveAspectRatioAttr;
+extern const GlobalString primitiveUnitsAttr;
+extern const GlobalString refXAttr;
+extern const GlobalString refYAttr;
+extern const GlobalString repeatCountAttr;
+extern const GlobalString repeatDurAttr;
+extern const GlobalString requiredExtensionsAttr;
+extern const GlobalString requiredFeaturesAttr;
+extern const GlobalString specularConstantAttr;
+extern const GlobalString specularExponentAttr;
+extern const GlobalString spreadMethodAttr;
+extern const GlobalString startOffsetAttr;
+extern const GlobalString stdDeviationAttr;
+extern const GlobalString stitchTilesAttr;
+extern const GlobalString surfaceScaleAttr;
+extern const GlobalString systemLanguageAttr;
+extern const GlobalString tableValuesAttr;
+extern const GlobalString targetXAttr;
+extern const GlobalString targetYAttr;
+extern const GlobalString textLengthAttr;
+extern const GlobalString viewBoxAttr;
+extern const GlobalString viewTargetAttr;
+extern const GlobalString xChannelSelectorAttr;
+extern const GlobalString yChannelSelectorAttr;
+extern const GlobalString zoomAndPanAttr;
+
 extern const GlobalString relAttr;
 extern const GlobalString cellspacingAttr;
 extern const GlobalString bordercolorAttr;
@@ -345,7 +435,6 @@ extern const GlobalString x2Attr;
 extern const GlobalString yAttr;
 extern const GlobalString y1Attr;
 extern const GlobalString y2Attr;
-
 extern const GlobalString encodingAttr;
 
 } // namespace htmlbook

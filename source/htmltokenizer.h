@@ -4,7 +4,7 @@
 #include "parserstring.h"
 #include "document.h"
 
-#include <string>
+#include <span>
 
 namespace htmlbook {
 
@@ -21,9 +21,8 @@ public:
         EndOfFile
     };
 
-    HTMLToken() = default;
-    HTMLToken(Type type, const GlobalString& tagName)
-        : m_type(type), m_tagName(tagName)
+    explicit HTMLToken(Heap* heap)
+        : m_heap(heap)
     {}
 
     Type type() const { return m_type; }
@@ -34,51 +33,12 @@ public:
     const std::string& publicIdentifier() const { return m_publicIdentifier; }
     const std::string& systemIdentifier() const { return m_systemIdentifier; }
     const std::string& data() const { return m_data; }
-    const AttributeList& attributes() const { return m_attributes; }
-
-    const GlobalString& tagName() {
-        assert(m_type == Type::StartTag || m_type == Type::EndTag);
-        if(!m_tagName.empty())
-            return m_tagName;
-        m_tagName = GlobalString(m_data);
-        return m_tagName;
-    }
-
-    Attribute* findAttribute(const GlobalString& name) {
-        assert(m_type == Type::StartTag || m_type == Type::EndTag);
-        for(auto& attribute : m_attributes) {
-            if(name == attribute.name())
-                return &attribute;
-        }
-
-        return nullptr;
-    }
-
-    void adjustTagName(const std::string_view& oldName, const std::string_view& newName) {
-        assert(m_type == Type::StartTag || m_type == Type::EndTag);
-        if(oldName == m_tagName)
-            m_tagName = newName;
-    }
-
-    void adjustAttributeName(const std::string_view& oldName, const std::string_view& newName) {
-        assert(m_type == Type::StartTag || m_type == Type::EndTag);
-        for(auto& attribute : m_attributes) {
-            if(oldName == attribute.name())
-                attribute.setName(newName);
-        }
-    }
-
-    void skipLeadingNewLine() {
-        assert(m_type == Type::SpaceCharacter);
-        if(m_data.front() == '\n')
-            m_data.erase(0, 1);
-    }
+    std::vector<Attribute>& attributes() const { return m_attributes; }
 
     void beginStartTag() {
         assert(m_type == Type::Unknown);
         m_type = Type::StartTag;
         m_selfClosing = false;
-        m_tagName = emptyGlo;
         m_attributes.clear();
         m_data.clear();
     }
@@ -87,7 +47,6 @@ public:
         assert(m_type == Type::Unknown);
         m_type = Type::EndTag;
         m_selfClosing = false;
-        m_tagName = emptyGlo;
         m_attributes.clear();
         m_data.clear();
     }
@@ -126,7 +85,7 @@ public:
     void endAttribute() {
         assert(m_type == Type::StartTag || m_type == Type::EndTag);
         GlobalString name(m_attributeName);
-        m_attributes.emplace_back(name, m_attributeValue);
+        m_attributes.emplace_back(name, m_heap->createString(m_attributeValue));
     }
 
     void beginComment() {
@@ -221,18 +180,115 @@ public:
     }
 
 private:
+    Heap* m_heap;
     Type m_type{Type::Unknown};
     bool m_selfClosing{false};
+    bool m_forceQuirks{false};
     bool m_hasPublicIdentifier{false};
     bool m_hasSystemIdentifier{false};
-    bool m_forceQuirks{false};
     std::string m_publicIdentifier;
     std::string m_systemIdentifier;
     std::string m_attributeName;
     std::string m_attributeValue;
     std::string m_data;
+    mutable std::vector<Attribute> m_attributes;
+};
+
+class HTMLTokenView {
+public:
+    HTMLTokenView(HTMLToken& token)
+        : m_type(token.type())
+    {
+        switch(m_type) {
+        case HTMLToken::Type::DOCTYPE:
+            m_forceQuirks = token.forceQuirks();
+            m_hasPublicIdentifier = token.hasPublicIdentifier();
+            m_hasSystemIdentifier = token.hasSystemIdentifier();
+            m_publicIdentifier = token.publicIdentifier();
+            m_systemIdentifier = token.systemIdentifier();
+            m_data = token.data();
+        case HTMLToken::Type::StartTag:
+        case HTMLToken::Type::EndTag:
+            m_selfClosing = token.selfClosing();
+            m_tagName = GlobalString(token.data());
+            m_attributes = token.attributes();
+            break;
+        case HTMLToken::Type::Comment:
+        case HTMLToken::Type::Character:
+        case HTMLToken::Type::SpaceCharacter:
+            m_data = token.data();
+            break;
+        default:
+            break;
+        }
+    }
+
+    HTMLTokenView(HTMLToken::Type type, const GlobalString& tagName)
+        : m_type(type), m_tagName(tagName)
+    {}
+
+    HTMLToken::Type type() const { return m_type; }
+    bool selfClosing() const { return m_selfClosing; }
+    const std::string_view& data() const { return m_data; }
+    const GlobalString& tagName() const { return m_tagName; }
+    const std::span<Attribute>& attributes() const { return m_attributes; }
+
+    const Attribute* findAttribute(const GlobalString& name) const {
+        assert(m_type == HTMLToken::Type::StartTag || m_type == HTMLToken::Type::EndTag);
+        for(auto& attribute : m_attributes) {
+            if(name == attribute.name()) {
+                return &attribute;
+            }
+        }
+
+        return nullptr;
+    }
+
+    bool hasAttribute(const GlobalString& name) const {
+        assert(m_type == HTMLToken::Type::StartTag || m_type == HTMLToken::Type::EndTag);
+        for(auto& attribute : m_attributes) {
+            if(name == attribute.name()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void adjustTagName(const GlobalString& oldName, const GlobalString& newName) {
+        assert(m_type == HTMLToken::Type::StartTag || m_type == HTMLToken::Type::EndTag);
+        if(m_tagName == oldName) {
+            m_tagName = newName;
+        }
+    }
+
+    void adjustAttributeName(const GlobalString& oldName, const GlobalString& newName) {
+        assert(m_type == HTMLToken::Type::StartTag || m_type == HTMLToken::Type::EndTag);
+        for(auto& attribute : m_attributes) {
+            if(oldName == attribute.name()) {
+                attribute.setName(newName);
+            }
+        }
+    }
+
+    void skipLeadingNewLine() {
+        assert(m_type == HTMLToken::Type::SpaceCharacter);
+        if(m_data.front() == '\n') {
+            m_data.remove_prefix(1);
+        }
+    }
+
+private:
+    HTMLToken::Type m_type;
+    bool m_selfClosing{false};
+    bool m_hasPublicIdentifier{false};
+    bool m_hasSystemIdentifier{false};
+    bool m_forceQuirks{false};
+    std::string_view m_publicIdentifier;
+    std::string_view m_systemIdentifier;
+    std::string_view m_data;
     GlobalString m_tagName;
-    AttributeList m_attributes;
+    std::span<Attribute> m_attributes;
 };
 
 class HTMLTokenizer {
@@ -310,11 +366,11 @@ public:
         CDATASectionDoubleRightSquareBracketState //
     };
 
-    HTMLTokenizer(const std::string_view& content)
-        : m_input(content)
+    HTMLTokenizer(const std::string_view& content, Heap* heap)
+        : m_input(content), m_currentToken(heap)
     {}
 
-    HTMLToken& nextToken();
+    HTMLTokenView nextToken();
 
     State state() const { return m_state; }
     void setState(State state) { m_state = state; }

@@ -709,15 +709,16 @@ Element* HTMLFormattingElementList::closestElementInScope(const GlobalString& ta
     return nullptr;
 }
 
-Element* HTMLParser::createHTMLElement(HTMLToken& token) const
+Element* HTMLParser::createHTMLElement(HTMLTokenView& token) const
 {
     return createElement(token, namespaceuri::xhtml);
 }
 
-Element* HTMLParser::createElement(HTMLToken& token, const GlobalString& namespaceUri) const
+Element* HTMLParser::createElement(HTMLTokenView& token, const GlobalString& namespaceUri) const
 {
     auto element = m_document->createElement(token.tagName(), namespaceUri);
-    element->setAttributeList(token.attributes());
+    for(auto attribute : token.attributes())
+        element->setAttribute(attribute);
     return element;
 }
 
@@ -790,7 +791,7 @@ void HTMLParser::fosterParent(Node* child)
     insert(location);
 }
 
-void HTMLParser::adoptionAgencyAlgorithm(HTMLToken& token)
+void HTMLParser::adoptionAgencyAlgorithm(HTMLTokenView& token)
 {
     static const int outerIterationLimit = 8;
     static const int innerIterationLimit = 3;
@@ -910,127 +911,222 @@ void HTMLParser::closeCell()
     assert(m_insertionMode == InsertionMode::InRow);
 }
 
-void HTMLParser::adjustSVGTagNames(HTMLToken& token)
+void HTMLParser::adjustSVGTagNames(HTMLTokenView& token)
 {
-    token.adjustTagName("altglyph", "altGlyph");
-    token.adjustTagName("altglyphdef", "altGlyphDef");
-    token.adjustTagName("altglyphitem", "altGlyphItem");
-    token.adjustTagName("animatecolor", "animateColor");
-    token.adjustTagName("animatemotion", "animateMotion");
-    token.adjustTagName("animatetransform", "animateTransform");
-    token.adjustTagName("clippath", "clipPath");
-    token.adjustTagName("feblend", "feBlend");
-    token.adjustTagName("fecolormatrix", "feColorMatrix");
-    token.adjustTagName("fecomponenttransfer", "feComponentTransfer");
-    token.adjustTagName("fecomposite", "feComposite");
-    token.adjustTagName("feconvolvematrix", "feConvolveMatrix");
-    token.adjustTagName("fediffuselighting", "feDiffuseLighting");
-    token.adjustTagName("fedisplacementmap", "feDisplacementMap");
-    token.adjustTagName("fedistantlight", "feDistantLight");
-    token.adjustTagName("fedropshadow", "feDropShadow");
-    token.adjustTagName("feflood", "feFlood");
-    token.adjustTagName("fefunca", "feFuncA");
-    token.adjustTagName("fefuncb", "feFuncB");
-    token.adjustTagName("fefuncg", "feFuncG");
-    token.adjustTagName("fefuncr", "feFuncR");
-    token.adjustTagName("fegaussianblur", "feGaussianBlur");
-    token.adjustTagName("feimage", "feImage");
-    token.adjustTagName("femerge", "feMerge");
-    token.adjustTagName("femergenode", "feMergeNode");
-    token.adjustTagName("femorphology", "feMorphology");
-    token.adjustTagName("feoffset", "feOffset");
-    token.adjustTagName("fepointlight", "fePointLight");
-    token.adjustTagName("fespecularlighting", "feSpecularLighting");
-    token.adjustTagName("fespotlight", "feSpotlight");
-    token.adjustTagName("glyphref", "glyphRef");
-    token.adjustTagName("lineargradient", "linearGradient");
-    token.adjustTagName("radialgradient", "radialGradient");
-    token.adjustTagName("textpath", "textPath");
+    static const GlobalString altglyph("altglyph");
+    static const GlobalString altglyphdef("altglyphdef");
+    static const GlobalString altglyphitem("altglyphitem");
+    static const GlobalString animatecolor("animatecolor");
+    static const GlobalString animatemotion("animatemotion");
+    static const GlobalString animatetransform("animatetransform");
+    static const GlobalString clippath("clippath");
+    static const GlobalString feblend("feblend");
+    static const GlobalString fecolormatrix("fecolormatrix");
+    static const GlobalString fecomponenttransfer("fecomponenttransfer");
+    static const GlobalString fecomposite("fecomposite");
+    static const GlobalString feconvolvematrix("feconvolvematrix");
+    static const GlobalString fediffuselighting("fediffuselighting");
+    static const GlobalString fedisplacementmap("fedisplacementmap");
+    static const GlobalString fedistantlight("fedistantlight");
+    static const GlobalString fedropshadow("fedropshadow");
+    static const GlobalString feflood("feflood");
+    static const GlobalString fefunca("fefunca");
+    static const GlobalString fefuncb("fefuncb");
+    static const GlobalString fefuncg("fefuncg");
+    static const GlobalString fefuncr("fefuncr");
+    static const GlobalString fegaussianblur("fegaussianblur");
+    static const GlobalString feimage("feimage");
+    static const GlobalString femerge("femerge");
+    static const GlobalString femergenode("femergenode");
+    static const GlobalString femorphology("femorphology");
+    static const GlobalString feoffset("feoffset");
+    static const GlobalString fepointlight("fepointlight");
+    static const GlobalString fespecularlighting("fespecularlighting");
+    static const GlobalString fespotlight("fespotlight");
+    static const GlobalString glyphref("glyphref");
+    static const GlobalString lineargradient("lineargradient");
+    static const GlobalString radialgradient("radialgradient");
+    static const GlobalString textpath("textpath");
+
+    token.adjustTagName(altglyph, altGlyphTag);
+    token.adjustTagName(altglyphdef, altGlyphDefTag);
+    token.adjustTagName(altglyphitem, altGlyphItemTag);
+    token.adjustTagName(animatecolor, animateColorTag);
+    token.adjustTagName(animatemotion, animateMotionTag);
+    token.adjustTagName(animatetransform, animateTransformTag);
+    token.adjustTagName(clippath, clipPathTag);
+    token.adjustTagName(feblend, feBlendTag);
+    token.adjustTagName(fecolormatrix, feColorMatrixTag);
+    token.adjustTagName(fecomponenttransfer, feComponentTransferTag);
+    token.adjustTagName(fecomposite, feCompositeTag);
+    token.adjustTagName(feconvolvematrix, feConvolveMatrixTag);
+    token.adjustTagName(fediffuselighting, feDiffuseLightingTag);
+    token.adjustTagName(fedisplacementmap, feDisplacementMapTag);
+    token.adjustTagName(fedistantlight, feDistantLightTag);
+    token.adjustTagName(fedropshadow, feDropShadowTag);
+    token.adjustTagName(feflood, feFloodTag);
+    token.adjustTagName(fefunca, feFuncATag);
+    token.adjustTagName(fefuncb, feFuncBTag);
+    token.adjustTagName(fefuncg, feFuncGTag);
+    token.adjustTagName(fefuncr, feFuncRTag);
+    token.adjustTagName(fegaussianblur, feGaussianBlurTag);
+    token.adjustTagName(feimage, feImageTag);
+    token.adjustTagName(femerge, feMergeTag);
+    token.adjustTagName(femergenode, feMergeNodeTag);
+    token.adjustTagName(femorphology, feMorphologyTag);
+    token.adjustTagName(feoffset, feOffsetTag);
+    token.adjustTagName(fepointlight, fePointLightTag);
+    token.adjustTagName(fespecularlighting, feSpecularLightingTag);
+    token.adjustTagName(fespotlight, feSpotLightTag);
+    token.adjustTagName(glyphref, glyphRefTag);
+    token.adjustTagName(lineargradient, linearGradientTag);
+    token.adjustTagName(radialgradient, radialGradientTag);
+    token.adjustTagName(textpath, textPathTag);
 }
 
-void HTMLParser::adjustSVGAttributes(HTMLToken& token)
+void HTMLParser::adjustSVGAttributes(HTMLTokenView& token)
 {
-    token.adjustAttributeName("attributename", "attributeName");
-    token.adjustAttributeName("attributetype", "attributeType");
-    token.adjustAttributeName("basefrequency", "baseFrequency");
-    token.adjustAttributeName("baseprofile", "baseProfile");
-    token.adjustAttributeName("calcmode", "calcMode");
-    token.adjustAttributeName("clippathunits", "clipPathUnits");
-    token.adjustAttributeName("diffuseconstant", "diffuseConstant");
-    token.adjustAttributeName("edgemode", "edgeMode");
-    token.adjustAttributeName("filterunits", "filterUnits");
-    token.adjustAttributeName("glyphref", "glyphRef");
-    token.adjustAttributeName("gradienttransform", "gradientTransform");
-    token.adjustAttributeName("gradientunits", "gradientUnits");
-    token.adjustAttributeName("kernelmatrix", "kernelMatrix");
-    token.adjustAttributeName("kernelunitlength", "kernelUnitLength");
-    token.adjustAttributeName("keypoints", "keyPoints");
-    token.adjustAttributeName("keysplines", "keySplines");
-    token.adjustAttributeName("keytimes", "keyTimes");
-    token.adjustAttributeName("lengthadjust", "lengthAdjust");
-    token.adjustAttributeName("limitingconeangle", "limitingConeAngle");
-    token.adjustAttributeName("markerheight", "markerHeight");
-    token.adjustAttributeName("markerunits", "markerUnits");
-    token.adjustAttributeName("markerwidth", "markerWidth");
-    token.adjustAttributeName("maskcontentunits", "maskContentUnits");
-    token.adjustAttributeName("maskunits", "maskUnits");
-    token.adjustAttributeName("numoctaves", "numOctaves");
-    token.adjustAttributeName("pathlength", "pathLength");
-    token.adjustAttributeName("patterncontentunits", "patternContentUnits");
-    token.adjustAttributeName("patterntransform", "patternTransform");
-    token.adjustAttributeName("patternunits", "patternUnits");
-    token.adjustAttributeName("pointsatx", "pointsAtX");
-    token.adjustAttributeName("pointsaty", "pointsAtY");
-    token.adjustAttributeName("pointsatz", "pointsAtZ");
-    token.adjustAttributeName("preservealpha", "preserveAlpha");
-    token.adjustAttributeName("preserveaspectratio", "preserveAspectRatio");
-    token.adjustAttributeName("primitiveunits", "primitiveUnits");
-    token.adjustAttributeName("refx", "refX");
-    token.adjustAttributeName("refy", "refY");
-    token.adjustAttributeName("repeatcount", "repeatCount");
-    token.adjustAttributeName("repeatdur", "repeatDur");
-    token.adjustAttributeName("requiredextensions", "requiredExtensions");
-    token.adjustAttributeName("requiredfeatures", "requiredFeatures");
-    token.adjustAttributeName("specularconstant", "specularConstant");
-    token.adjustAttributeName("specularexponent", "specularExponent");
-    token.adjustAttributeName("spreadmethod", "spreadMethod");
-    token.adjustAttributeName("startoffset", "startOffset");
-    token.adjustAttributeName("stddeviation", "stdDeviation");
-    token.adjustAttributeName("stitchtiles", "stitchTiles");
-    token.adjustAttributeName("surfacescale", "surfaceScale");
-    token.adjustAttributeName("systemlanguage", "systemLanguage");
-    token.adjustAttributeName("tablevalues", "tableValues");
-    token.adjustAttributeName("targetx", "targetX");
-    token.adjustAttributeName("targety", "targetY");
-    token.adjustAttributeName("textlength", "textLength");
-    token.adjustAttributeName("viewbox", "viewBox");
-    token.adjustAttributeName("viewtarget", "viewTarget");
-    token.adjustAttributeName("xchannelselector", "xChannelSelector");
-    token.adjustAttributeName("ychannelselector", "yChannelSelector");
-    token.adjustAttributeName("zoomandpan", "zoomAndPan");
+    static const GlobalString attributename("attributename");
+    static const GlobalString attributetype("attributetype");
+    static const GlobalString basefrequency("basefrequency");
+    static const GlobalString baseprofile("baseprofile");
+    static const GlobalString calcmode("calcmode");
+    static const GlobalString clippathunits("clippathunits");
+    static const GlobalString diffuseconstant("diffuseconstant");
+    static const GlobalString edgemode("edgemode");
+    static const GlobalString filterunits("filterunits");
+    static const GlobalString glyphref("glyphref");
+    static const GlobalString gradienttransform("gradienttransform");
+    static const GlobalString gradientunits("gradientunits");
+    static const GlobalString kernelmatrix("kernelmatrix");
+    static const GlobalString kernelunitlength("kernelunitlength");
+    static const GlobalString keypoints("keypoints");
+    static const GlobalString keysplines("keysplines");
+    static const GlobalString keytimes("keytimes");
+    static const GlobalString lengthadjust("lengthadjust");
+    static const GlobalString limitingconeangle("limitingconeangle");
+    static const GlobalString markerheight("markerheight");
+    static const GlobalString markerunits("markerunits");
+    static const GlobalString markerwidth("markerwidth");
+    static const GlobalString maskcontentunits("maskcontentunits");
+    static const GlobalString maskunits("maskunits");
+    static const GlobalString numoctaves("numoctaves");
+    static const GlobalString pathlength("pathlength");
+    static const GlobalString patterncontentunits("patterncontentunits");
+    static const GlobalString patterntransform("patterntransform");
+    static const GlobalString patternunits("patternunits");
+    static const GlobalString pointsatx("pointsatx");
+    static const GlobalString pointsaty("pointsaty");
+    static const GlobalString pointsatz("pointsatz");
+    static const GlobalString preservealpha("preservealpha");
+    static const GlobalString preserveaspectratio("preserveaspectratio");
+    static const GlobalString primitiveunits("primitiveunits");
+    static const GlobalString refx("refx");
+    static const GlobalString refy("refy");
+    static const GlobalString repeatcount("repeatcount");
+    static const GlobalString repeatdur("repeatdur");
+    static const GlobalString requiredextensions("requiredextensions");
+    static const GlobalString requiredfeatures("requiredfeatures");
+    static const GlobalString specularconstant("specularconstant");
+    static const GlobalString specularexponent("specularexponent");
+    static const GlobalString spreadmethod("spreadmethod");
+    static const GlobalString startoffset("startoffset");
+    static const GlobalString stddeviation("stddeviation");
+    static const GlobalString stitchtiles("stitchtiles");
+    static const GlobalString surfacescale("surfacescale");
+    static const GlobalString systemlanguage("systemlanguage");
+    static const GlobalString tablevalues("tablevalues");
+    static const GlobalString targetx("targetx");
+    static const GlobalString targety("targety");
+    static const GlobalString textlength("textlength");
+    static const GlobalString viewbox("viewbox");
+    static const GlobalString viewtarget("viewtarget");
+    static const GlobalString xchannelselector("xchannelselector");
+    static const GlobalString ychannelselector("ychannelselector");
+    static const GlobalString zoomandpan("zoomandpan");
+
+    token.adjustAttributeName(attributename, attributeNameAttr);
+    token.adjustAttributeName(attributetype, attributeTypeAttr);
+    token.adjustAttributeName(basefrequency, baseFrequencyAttr);
+    token.adjustAttributeName(baseprofile, baseProfileAttr);
+    token.adjustAttributeName(calcmode, calcModeAttr);
+    token.adjustAttributeName(clippathunits, clipPathUnitsAttr);
+    token.adjustAttributeName(diffuseconstant, diffuseConstantAttr);
+    token.adjustAttributeName(edgemode, edgeModeAttr);
+    token.adjustAttributeName(filterunits, filterUnitsAttr);
+    token.adjustAttributeName(glyphref, glyphRefAttr);
+    token.adjustAttributeName(gradienttransform, gradientTransformAttr);
+    token.adjustAttributeName(gradientunits, gradientUnitsAttr);
+    token.adjustAttributeName(kernelmatrix, kernelMatrixAttr);
+    token.adjustAttributeName(kernelunitlength, kernelUnitLengthAttr);
+    token.adjustAttributeName(keypoints, keyPointsAttr);
+    token.adjustAttributeName(keysplines, keySplinesAttr);
+    token.adjustAttributeName(keytimes, keyTimesAttr);
+    token.adjustAttributeName(lengthadjust, lengthAdjustAttr);
+    token.adjustAttributeName(limitingconeangle, limitingConeAngleAttr);
+    token.adjustAttributeName(markerheight, markerHeightAttr);
+    token.adjustAttributeName(markerunits, markerUnitsAttr);
+    token.adjustAttributeName(markerwidth, markerWidthAttr);
+    token.adjustAttributeName(maskcontentunits, maskContentUnitsAttr);
+    token.adjustAttributeName(maskunits, maskUnitsAttr);
+    token.adjustAttributeName(numoctaves, numOctavesAttr);
+    token.adjustAttributeName(pathlength, pathLengthAttr);
+    token.adjustAttributeName(patterncontentunits, patternContentUnitsAttr);
+    token.adjustAttributeName(patterntransform, patternTransformAttr);
+    token.adjustAttributeName(patternunits, patternUnitsAttr);
+    token.adjustAttributeName(pointsatx, pointsAtXAttr);
+    token.adjustAttributeName(pointsaty, pointsAtYAttr);
+    token.adjustAttributeName(pointsatz, pointsAtZAttr);
+    token.adjustAttributeName(preservealpha, preserveAlphaAttr);
+    token.adjustAttributeName(preserveaspectratio, preserveAspectRatioAttr);
+    token.adjustAttributeName(primitiveunits, primitiveUnitsAttr);
+    token.adjustAttributeName(refx, refXAttr);
+    token.adjustAttributeName(refy, refYAttr);
+    token.adjustAttributeName(repeatcount, repeatCountAttr);
+    token.adjustAttributeName(repeatdur, repeatDurAttr);
+    token.adjustAttributeName(requiredextensions, requiredExtensionsAttr);
+    token.adjustAttributeName(requiredfeatures, requiredFeaturesAttr);
+    token.adjustAttributeName(specularconstant, specularConstantAttr);
+    token.adjustAttributeName(specularexponent, specularExponentAttr);
+    token.adjustAttributeName(spreadmethod, spreadMethodAttr);
+    token.adjustAttributeName(startoffset, startOffsetAttr);
+    token.adjustAttributeName(stddeviation, stdDeviationAttr);
+    token.adjustAttributeName(stitchtiles, stitchTilesAttr);
+    token.adjustAttributeName(surfacescale, surfaceScaleAttr);
+    token.adjustAttributeName(systemlanguage, systemLanguageAttr);
+    token.adjustAttributeName(tablevalues, tableValuesAttr);
+    token.adjustAttributeName(targetx, targetXAttr);
+    token.adjustAttributeName(targety, targetYAttr);
+    token.adjustAttributeName(textlength, textLengthAttr);
+    token.adjustAttributeName(viewbox, viewBoxAttr);
+    token.adjustAttributeName(viewtarget, viewTargetAttr);
+    token.adjustAttributeName(xchannelselector, xChannelSelectorAttr);
+    token.adjustAttributeName(ychannelselector, yChannelSelectorAttr);
+    token.adjustAttributeName(zoomandpan, zoomAndPanAttr);
 }
 
-void HTMLParser::adjustMathMLAttributes(HTMLToken& token)
+void HTMLParser::adjustMathMLAttributes(HTMLTokenView& token)
 {
-    token.adjustAttributeName("definitionurl", "definitionURL");
+    static const GlobalString definitionurl("definitionurl");
+    token.adjustAttributeName(definitionurl, definitionUrlTag);
 }
 
-void HTMLParser::insertDoctype(HTMLToken& token)
-{
-}
-
-void HTMLParser::insertComment(HTMLToken& token, ContainerNode* parent)
+void HTMLParser::insertDoctype(HTMLTokenView& token)
 {
 }
 
-void HTMLParser::insertHTMLHtmlElement(HTMLToken& token)
+void HTMLParser::insertComment(HTMLTokenView& token, ContainerNode* parent)
+{
+}
+
+void HTMLParser::insertHTMLHtmlElement(HTMLTokenView& token)
 {
     auto element = createHTMLElement(token);
     append(m_document, element, false);
     m_openElements.pushHTMLHtmlElement(element);
 }
 
-void HTMLParser::insertHeadElement(HTMLToken& token)
+void HTMLParser::insertHeadElement(HTMLTokenView& token)
 {
     auto element = createHTMLElement(token);
     append(element, false);
@@ -1038,14 +1134,14 @@ void HTMLParser::insertHeadElement(HTMLToken& token)
     m_head = element;
 }
 
-void HTMLParser::insertHTMLBodyElement(HTMLToken& token)
+void HTMLParser::insertHTMLBodyElement(HTMLTokenView& token)
 {
     auto element = createHTMLElement(token);
     append(element, false);
     m_openElements.pushHTMLBodyElement(element);
 }
 
-void HTMLParser::insertHTMLFormElement(HTMLToken& token)
+void HTMLParser::insertHTMLFormElement(HTMLTokenView& token)
 {
     auto element = createHTMLElement(token);
     append(element, false);
@@ -1053,20 +1149,20 @@ void HTMLParser::insertHTMLFormElement(HTMLToken& token)
     m_form = element;
 }
 
-void HTMLParser::insertSelfClosingHTMLElement(HTMLToken& token)
+void HTMLParser::insertSelfClosingHTMLElement(HTMLTokenView& token)
 {
     auto element = createHTMLElement(token);
     append(element, true);
 }
 
-void HTMLParser::insertHTMLElement(HTMLToken& token)
+void HTMLParser::insertHTMLElement(HTMLTokenView& token)
 {
     auto element = createHTMLElement(token);
     append(element, false);
     m_openElements.push(element);
 }
 
-void HTMLParser::insertHTMLFormattingElement(HTMLToken& token)
+void HTMLParser::insertHTMLFormattingElement(HTMLTokenView& token)
 {
     auto element = createHTMLElement(token);
     append(element, false);
@@ -1074,7 +1170,7 @@ void HTMLParser::insertHTMLFormattingElement(HTMLToken& token)
     m_activeFormattingElements.append(element);
 }
 
-void HTMLParser::insertForeignElement(HTMLToken& token, const GlobalString& namespaceUri)
+void HTMLParser::insertForeignElement(HTMLTokenView& token, const GlobalString& namespaceUri)
 {
     auto element = createElement(token, namespaceUri);
     append(element, token.selfClosing());
@@ -1082,7 +1178,7 @@ void HTMLParser::insertForeignElement(HTMLToken& token, const GlobalString& name
         m_openElements.push(element);
 }
 
-void HTMLParser::insertTextNode(const std::string& data)
+void HTMLParser::insertTextNode(const std::string_view& data)
 {
     InsertionLocation location;
     location.parent = m_openElements.top();
@@ -1161,7 +1257,7 @@ void HTMLParser::resetInsertionMode()
     }
 }
 
-HTMLParser::InsertionMode HTMLParser::currentInsertionMode(HTMLToken& token) const
+HTMLParser::InsertionMode HTMLParser::currentInsertionMode(HTMLTokenView& token) const
 {
     if(m_openElements.empty())
         return m_insertionMode;
@@ -1201,7 +1297,7 @@ HTMLParser::InsertionMode HTMLParser::currentInsertionMode(HTMLToken& token) con
     return InsertionMode::InForeignContent;
 }
 
-void HTMLParser::handleInitialMode(HTMLToken& token)
+void HTMLParser::handleInitialMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::SpaceCharacter) {
         return;
@@ -1213,7 +1309,7 @@ void HTMLParser::handleInitialMode(HTMLToken& token)
     handleBeforeHTMLMode(token);
 }
 
-void HTMLParser::handleBeforeHTMLMode(HTMLToken& token)
+void HTMLParser::handleBeforeHTMLMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -1237,7 +1333,7 @@ void HTMLParser::handleBeforeHTMLMode(HTMLToken& token)
     handleBeforeHeadMode(token);
 }
 
-void HTMLParser::handleBeforeHeadMode(HTMLToken& token)
+void HTMLParser::handleBeforeHeadMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -1266,7 +1362,7 @@ void HTMLParser::handleBeforeHeadMode(HTMLToken& token)
     handleInHeadMode(token);
 }
 
-void HTMLParser::handleInHeadMode(HTMLToken& token)
+void HTMLParser::handleInHeadMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -1332,7 +1428,7 @@ void HTMLParser::handleInHeadMode(HTMLToken& token)
     handleAfterHeadMode(token);
 }
 
-void HTMLParser::handleInHeadNoscriptMode(HTMLToken& token)
+void HTMLParser::handleInHeadNoscriptMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -1378,7 +1474,7 @@ void HTMLParser::handleInHeadNoscriptMode(HTMLToken& token)
     handleInHeadMode(token);
 }
 
-void HTMLParser::handleAfterHeadMode(HTMLToken& token)
+void HTMLParser::handleAfterHeadMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -1436,7 +1532,7 @@ void HTMLParser::handleAfterHeadMode(HTMLToken& token)
     handleInBodyMode(token);
 }
 
-void HTMLParser::handleInBodyMode(HTMLToken& token)
+void HTMLParser::handleInBodyMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -2021,7 +2117,7 @@ void HTMLParser::handleInBodyMode(HTMLToken& token)
     }
 }
 
-void HTMLParser::handleTextMode(HTMLToken& token)
+void HTMLParser::handleTextMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::Character
         || token.type() == HTMLToken::Type::SpaceCharacter) {
@@ -2056,7 +2152,7 @@ void HTMLParser::handleTextMode(HTMLToken& token)
     }
 }
 
-void HTMLParser::handleInTableMode(HTMLToken& token)
+void HTMLParser::handleInTableMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == captionTag) {
@@ -2174,7 +2270,7 @@ void HTMLParser::handleInTableMode(HTMLToken& token)
     m_fosterParenting = false;
 }
 
-void HTMLParser::handleInTableTextMode(HTMLToken& token)
+void HTMLParser::handleInTableTextMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::Character
         || token.type() == HTMLToken::Type::SpaceCharacter) {
@@ -2186,7 +2282,7 @@ void HTMLParser::handleInTableTextMode(HTMLToken& token)
     handleToken(token, m_insertionMode);
 }
 
-void HTMLParser::handleInCaptionMode(HTMLToken& token)
+void HTMLParser::handleInCaptionMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == captionTag
@@ -2237,7 +2333,7 @@ void HTMLParser::handleInCaptionMode(HTMLToken& token)
     handleInBodyMode(token);
 }
 
-void HTMLParser::handleInColumnGroupMode(HTMLToken& token)
+void HTMLParser::handleInColumnGroupMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -2273,7 +2369,7 @@ void HTMLParser::handleInColumnGroupMode(HTMLToken& token)
     handleInTableMode(token);
 }
 
-void HTMLParser::handleInTableBodyMode(HTMLToken& token)
+void HTMLParser::handleInTableBodyMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == trTag) {
@@ -2342,7 +2438,7 @@ void HTMLParser::handleInTableBodyMode(HTMLToken& token)
     handleInTableMode(token);
 }
 
-void HTMLParser::handleInRowMode(HTMLToken& token)
+void HTMLParser::handleInRowMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == tdTag
@@ -2408,7 +2504,7 @@ void HTMLParser::handleInRowMode(HTMLToken& token)
     handleInTableMode(token);
 }
 
-void HTMLParser::handleInCellMode(HTMLToken& token)
+void HTMLParser::handleInCellMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == captionTag
@@ -2470,7 +2566,7 @@ void HTMLParser::handleInCellMode(HTMLToken& token)
     handleInBodyMode(token);
 }
 
-void HTMLParser::handleInSelectMode(HTMLToken& token)
+void HTMLParser::handleInSelectMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -2564,7 +2660,7 @@ void HTMLParser::handleInSelectMode(HTMLToken& token)
     handleErrorToken(token);
 }
 
-void HTMLParser::handleInSelectInTableMode(HTMLToken& token)
+void HTMLParser::handleInSelectInTableMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == captionTag
@@ -2603,7 +2699,7 @@ void HTMLParser::handleInSelectInTableMode(HTMLToken& token)
     handleInSelectMode(token);
 }
 
-void HTMLParser::handleInForeignContentMode(HTMLToken& token)
+void HTMLParser::handleInForeignContentMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == bTag
@@ -2694,7 +2790,7 @@ void HTMLParser::handleInForeignContentMode(HTMLToken& token)
     }
 }
 
-void HTMLParser::handleAfterBodyMode(HTMLToken& token)
+void HTMLParser::handleAfterBodyMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -2720,7 +2816,7 @@ void HTMLParser::handleAfterBodyMode(HTMLToken& token)
     handleInBodyMode(token);
 }
 
-void HTMLParser::handleInFramesetMode(HTMLToken& token)
+void HTMLParser::handleInFramesetMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -2764,7 +2860,7 @@ void HTMLParser::handleInFramesetMode(HTMLToken& token)
     handleErrorToken(token);
 }
 
-void HTMLParser::handleAfterFramesetMode(HTMLToken& token)
+void HTMLParser::handleAfterFramesetMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -2793,7 +2889,7 @@ void HTMLParser::handleAfterFramesetMode(HTMLToken& token)
     handleErrorToken(token);
 }
 
-void HTMLParser::handleAfterAfterBodyMode(HTMLToken& token)
+void HTMLParser::handleAfterAfterBodyMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -2815,7 +2911,7 @@ void HTMLParser::handleAfterAfterBodyMode(HTMLToken& token)
     handleInBodyMode(token);
 }
 
-void HTMLParser::handleAfterAfterFramesetMode(HTMLToken& token)
+void HTMLParser::handleAfterAfterFramesetMode(HTMLTokenView& token)
 {
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == htmlTag) {
@@ -2842,17 +2938,17 @@ void HTMLParser::handleAfterAfterFramesetMode(HTMLToken& token)
 
 void HTMLParser::handleFakeStartTagToken(const GlobalString& tagName)
 {
-    HTMLToken token(HTMLToken::Type::StartTag, tagName);
+    HTMLTokenView token(HTMLToken::Type::StartTag, tagName);
     handleToken(token, m_insertionMode);
 }
 
 void HTMLParser::handleFakeEndTagToken(const GlobalString& tagName)
 {
-    HTMLToken token(HTMLToken::Type::EndTag, tagName);
+    HTMLTokenView token(HTMLToken::Type::EndTag, tagName);
     handleToken(token, m_insertionMode);
 }
 
-void HTMLParser::defaultForInBodyEndTagToken(HTMLToken& token)
+void HTMLParser::defaultForInBodyEndTagToken(HTMLTokenView& token)
 {
     for(int i = m_openElements.size() - 1; i >= 0; --i) {
         auto element = m_openElements.at(i);
@@ -2890,11 +2986,11 @@ void HTMLParser::flushPendingTableCharacters()
     m_insertionMode = m_originalInsertionMode;
 }
 
-void HTMLParser::handleErrorToken(HTMLToken& token)
+void HTMLParser::handleErrorToken(HTMLTokenView& token)
 {
 }
 
-void HTMLParser::handleRCDataToken(HTMLToken& token)
+void HTMLParser::handleRCDataToken(HTMLTokenView& token)
 {
     insertHTMLElement(token);
     m_tokenizer.setState(HTMLTokenizer::State::RCDATA);
@@ -2902,7 +2998,7 @@ void HTMLParser::handleRCDataToken(HTMLToken& token)
     m_insertionMode = InsertionMode::Text;
 }
 
-void HTMLParser::handleRawTextToken(HTMLToken& token)
+void HTMLParser::handleRawTextToken(HTMLTokenView& token)
 {
     insertHTMLElement(token);
     m_tokenizer.setState(HTMLTokenizer::State::RAWTEXT);
@@ -2910,7 +3006,7 @@ void HTMLParser::handleRawTextToken(HTMLToken& token)
     m_insertionMode = InsertionMode::Text;
 }
 
-void HTMLParser::handleScriptDataToken(HTMLToken& token)
+void HTMLParser::handleScriptDataToken(HTMLTokenView& token)
 {
     insertHTMLElement(token);
     m_tokenizer.setState(HTMLTokenizer::State::ScriptData);
@@ -2918,7 +3014,7 @@ void HTMLParser::handleScriptDataToken(HTMLToken& token)
     m_insertionMode = InsertionMode::Text;
 }
 
-void HTMLParser::handleDoctypeToken(HTMLToken& token)
+void HTMLParser::handleDoctypeToken(HTMLTokenView& token)
 {
     if(m_insertionMode == InsertionMode::Initial) {
         insertDoctype(token);
@@ -2935,7 +3031,7 @@ void HTMLParser::handleDoctypeToken(HTMLToken& token)
     handleErrorToken(token);
 }
 
-void HTMLParser::handleCommentToken(HTMLToken& token)
+void HTMLParser::handleCommentToken(HTMLTokenView& token)
 {
     if(m_insertionMode == InsertionMode::Initial
         || m_insertionMode == InsertionMode::BeforeHTML
@@ -2959,7 +3055,7 @@ void HTMLParser::handleCommentToken(HTMLToken& token)
     insertComment(token, m_openElements.top());
 }
 
-void HTMLParser::handleToken(HTMLToken& token, InsertionMode mode)
+void HTMLParser::handleToken(HTMLTokenView& token, InsertionMode mode)
 {
     switch(mode) {
     case InsertionMode::Initial:
@@ -3011,41 +3107,37 @@ void HTMLParser::handleToken(HTMLToken& token, InsertionMode mode)
     }
 }
 
-void HTMLParser::buildTree(HTMLToken& token)
+HTMLParser::HTMLParser(HTMLDocument* document, const std::string_view& content)
+    : m_document(document), m_tokenizer(content, document->heap())
 {
-    if(token.type() == HTMLToken::Type::DOCTYPE) {
-        handleDoctypeToken(token);
-        return;
-    }
-
-    if(token.type() == HTMLToken::Type::Comment) {
-        handleCommentToken(token);
-        return;
-    }
-
-    if(m_skipLeadingNewline
-        && token.type() == HTMLToken::Type::SpaceCharacter) {
-        token.skipLeadingNewLine();
-    }
-
-    m_skipLeadingNewline = false;
-    handleToken(token, currentInsertionMode(token));
-}
-
-void HTMLParser::finishTree()
-{
-    assert(!m_openElements.empty());
-    m_openElements.popAll();
 }
 
 bool HTMLParser::parse()
 {
     m_document->beginParsingChildren();
     while(!m_tokenizer.atEOF()) {
-        buildTree(m_tokenizer.nextToken());
+        auto token = m_tokenizer.nextToken();
+        if(token.type() == HTMLToken::Type::DOCTYPE) {
+            handleDoctypeToken(token);
+            continue;
+        }
+
+        if(token.type() == HTMLToken::Type::Comment) {
+            handleCommentToken(token);
+            continue;
+        }
+
+        if(m_skipLeadingNewline
+            && token.type() == HTMLToken::Type::SpaceCharacter) {
+            token.skipLeadingNewLine();
+        }
+
+        m_skipLeadingNewline = false;
+        handleToken(token, currentInsertionMode(token));
     }
 
-    finishTree();
+    assert(!m_openElements.empty());
+    m_openElements.popAll();
     m_document->finishParsingChildren();
     return true;
 }

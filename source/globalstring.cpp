@@ -1,6 +1,5 @@
 #include "globalstring.h"
 
-#include <string>
 #include <set>
 
 namespace htmlbook {
@@ -12,15 +11,13 @@ GlobalString::GlobalString(const std::string_view& value)
 
 HeapString GlobalString::add(const std::string_view& value)
 {
-    static Heap heap{8192};
-    static std::pmr::set<HeapString, std::less<>> table{&heap};
+    static Heap heap(8192);
+    static std::pmr::set<HeapString, std::less<>> table(&heap);
     auto lb = table.lower_bound(value);
     if(lb != table.end() && *lb == value)
         return *lb;
     return *table.emplace_hint(lb, heap.createString(value));
 }
-
-const std::string emptyString;
 
 const GlobalString nullGlo;
 const GlobalString emptyGlo("");
@@ -33,6 +30,38 @@ const GlobalString mathml("http://www.w3.org/1998/Math/MathML");
 const GlobalString svg("http://www.w3.org/2000/svg");
 
 } // namespace namespaceuri
+
+const GlobalString altGlyphTag("altGlyph");
+const GlobalString altGlyphDefTag("altGlyphDef");
+const GlobalString altGlyphItemTag("altGlyphItem");
+const GlobalString animateColorTag("animateColor");
+const GlobalString animateMotionTag("animateMotion");
+const GlobalString animateTransformTag("animateTransform");
+const GlobalString feBlendTag("feBlend");
+const GlobalString feColorMatrixTag("feColorMatrix");
+const GlobalString feComponentTransferTag("feComponentTransfer");
+const GlobalString feCompositeTag("feComposite");
+const GlobalString feConvolveMatrixTag("feConvolveMatrix");
+const GlobalString feDiffuseLightingTag("feDiffuseLighting");
+const GlobalString feDisplacementMapTag("feDisplacementMap");
+const GlobalString feDistantLightTag("feDistantLight");
+const GlobalString feDropShadowTag("feDropShadow");
+const GlobalString feFloodTag("feFlood");
+const GlobalString feFuncATag("feFuncA");
+const GlobalString feFuncBTag("feFuncB");
+const GlobalString feFuncGTag("feFuncG");
+const GlobalString feFuncRTag("feFuncR");
+const GlobalString feGaussianBlurTag("feGaussianBlur");
+const GlobalString feImageTag("feImage");
+const GlobalString feMergeTag("feMergeNode");
+const GlobalString feMergeNodeTag("");
+const GlobalString feMorphologyTag("feMorphology");
+const GlobalString feOffsetTag("feOffset");
+const GlobalString fePointLightTag("fePointLight");
+const GlobalString feSpecularLightingTag("feSpecularLighting");
+const GlobalString feSpotLightTag("feSpotLight");
+const GlobalString glyphRefTag("glyphRef");
+const GlobalString definitionUrlTag("definitionUrl");
 
 const GlobalString aTag("a");
 const GlobalString abbrTag("abbr");
@@ -233,6 +262,46 @@ const GlobalString styleAttr("style");
 const GlobalString typeAttr("type");
 const GlobalString widthAttr("width");
 
+const GlobalString attributeNameAttr("attributeName");
+const GlobalString attributeTypeAttr("attributeType");
+const GlobalString baseFrequencyAttr("baseFrequency");
+const GlobalString baseProfileAttr("baseProfile");
+const GlobalString calcModeAttr("calcMode");
+const GlobalString diffuseConstantAttr("diffuseConstant");
+const GlobalString edgeModeAttr("edgeMode");
+const GlobalString filterUnitsAttr("filterUnits");
+const GlobalString glyphRefAttr("glyphRef");
+const GlobalString kernelMatrixAttr("kernelMatrix");
+const GlobalString kernelUnitLengthAttr("kernelUnitLength");
+const GlobalString keyPointsAttr("keyPoints");
+const GlobalString keySplinesAttr("keySplines");
+const GlobalString keyTimesAttr("keyTimes");
+const GlobalString limitingConeAngleAttr("limitingConeAngle");
+const GlobalString numOctavesAttr("numOctaves");
+const GlobalString pathLengthAttr("pathLength");
+const GlobalString pointsAtXAttr("pointsAtX");
+const GlobalString pointsAtYAttr("pointsAtY");
+const GlobalString pointsAtZAttr("pointsAtZ");
+const GlobalString preserveAlphaAttr("preserveAlpha");
+const GlobalString primitiveUnitsAttr("primitiveUnits");
+const GlobalString repeatCountAttr("repeatCount");
+const GlobalString repeatDurAttr("repeatDur");
+const GlobalString requiredExtensionsAttr("requiredExtensions");
+const GlobalString requiredFeaturesAttr("requiredFeatures");
+const GlobalString specularConstantAttr("specularConstant");
+const GlobalString specularExponentAttr("specularExponent");
+const GlobalString stdDeviationAttr("stdDeviation");
+const GlobalString stitchTilesAttr("stitchTiles");
+const GlobalString surfaceScaleAttr("surfaceScale");
+const GlobalString systemLanguageAttr("systemLanguage");
+const GlobalString tableValuesAttr("tableValues");
+const GlobalString targetXAttr("targetX");
+const GlobalString targetYAttr("targetY");
+const GlobalString viewTargetAttr("viewTarget");
+const GlobalString xChannelSelectorAttr("xChannelSelector");
+const GlobalString yChannelSelectorAttr("yChannelSelector");
+const GlobalString zoomAndPanAttr("zoomAndPan");
+
 const GlobalString clipAttr("clip");
 const GlobalString clipPathUnitsAttr("clipPathUnits");
 const GlobalString clip_pathAttr("clip-path");
@@ -318,7 +387,6 @@ const GlobalString x2Attr("x2");
 const GlobalString yAttr("y");
 const GlobalString y1Attr("y1");
 const GlobalString y2Attr("y2");
-
 const GlobalString encodingAttr("encoding");
 
 } // namespace htmlbook

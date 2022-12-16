@@ -107,14 +107,18 @@ using CSSTokenList = std::vector<CSSToken>;
 
 class CSSTokenStream {
 public:
+    CSSTokenStream(const CSSToken* data, size_t size)
+        : m_begin(data), m_end(data + size)
+    {}
+
     CSSTokenStream(const CSSToken* begin, const CSSToken* end)
         : m_begin(begin), m_end(end)
     {}
 
     const CSSToken& peek() const {
-        static const CSSToken EndOfFileToken(CSSToken::Type::EndOfFile);
+        static const CSSToken eof(CSSToken::Type::EndOfFile);
         if(m_begin == m_end)
-            return EndOfFileToken;
+            return eof;
         return *m_begin;
     }
 

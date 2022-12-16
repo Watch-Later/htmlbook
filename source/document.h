@@ -117,53 +117,28 @@ struct is<ContainerNode> {
 class Attribute {
 public:
     Attribute() = default;
-    Attribute(const GlobalString& name, std::string value)
-        : m_name(name), m_value(std::move(value))
+    Attribute(const GlobalString& name, const HeapString& value)
+        : m_name(name), m_value(value)
     {}
 
     const GlobalString& name() const { return m_name; }
     void setName(const GlobalString& name) { m_name = name; }
 
-    const std::string& value() const { return m_value; }
-    void setValue(std::string value) { m_value = std::move(value); }
+    const HeapString& value() const { return m_value; }
+    void setValue(const HeapString& value) { m_value = value; }
 
     bool empty() const { return m_value.empty(); }
 
 private:
     GlobalString m_name;
-    std::string m_value;
+    HeapString m_value;
 };
 
 inline bool operator==(const Attribute& a, const Attribute& b) { return a.name() == b.name() && a.value() == b.value(); }
 inline bool operator!=(const Attribute& a, const Attribute& b) { return a.name() != b.name() || a.value() != b.value(); }
 
-using AttributeList = std::vector<Attribute>;
-
-class AttributeData {
-public:
-    AttributeData() = default;
-
-    const std::string& get(const GlobalString& name) const;
-    bool has(const GlobalString& name) const;
-
-    void set(const GlobalString& name, std::string value);
-    void remove(const GlobalString& name);
-
-    const Attribute* find(const GlobalString& name) const;
-    Attribute* find(const GlobalString& name);
-
-    void setId(const GlobalString& value) { m_id = value; }
-    void setClass(const std::string_view& value);
-
-    const GlobalString& id() const { return m_id; }
-    const GlobalStringList& classNames() const { return m_classNames; }
-    const AttributeList& attributes() const { return m_attributes; }
-
-private:
-    GlobalString m_id;
-    GlobalStringList m_classNames;
-    AttributeList m_attributes;
-};
+using AttributeList = std::pmr::list<Attribute>;
+using ClassNameList = std::pmr::list<HeapString>;
 
 class Element : public ContainerNode {
 public:
@@ -173,27 +148,24 @@ public:
 
     const GlobalString& tagName() const { return m_tagName; }
     const GlobalString& namespaceUri() const { return m_namespaceUri; }
-    const AttributeList& attributes() const;
+    const AttributeList& attributes() const { return m_attributes; }
 
-    const std::string& lang() const;
-    const GlobalString& id() const;
-    const GlobalStringList& classNames() const;
+    const HeapString& lang() const;
+    const HeapString& id() const { return m_id; }
+    const ClassNameList& classNames() const { return m_classNames; }
 
     const Attribute* findAttribute(const GlobalString& name) const;
     bool hasAttribute(const GlobalString& name) const;
-    const std::string& getAttribute(const GlobalString& name) const;
+    const HeapString& getAttribute(const GlobalString& name) const;
     void setAttributeList(const AttributeList& attributes);
     void setAttribute(const Attribute& attribute);
-    void setAttribute(const GlobalString& name, std::string value);
+    void setAttribute(const GlobalString& name, const HeapString& value);
     void removeAttribute(const GlobalString& name);
-    virtual void parseAttribute(const GlobalString& name, const std::string_view& value);
-    virtual void collectAttributeStyle(std::stringstream& output, const GlobalString& name, const std::string& value) const {}
+    virtual void parseAttribute(const GlobalString& name, const HeapString& value);
+    virtual void collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const {}
 
     CSSPropertyList inlineStyle() const;
     CSSPropertyList presentationAttributeStyle() const;
-
-    const AttributeData* attributeData() const;
-    AttributeData* attributeData();
 
     Element* parentElement() const;
     Element* previousElement() const;
@@ -204,7 +176,9 @@ public:
 private:
     GlobalString m_tagName;
     GlobalString m_namespaceUri;
-    std::unique_ptr<AttributeData> m_attributeData;
+    HeapString m_id;
+    ClassNameList m_classNames;
+    AttributeList m_attributes;
 };
 
 template<>
@@ -280,7 +254,7 @@ private:
     CSSRuleList m_authorRules;
     CSSRuleList m_userRules;
     std::unique_ptr<CSSRuleCache> m_ruleCache;
-    std::pmr::map<GlobalString, Element*> m_idCache;
+    std::pmr::map<HeapString, Element*> m_idCache;
     std::pmr::map<Url, RefPtr<Resource>> m_resourceCache;
 };
 

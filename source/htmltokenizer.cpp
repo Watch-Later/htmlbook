@@ -3,7 +3,7 @@
 
 namespace htmlbook {
 
-HTMLToken& HTMLTokenizer::nextToken()
+HTMLTokenView HTMLTokenizer::nextToken()
 {
     m_currentToken.reset();
     if(!m_characterBuffer.empty()) {
@@ -1456,7 +1456,7 @@ bool HTMLTokenizer::emitCurrentToken()
     assert(m_currentToken.type() != HTMLToken::Type::Unknown);
     assert(m_characterBuffer.empty());
     if(m_currentToken.type() == HTMLToken::Type::StartTag)
-        m_appropriateEndTagName = m_currentToken.tagName();
+        m_appropriateEndTagName = GlobalString(m_currentToken.data());
     return false;
 }
 

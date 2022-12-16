@@ -105,15 +105,13 @@ class HTMLDocument;
 
 class HTMLParser {
 public:
-    HTMLParser(HTMLDocument* document, const std::string_view& content)
-        : m_document(document), m_tokenizer(content)
-    {}
+    HTMLParser(HTMLDocument* document, const std::string_view& content);
 
     bool parse();
 
 private:
-    Element* createHTMLElement(HTMLToken& token) const;
-    Element* createElement(HTMLToken& token, const GlobalString& namespaceUri) const;
+    Element* createHTMLElement(HTMLTokenView& token) const;
+    Element* createElement(HTMLTokenView& token, const GlobalString& namespaceUri) const;
     Element* cloneElement(const Element* element) const;
     Element* currentElement() const { return m_openElements.top(); }
 
@@ -132,25 +130,25 @@ private:
     void findFosterLocation(InsertionLocation& location) const;
     void fosterParent(Node* child);
 
-    void adoptionAgencyAlgorithm(HTMLToken& token);
+    void adoptionAgencyAlgorithm(HTMLTokenView& token);
     void reconstructActiveFormattingElements();
     void closeCell();
 
-    static void adjustSVGTagNames(HTMLToken& token);
-    static void adjustSVGAttributes(HTMLToken& token);
-    static void adjustMathMLAttributes(HTMLToken& token);
+    static void adjustSVGTagNames(HTMLTokenView& token);
+    static void adjustSVGAttributes(HTMLTokenView& token);
+    static void adjustMathMLAttributes(HTMLTokenView& token);
 
-    void insertDoctype(HTMLToken& token);
-    void insertComment(HTMLToken& token, ContainerNode* parent);
-    void insertHTMLHtmlElement(HTMLToken& token);
-    void insertHeadElement(HTMLToken& token);
-    void insertHTMLBodyElement(HTMLToken& token);
-    void insertHTMLFormElement(HTMLToken& token);
-    void insertSelfClosingHTMLElement(HTMLToken& token);
-    void insertHTMLElement(HTMLToken& token);
-    void insertHTMLFormattingElement(HTMLToken& token);
-    void insertForeignElement(HTMLToken& token, const GlobalString& namespaceUri);
-    void insertTextNode(const std::string& data);
+    void insertDoctype(HTMLTokenView& token);
+    void insertComment(HTMLTokenView& token, ContainerNode* parent);
+    void insertHTMLHtmlElement(HTMLTokenView& token);
+    void insertHeadElement(HTMLTokenView& token);
+    void insertHTMLBodyElement(HTMLTokenView& token);
+    void insertHTMLFormElement(HTMLTokenView& token);
+    void insertSelfClosingHTMLElement(HTMLTokenView& token);
+    void insertHTMLElement(HTMLTokenView& token);
+    void insertHTMLFormattingElement(HTMLTokenView& token);
+    void insertForeignElement(HTMLTokenView& token, const GlobalString& namespaceUri);
+    void insertTextNode(const std::string_view& data);
 
     enum class InsertionMode {
         Initial,
@@ -182,49 +180,46 @@ private:
     InsertionMode insertionMode() const { return m_insertionMode; }
 
     void resetInsertionMode();
-    InsertionMode currentInsertionMode(HTMLToken& token) const;
+    InsertionMode currentInsertionMode(HTMLTokenView& token) const;
 
-    void handleInitialMode(HTMLToken& token);
-    void handleBeforeHTMLMode(HTMLToken& token);
-    void handleBeforeHeadMode(HTMLToken& token);
-    void handleInHeadMode(HTMLToken& token);
-    void handleInHeadNoscriptMode(HTMLToken& token);
-    void handleAfterHeadMode(HTMLToken& token);
-    void handleInBodyMode(HTMLToken& token);
-    void handleTextMode(HTMLToken& token);
-    void handleInTableMode(HTMLToken& token);
-    void handleInTableTextMode(HTMLToken& token);
-    void handleInCaptionMode(HTMLToken& token);
-    void handleInColumnGroupMode(HTMLToken& token);
-    void handleInTableBodyMode(HTMLToken& token);
-    void handleInRowMode(HTMLToken& token);
-    void handleInCellMode(HTMLToken& token);
-    void handleInSelectMode(HTMLToken& token);
-    void handleInSelectInTableMode(HTMLToken& token);
-    void handleInForeignContentMode(HTMLToken& token);
-    void handleAfterBodyMode(HTMLToken& token);
-    void handleInFramesetMode(HTMLToken& token);
-    void handleAfterFramesetMode(HTMLToken& token);
-    void handleAfterAfterBodyMode(HTMLToken& token);
-    void handleAfterAfterFramesetMode(HTMLToken& token);
+    void handleInitialMode(HTMLTokenView& token);
+    void handleBeforeHTMLMode(HTMLTokenView& token);
+    void handleBeforeHeadMode(HTMLTokenView& token);
+    void handleInHeadMode(HTMLTokenView& token);
+    void handleInHeadNoscriptMode(HTMLTokenView& token);
+    void handleAfterHeadMode(HTMLTokenView& token);
+    void handleInBodyMode(HTMLTokenView& token);
+    void handleTextMode(HTMLTokenView& token);
+    void handleInTableMode(HTMLTokenView& token);
+    void handleInTableTextMode(HTMLTokenView& token);
+    void handleInCaptionMode(HTMLTokenView& token);
+    void handleInColumnGroupMode(HTMLTokenView& token);
+    void handleInTableBodyMode(HTMLTokenView& token);
+    void handleInRowMode(HTMLTokenView& token);
+    void handleInCellMode(HTMLTokenView& token);
+    void handleInSelectMode(HTMLTokenView& token);
+    void handleInSelectInTableMode(HTMLTokenView& token);
+    void handleInForeignContentMode(HTMLTokenView& token);
+    void handleAfterBodyMode(HTMLTokenView& token);
+    void handleInFramesetMode(HTMLTokenView& token);
+    void handleAfterFramesetMode(HTMLTokenView& token);
+    void handleAfterAfterBodyMode(HTMLTokenView& token);
+    void handleAfterAfterFramesetMode(HTMLTokenView& token);
 
     void handleFakeStartTagToken(const GlobalString& tagName);
     void handleFakeEndTagToken(const GlobalString& tagName);
 
-    void defaultForInBodyEndTagToken(HTMLToken& token);
+    void defaultForInBodyEndTagToken(HTMLTokenView& token);
     void flushPendingTableCharacters();
 
-    void handleErrorToken(HTMLToken& token);
-    void handleRCDataToken(HTMLToken& token);
-    void handleRawTextToken(HTMLToken& token);
-    void handleScriptDataToken(HTMLToken& token);
+    void handleErrorToken(HTMLTokenView& token);
+    void handleRCDataToken(HTMLTokenView& token);
+    void handleRawTextToken(HTMLTokenView& token);
+    void handleScriptDataToken(HTMLTokenView& token);
 
-    void handleDoctypeToken(HTMLToken& token);
-    void handleCommentToken(HTMLToken& token);
-
-    void handleToken(HTMLToken& token, InsertionMode mode);
-    void buildTree(HTMLToken& token);
-    void finishTree();
+    void handleDoctypeToken(HTMLTokenView& token);
+    void handleCommentToken(HTMLTokenView& token);
+    void handleToken(HTMLTokenView& token, InsertionMode mode);
 
 private:
     HTMLDocument* m_document;
