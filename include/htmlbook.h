@@ -38,42 +38,75 @@
 #define HTMLBOOK_API
 #endif
 
-namespace htmlbook {
-
 /*
  * Contribute : https://github.com/sammycage/htmlbook
  * Donate : https://patreon.com/sammycage
  */
 
-enum class PageUnit {
-    Centimeters,
-    Millimeters,
-    Inches,
-    Points,
-    Picas,
-    Pixels
-};
+namespace htmlbook {
 
 class HTMLBOOK_API PageSize {
 public:
     PageSize() = default;
-    PageSize(float width, float height, PageUnit unit)
-        : width(width), height(height), unit(unit)
+    PageSize(float width, float height)
+        : m_width(width), m_height(height)
     {}
 
-    static const PageSize A5;
-    static const PageSize A4;
+    void setWidth(float width) { m_width = width; }
+    void setHeight(float height) { m_height = height; }
+
+    float width() const { return m_width; }
+    float height() const { return m_height; }
+
     static const PageSize A3;
-    static const PageSize B5;
+    static const PageSize A4;
+    static const PageSize A5;
     static const PageSize B4;
+    static const PageSize B5;
     static const PageSize Letter;
     static const PageSize Legal;
     static const PageSize Ledger;
 
+private:
+    float m_width{0};
+    float m_height{0};
+};
+
+class HTMLBOOK_API PageMargins {
 public:
-    float width{0};
-    float height{0};
-    PageUnit unit{PageUnit::Pixels};
+    PageMargins() = default;
+    explicit PageMargins(float margin)
+        : m_top(margin), m_right(margin), m_bottom(margin), m_left(margin)
+    {}
+
+    PageMargins(float vertical, float horizontal)
+        : m_top(vertical), m_right(horizontal), m_bottom(vertical), m_left(horizontal)
+    {}
+
+    PageMargins(float top, float right, float bottom, float left)
+        : m_top(top), m_right(right), m_bottom(bottom), m_left(left)
+    {}
+
+    void setTop(float top) { m_top = top; }
+    void setRight(float right) { m_right = right; }
+    void setBottom(float bottom) { m_bottom = bottom; }
+    void setLeft(float left) { m_left = left; }
+
+    float top() const { return m_top; }
+    float right() const { return m_right; }
+    float bottom() const { return m_bottom; }
+    float left() const { return m_left; }
+
+private:
+    float m_top{0};
+    float m_right{0};
+    float m_bottom{0};
+    float m_left{0};
+};
+
+enum class PageOrientation {
+    Portrait,
+    Landscape
 };
 
 class HTMLBOOK_API ResourceClient {
@@ -116,9 +149,11 @@ class HTMLBOOK_API Book {
 public:
     /**
      * @brief Book
-     * @param pageSize
+     * @param size
+     * @param orientation
+     * @param margins
      */
-    Book(const PageSize& pageSize);
+    Book(const PageSize& size, PageOrientation orientation = PageOrientation::Portrait, const PageMargins& margins = PageMargins());
 
     /**
      * @brief ~Book
@@ -248,11 +283,6 @@ public:
     void addUserStyleSheet(std::string_view content);
 
     /**
-     * @brief clearUserStyleSheet
-     */
-    void clearUserStyleSheet();
-
-    /**
      * @brief clear
      */
     void clear();
@@ -292,40 +322,6 @@ public:
      * @return
      */
     HTMLDocument* document() const;
-
-    /**
-     * @brief setResourceClient
-     * @param client
-     */
-    static void setResourceClient(ResourceClient* client);
-
-    /**
-     * @brief resourceClient
-     * @return
-     */
-    static ResourceClient* resourceClient();
-
-    /**
-     * @brief addFontFile
-     * @param family
-     * @param italic
-     * @param smallCaps
-     * @param weight
-     * @param filename
-     * @return
-     */
-    static bool addFontFile(const std::string& family, bool italic, bool smallCaps, int weight, const std::string& filename);
-
-    /**
-     * @brief addFontData
-     * @param family
-     * @param italic
-     * @param smallCaps
-     * @param weight
-     * @param data
-     * @return
-     */
-    static bool addFontData(const std::string& family, bool italic, bool smallCaps, int weight, std::vector<char> data);
 
 private:
     std::unique_ptr<HTMLDocument> m_document;

@@ -447,8 +447,8 @@ void HTMLLinkElement::finishParsingChildren()
     document()->addAuthorStyleSheet(resource->text());
 }
 
-HTMLDocument::HTMLDocument(const PageSize& pageSize)
-    : m_pageSize(pageSize)
+HTMLDocument::HTMLDocument(const PageSize& size, PageOrientation orientation, const PageMargins& margins)
+    : m_pageSize(size), m_pageOrientation(orientation), m_pageMargins(margins)
 {
 }
 

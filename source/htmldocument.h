@@ -134,7 +134,7 @@ public:
 
 class HTMLDocument final : public Document {
 public:
-    HTMLDocument(const PageSize& pageSize);
+    HTMLDocument(const PageSize& size, PageOrientation orientation, const PageMargins& margins);
 
     bool load(const std::string_view& content) final;
 
@@ -142,6 +142,8 @@ public:
 
 private:
     PageSize m_pageSize;
+    PageOrientation m_pageOrientation;
+    PageMargins m_pageMargins;
     std::string m_title;
     std::string m_subject;
     std::string m_author;

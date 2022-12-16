@@ -4,17 +4,17 @@
 
 namespace htmlbook {
 
-const PageSize PageSize::A5(148, 210, PageUnit::Millimeters);
-const PageSize PageSize::A4(210, 297, PageUnit::Millimeters);
-const PageSize PageSize::A3(297, 420, PageUnit::Millimeters);
-const PageSize PageSize::B5(176, 250, PageUnit::Millimeters);
-const PageSize PageSize::B4(250, 353, PageUnit::Millimeters);
-const PageSize PageSize::Letter(8.5, 11, PageUnit::Inches);
-const PageSize PageSize::Legal(8.5, 14, PageUnit::Inches);
-const PageSize PageSize::Ledger(11, 17, PageUnit::Inches);
+const PageSize PageSize::A3(842, 1191);
+const PageSize PageSize::A4(595, 842);
+const PageSize PageSize::A5(420, 595);
+const PageSize PageSize::B4(709, 1001);
+const PageSize PageSize::B5(499, 709);
+const PageSize PageSize::Letter(612, 792);
+const PageSize PageSize::Legal(612, 1008);
+const PageSize PageSize::Ledger(1224, 792);
 
-Book::Book(const PageSize& pageSize)
-    : m_document(new HTMLDocument(pageSize))
+Book::Book(const PageSize& size, PageOrientation orientation, const PageMargins& margins)
+    : m_document(new HTMLDocument(size, orientation, margins))
 {
 }
 
@@ -65,25 +65,6 @@ void Book::serialize(std::ostream& o) const
 HTMLDocument* Book::document() const
 {
     return m_document.get();
-}
-
-void Book::setResourceClient(ResourceClient* client)
-{
-    resourceLoader()->setClient(client);
-}
-
-ResourceClient* Book::resourceClient()
-{
-    return resourceLoader()->client();
-}
-
-bool Book::addFontData(const std::string& family, bool italic, bool smallCaps, int weight, std::vector<char> data)
-{
-    auto face = FontFace::create(std::move(data));
-    if(face == nullptr)
-        return false;
-    fontCache()->addFace(family, italic, smallCaps, weight, std::move(face));
-    return true;
 }
 
 } // namespace htmlbook

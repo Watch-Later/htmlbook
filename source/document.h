@@ -222,7 +222,6 @@ public:
 
     void addAuthorStyleSheet(const std::string_view& content);
     void addUserStyleSheet(const std::string_view& content);
-    void clearUserStyleSheet();
 
     const CSSRuleList& authorRules() const { return m_authorRules; }
     const CSSRuleList& userRules() const { return m_userRules; }
