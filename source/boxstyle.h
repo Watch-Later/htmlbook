@@ -402,12 +402,17 @@ private:
     Length m_value;
 };
 
-class BoxStyle : public RefCounted<BoxStyle> {
-public:
-    static RefPtr<BoxStyle> create(Document* document, PseudoType pseudoType);
-    static RefPtr<BoxStyle> create(const BoxStyle& parentStyle, Display display);
+class Node;
 
-    Document* document() const { return m_document; }
+class BoxStyle : public HeapMember, public RefCounted<BoxStyle> {
+public:
+    static RefPtr<BoxStyle> create(Node* node, PseudoType pseudoType, Display display);
+    static RefPtr<BoxStyle> create(const RefPtr<BoxStyle>& parentStyle, Display display);
+
+    Document* document() const;
+    Heap* heap() const;
+
+    Node* node() const { return m_node; }
     PseudoType pseudoType() const { return m_pseudoType; }
     const CSSPropertyMap& properties() const { return m_properties; }
     RefPtr<FontFace> fontFace() const;
@@ -586,8 +591,8 @@ public:
     void inheritFrom(const BoxStyle& parentStyle);
 
 private:
-    BoxStyle(Document* document, PseudoType pseudoType, Display display);
-    Document* m_document;
+    BoxStyle(Node* node, PseudoType pseudoType, Display display);
+    Node* m_node;
     CSSPropertyMap m_properties;
     mutable RefPtr<FontFace> m_fontFace;
     PseudoType m_pseudoType;

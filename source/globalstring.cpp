@@ -11,12 +11,12 @@ GlobalString::GlobalString(const std::string_view& value)
 
 HeapString GlobalString::add(const std::string_view& value)
 {
-    static Heap heap(8192);
+    static Heap heap(1024 * 25);
     static std::pmr::set<HeapString, std::less<>> table(&heap);
     auto lb = table.lower_bound(value);
     if(lb != table.end() && *lb == value)
         return *lb;
-    return *table.emplace_hint(lb, heap.createString(value));
+    return *table.emplace_hint(lb, HeapString::create(&heap, value));
 }
 
 const GlobalString nullGlo;

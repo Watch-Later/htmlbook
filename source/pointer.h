@@ -1,10 +1,19 @@
 #ifndef POINTER_H
 #define POINTER_H
 
+#include <memory_resource>
 #include <algorithm>
 #include <cstdint>
 
 namespace htmlbook {
+
+using Heap = std::pmr::monotonic_buffer_resource;
+
+class HeapMember {
+public:
+    static void* operator new(size_t size, Heap* heap) { return heap->allocate(size); }
+    static void operator delete(void* data) {}
+};
 
 template<typename T>
 class RefCounted {

@@ -59,7 +59,7 @@ std::unique_ptr<CSSRule> CSSParser::consumeStyleRule(CSSTokenStream& input)
 
     CSSPropertyList properties(m_heap);
     consumeDeclaractionList(block, properties);
-    return CSSStyleRule::create(std::move(selectors), std::move(properties));
+    return CSSStyleRule::create(m_heap, std::move(selectors), std::move(properties));
 }
 
 std::unique_ptr<CSSRule> CSSParser::consumeAtRule(CSSTokenStream& input)
@@ -119,7 +119,7 @@ std::unique_ptr<CSSRule> CSSParser::consumeImportRule(CSSTokenStream& input)
         return nullptr;
     }
 
-    return CSSImportRule::create(href);
+    return CSSImportRule::create(m_heap, href);
 }
 
 std::unique_ptr<CSSRule> CSSParser::consumeFontFaceRule(CSSTokenStream& prelude, CSSTokenStream& block)
@@ -130,7 +130,7 @@ std::unique_ptr<CSSRule> CSSParser::consumeFontFaceRule(CSSTokenStream& prelude,
 
     CSSPropertyList properties(m_heap);
     consumeDeclaractionList(block, properties);
-    return CSSFontFaceRule::create(std::move(properties));
+    return CSSFontFaceRule::create(m_heap, std::move(properties));
 }
 
 std::unique_ptr<CSSRule> CSSParser::consumePageRule(CSSTokenStream& prelude, CSSTokenStream& block)
@@ -161,7 +161,7 @@ std::unique_ptr<CSSRule> CSSParser::consumePageRule(CSSTokenStream& prelude, CSS
         }
     }
 
-    return CSSPageRule::create(std::move(selectors), std::move(margins), std::move(properties));
+    return CSSPageRule::create(m_heap, std::move(selectors), std::move(margins), std::move(properties));
 }
 
 std::unique_ptr<CSSPageMarginRule> CSSParser::consumePageMarginRule(CSSTokenStream& input)
@@ -211,7 +211,7 @@ std::unique_ptr<CSSPageMarginRule> CSSParser::consumePageMarginRule(CSSTokenStre
 
     CSSPropertyList properties(m_heap);
     consumeDeclaractionList(block, properties);
-    return CSSPageMarginRule::create(it->value, std::move(properties));
+    return CSSPageMarginRule::create(m_heap, it->value, std::move(properties));
 }
 
 bool CSSParser::consumePageSelector(CSSTokenStream& input, CSSPageSelector& selector)
@@ -765,7 +765,7 @@ bool CSSParser::consumeDeclaractionValue(CSSTokenStream& input, CSSPropertyList&
             input.consumeIncludingWhitespace();
             if(!input.empty())
                 return false;
-            addExpandedProperty(properties, id, important, CSSInheritValue::create());
+            addExpandedProperty(properties, id, important, CSSInheritValue::create(m_heap));
             return true;
         }
 
@@ -773,7 +773,7 @@ bool CSSParser::consumeDeclaractionValue(CSSTokenStream& input, CSSPropertyList&
             input.consumeIncludingWhitespace();
             if(!input.empty())
                 return false;
-            addExpandedProperty(properties, id, important, CSSInitialValue::create());
+            addExpandedProperty(properties, id, important, CSSInitialValue::create(m_heap));
             return true;
         }
     }
@@ -832,21 +832,21 @@ void CSSParser::addProperty(CSSPropertyList& properties, CSSPropertyID id, bool 
         case CSSPropertyID::FontVariant:
         case CSSPropertyID::FontWeight:
         case CSSPropertyID::LineHeight:
-            value = CSSIdentValue::create(CSSValueID::Normal);
+            value = CSSIdentValue::create(m_heap, CSSValueID::Normal);
             break;
         case CSSPropertyID::ColumnWidth:
         case CSSPropertyID::ColumnCount:
-            value = CSSIdentValue::create(CSSValueID::Auto);
+            value = CSSIdentValue::create(m_heap, CSSValueID::Auto);
             break;
         case CSSPropertyID::FlexGrow:
         case CSSPropertyID::FlexShrink:
-            value = CSSNumberValue::create(1.0);
+            value = CSSNumberValue::create(m_heap, 1.0);
             break;
         case CSSPropertyID::FlexBasis:
-            value = CSSLengthValue::create(0.0, CSSLengthValue::Unit::None);
+            value = CSSLengthValue::create(m_heap, 0.0, CSSLengthValue::Unit::None);
             break;
         default:
-            value = CSSInitialValue::create();
+            value = CSSInitialValue::create(m_heap);
             break;
         }
     }
@@ -890,20 +890,20 @@ inline CSSValueID matchIdent(const CSSTokenStream& input, const idententry_t(&ta
 }
 
 template<unsigned int N>
-inline RefPtr<CSSValue> consumeIdent(CSSTokenStream& input, const idententry_t(&table)[N])
+inline RefPtr<CSSValue> consumeIdent(Heap* heap, CSSTokenStream& input, const idententry_t(&table)[N])
 {
     auto id = matchIdent(input, table);
     if(id == CSSValueID::Unknown)
         return nullptr;
     input.consumeIncludingWhitespace();
-    return CSSIdentValue::create(id);
+    return CSSIdentValue::create(heap, id);
 }
 
 RefPtr<CSSValue> CSSParser::consumeNone(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::Ident && equals(input->data(), "none", false)) {
         input.consumeIncludingWhitespace();
-        return CSSIdentValue::create(CSSValueID::None);
+        return CSSIdentValue::create(m_heap, CSSValueID::None);
     }
 
     return nullptr;
@@ -913,7 +913,7 @@ RefPtr<CSSValue> CSSParser::consumeAuto(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::Ident && equals(input->data(), "auto", false)) {
         input.consumeIncludingWhitespace();
-        return CSSIdentValue::create(CSSValueID::Auto);
+        return CSSIdentValue::create(m_heap, CSSValueID::Auto);
     }
 
     return nullptr;
@@ -923,7 +923,7 @@ RefPtr<CSSValue> CSSParser::consumeNormal(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::Ident && equals(input->data(), "normal", false)) {
         input.consumeIncludingWhitespace();
-        return CSSIdentValue::create(CSSValueID::Normal);
+        return CSSIdentValue::create(m_heap, CSSValueID::Normal);
     }
 
     return nullptr;
@@ -950,7 +950,7 @@ RefPtr<CSSValue> CSSParser::consumeInteger(CSSTokenStream& input, bool negative)
 
     auto value = input->integer();
     input.consumeIncludingWhitespace();
-    return CSSIntegerValue::create(value);
+    return CSSIntegerValue::create(m_heap, value);
 }
 
 RefPtr<CSSValue> CSSParser::consumePositiveInteger(CSSTokenStream& input)
@@ -960,7 +960,7 @@ RefPtr<CSSValue> CSSParser::consumePositiveInteger(CSSTokenStream& input)
 
     auto value = input->integer();
     input.consumeIncludingWhitespace();
-    return CSSIntegerValue::create(value);
+    return CSSIntegerValue::create(m_heap, value);
 }
 
 RefPtr<CSSValue> CSSParser::consumePercent(CSSTokenStream& input, bool negative)
@@ -970,7 +970,7 @@ RefPtr<CSSValue> CSSParser::consumePercent(CSSTokenStream& input, bool negative)
 
     auto value = input->number();
     input.consumeIncludingWhitespace();
-    return CSSPercentValue::create(value);
+    return CSSPercentValue::create(m_heap, value);
 }
 
 RefPtr<CSSValue> CSSParser::consumeNumber(CSSTokenStream& input, bool negative)
@@ -980,7 +980,7 @@ RefPtr<CSSValue> CSSParser::consumeNumber(CSSTokenStream& input, bool negative)
 
     auto value = input->number();
     input.consumeIncludingWhitespace();
-    return CSSNumberValue::create(value);
+    return CSSNumberValue::create(m_heap, value);
 }
 
 RefPtr<CSSValue> CSSParser::consumeLength(CSSTokenStream& input, bool negative, bool unitless)
@@ -993,7 +993,7 @@ RefPtr<CSSValue> CSSParser::consumeLength(CSSTokenStream& input, bool negative, 
         return nullptr;
     if(input->type() == CSSToken::Type::Number) {
         input.consumeIncludingWhitespace();
-        return CSSLengthValue::create(value, CSSLengthValue::Unit::None);
+        return CSSLengthValue::create(m_heap, value, CSSLengthValue::Unit::None);
     }
 
     static const struct {
@@ -1021,7 +1021,7 @@ RefPtr<CSSValue> CSSParser::consumeLength(CSSTokenStream& input, bool negative, 
     if(it == std::end(table))
         return nullptr;
     input.consumeIncludingWhitespace();
-    return CSSLengthValue::create(value, it->value);
+    return CSSLengthValue::create(m_heap, value, it->value);
 }
 
 RefPtr<CSSValue> CSSParser::consumeLengthOrAuto(CSSTokenStream& input, bool negative, bool unitless)
@@ -1092,7 +1092,7 @@ RefPtr<CSSValue> CSSParser::consumeString(CSSTokenStream& input)
     if(input->type() == CSSToken::Type::String) {
         auto value = input->data();
         input.consumeIncludingWhitespace();
-        return CSSStringValue::create(value);
+        return CSSStringValue::create(m_heap, value);
     }
 
     return nullptr;
@@ -1103,7 +1103,7 @@ RefPtr<CSSValue> CSSParser::consumeCustomIdent(CSSTokenStream& input)
     if(input->type() == CSSToken::Type::Ident) {
         auto value = input->data();
         input.consumeIncludingWhitespace();
-        return CSSCustomIdentValue::create(value);
+        return CSSCustomIdentValue::create(m_heap, value);
     }
 
     return nullptr;
@@ -1138,8 +1138,8 @@ RefPtr<CSSValue> CSSParser::consumeUrl(CSSTokenStream& input, bool image)
     }
 
     if(!image)
-        return CSSUrlValue::create(value);
-    return CSSImageValue::create(value);
+        return CSSUrlValue::create(m_heap, value);
+    return CSSImageValue::create(m_heap, value);
 }
 
 RefPtr<CSSValue> CSSParser::consumeUrlOrNone(CSSTokenStream& input, bool image)
@@ -1169,7 +1169,7 @@ RefPtr<CSSValue> CSSParser::consumeColor(CSSTokenStream& input)
         }
 
         input.consumeIncludingWhitespace();
-        return CSSColorValue::create(value | 0xFF000000);
+        return CSSColorValue::create(m_heap, value | 0xFF000000);
     }
 
     if(input->type() == CSSToken::Type::Function) {
@@ -1183,12 +1183,12 @@ RefPtr<CSSValue> CSSParser::consumeColor(CSSTokenStream& input)
         auto name = input->data();
         if(equals(name, "currentcolor", false)) {
             input.consumeIncludingWhitespace();
-            return CSSIdentValue::create(CSSValueID::CurrentColor);
+            return CSSIdentValue::create(m_heap, CSSValueID::CurrentColor);
         }
 
         if(equals(name, "transparent", false)) {
             input.consumeIncludingWhitespace();
-            return CSSColorValue::create(0x00000000);
+            return CSSColorValue::create(m_heap, 0x00000000);
         }
 
         static const struct {
@@ -1349,7 +1349,7 @@ RefPtr<CSSValue> CSSParser::consumeColor(CSSTokenStream& input)
         if(it == std::end(table) || it->name != name)
             return nullptr;
         input.consumeIncludingWhitespace();
-        return CSSColorValue::create(it->value | 0xFF000000);
+        return CSSColorValue::create(m_heap, it->value | 0xFF000000);
     }
 
     return nullptr;
@@ -1418,7 +1418,7 @@ RefPtr<CSSValue> CSSParser::consumeRgb(CSSTokenStream& input)
         return nullptr;
     input.consumeWhitespace();
     guard.release();
-    return CSSColorValue::create(red, green, blue, alpha);
+    return CSSColorValue::create(m_heap, red, green, blue, alpha);
 }
 
 RefPtr<CSSValue> CSSParser::consumeFillOrStroke(CSSTokenStream& input)
@@ -1435,7 +1435,7 @@ RefPtr<CSSValue> CSSParser::consumeFillOrStroke(CSSTokenStream& input)
         second = consumeColor(input);
     if(second == nullptr)
         return first;
-    return CSSPairValue::create(first, second);
+    return CSSPairValue::create(m_heap, first, second);
 }
 
 RefPtr<CSSValue> CSSParser::consumeQuotes(CSSTokenStream& input)
@@ -1452,7 +1452,7 @@ RefPtr<CSSValue> CSSParser::consumeQuotes(CSSTokenStream& input)
     }
 
     if(!values.empty() && values.size() % 2 == 0)
-        return CSSListValue::create(std::move(values));
+        return CSSListValue::create(m_heap, std::move(values));
     return nullptr;
 }
 
@@ -1474,7 +1474,7 @@ RefPtr<CSSValue> CSSParser::consumeContent(CSSTokenStream& input)
                 {"no-close-quote", CSSValueID::NoCloseQuote}
             };
 
-            value = consumeIdent(input, table);
+            value = consumeIdent(m_heap, input, table);
         }
 
         if(value == nullptr && input->type() == CSSToken::Type::Function) {
@@ -1497,7 +1497,7 @@ RefPtr<CSSValue> CSSParser::consumeContent(CSSTokenStream& input)
 
     if(values.empty())
         return nullptr;
-    return CSSListValue::create(std::move(values));
+    return CSSListValue::create(m_heap, std::move(values));
 }
 
 RefPtr<CSSValue> CSSParser::consumeContentAttr(CSSTokenStream& input)
@@ -1505,7 +1505,7 @@ RefPtr<CSSValue> CSSParser::consumeContentAttr(CSSTokenStream& input)
     auto value = consumeCustomIdent(input);
     if(value == nullptr || !input.empty())
         return nullptr;
-    return CSSFunctionValue::create(CSSValueID::Attr, std::move(value));
+    return CSSFunctionValue::create(m_heap, CSSValueID::Attr, std::move(value));
 }
 
 RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool counters)
@@ -1558,7 +1558,7 @@ RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool co
 
     if(!input.empty())
         return nullptr;
-    return CSSCounterValue::create(identifier, listStyle, separator);
+    return CSSCounterValue::create(m_heap, identifier, listStyle, separator);
 }
 
 RefPtr<CSSValue> CSSParser::consumeCounter(CSSTokenStream& input, bool increment)
@@ -1578,10 +1578,10 @@ RefPtr<CSSValue> CSSParser::consumeCounter(CSSTokenStream& input, bool increment
             input.consumeIncludingWhitespace();
         }
 
-        values.push_back(CSSPairValue::create(name, CSSIntegerValue::create(value)));
+        values.push_back(CSSPairValue::create(m_heap, name, CSSIntegerValue::create(m_heap, value)));
     }
 
-    return CSSListValue::create(std::move(values));
+    return CSSListValue::create(m_heap, std::move(values));
 }
 
 RefPtr<CSSValue> CSSParser::consumePage(CSSTokenStream& input)
@@ -1600,7 +1600,7 @@ RefPtr<CSSValue> CSSParser::consumeSize(CSSTokenStream& input)
         auto height = consumeLength(input, false, false);
         if(height == nullptr)
             height = width;
-        return CSSPairValue::create(width, height);
+        return CSSPairValue::create(m_heap, width, height);
     }
 
     RefPtr<CSSValue> size;
@@ -1618,7 +1618,7 @@ RefPtr<CSSValue> CSSParser::consumeSize(CSSTokenStream& input)
                 {"letter", CSSValueID::Letter}
             };
 
-            if(size = consumeIdent(input, table))
+            if(size = consumeIdent(m_heap, input, table))
                 continue;
         }
 
@@ -1628,7 +1628,7 @@ RefPtr<CSSValue> CSSParser::consumeSize(CSSTokenStream& input)
                 {"landscape", CSSValueID::Landscape}
             };
 
-            if(orientation = consumeIdent(input, table))
+            if(orientation = consumeIdent(m_heap, input, table))
                 continue;
         }
 
@@ -1641,7 +1641,7 @@ RefPtr<CSSValue> CSSParser::consumeSize(CSSTokenStream& input)
         return orientation;
     if(orientation == nullptr)
         return size;
-    return CSSPairValue::create(size, orientation);
+    return CSSPairValue::create(m_heap, size, orientation);
 }
 
 RefPtr<CSSValue> CSSParser::consumeFontWeight(CSSTokenStream& input)
@@ -1653,7 +1653,7 @@ RefPtr<CSSValue> CSSParser::consumeFontWeight(CSSTokenStream& input)
         {"lighter", CSSValueID::Lighter}
     };
 
-    if(auto value = consumeIdent(input, table))
+    if(auto value = consumeIdent(m_heap, input, table))
         return value;
 
     if(input->type() != CSSToken::Type::Number || input->numberType() != CSSToken::NumberType::Integer)
@@ -1662,7 +1662,7 @@ RefPtr<CSSValue> CSSParser::consumeFontWeight(CSSTokenStream& input)
     if(value < 1 || value > 1000)
         return nullptr;
     input.consumeIncludingWhitespace();
-    return CSSIntegerValue::create(value);
+    return CSSIntegerValue::create(m_heap, value);
 }
 
 RefPtr<CSSValue> CSSParser::consumeFontSize(CSSTokenStream& input, bool unitless)
@@ -1680,7 +1680,7 @@ RefPtr<CSSValue> CSSParser::consumeFontSize(CSSTokenStream& input, bool unitless
         {"larger", CSSValueID::Larger}
     };
 
-    if(auto value = consumeIdent(input, table))
+    if(auto value = consumeIdent(m_heap, input, table))
         return value;
     return consumeLengthOrPercent(input, false, unitless);
 }
@@ -1690,7 +1690,7 @@ RefPtr<CSSValue> CSSParser::consumeFontFamilyValue(CSSTokenStream& input)
     if(input->type() == CSSToken::Type::String) {
         auto value = input->data();
         input.consumeIncludingWhitespace();
-        return CSSStringValue::create(std::move(value));
+        return CSSStringValue::create(m_heap, value);
     }
 
     std::string value;
@@ -1703,7 +1703,7 @@ RefPtr<CSSValue> CSSParser::consumeFontFamilyValue(CSSTokenStream& input)
 
     if(value.empty())
         return nullptr;
-    return CSSStringValue::create(m_heap->createString(value));
+    return CSSStringValue::create(m_heap, HeapString::create(m_heap, value));
 }
 
 RefPtr<CSSValue> CSSParser::consumeFontFamily(CSSTokenStream& input)
@@ -1716,7 +1716,7 @@ RefPtr<CSSValue> CSSParser::consumeFontFamily(CSSTokenStream& input)
         values.push_back(std::move(value));
     }
 
-    return CSSListValue::create(std::move(values));
+    return CSSListValue::create(m_heap, std::move(values));
 }
 
 RefPtr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& input)
@@ -1729,12 +1729,12 @@ RefPtr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& input)
         if(value == nullptr || !block.empty())
             return nullptr;
         input.consumeWhitespace();
-        values.push_back(CSSFunctionValue::create(CSSValueID::Local, std::move(value)));
+        values.push_back(CSSFunctionValue::create(m_heap, CSSValueID::Local, std::move(value)));
     } else {
-        auto url = consumeUrl(input, false);
-        if(url == nullptr)
+        auto value = consumeUrl(input, false);
+        if(value == nullptr)
             return nullptr;
-        values.push_back(std::move(url));
+        values.push_back(std::move(value));
         if(input->type() == CSSToken::Type::Function && equals(input->data(), "format", false)) {
             auto block = input.consumeBlock();
             block.consumeWhitespace();
@@ -1742,11 +1742,11 @@ RefPtr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& input)
             if(value == nullptr || !block.empty())
                 return nullptr;
             input.consumeWhitespace();
-            values.push_back(CSSFunctionValue::create(CSSValueID::Format, std::move(value)));
+            values.push_back(CSSFunctionValue::create(m_heap, CSSValueID::Format, std::move(value)));
         }
     }
 
-    return CSSListValue::create(std::move(values));
+    return CSSListValue::create(m_heap, std::move(values));
 }
 
 RefPtr<CSSValue> CSSParser::consumeFontFaceSource(CSSTokenStream& input)
@@ -1765,7 +1765,7 @@ RefPtr<CSSValue> CSSParser::consumeFontFaceSource(CSSTokenStream& input)
         values.push_back(std::move(value));
     }
 
-    return CSSListValue::create(std::move(values));
+    return CSSListValue::create(m_heap, std::move(values));
 }
 
 RefPtr<CSSValue> CSSParser::consumeLineWidth(CSSTokenStream& input, bool unitless)
@@ -1776,7 +1776,7 @@ RefPtr<CSSValue> CSSParser::consumeLineWidth(CSSTokenStream& input, bool unitles
         {"thick", CSSValueID::Thick}
     };
 
-    if(auto value = consumeIdent(input, table))
+    if(auto value = consumeIdent(m_heap, input, table))
         return value;
     return consumeLength(input, false, unitless);
 }
@@ -1789,7 +1789,7 @@ RefPtr<CSSValue> CSSParser::consumeBorderRadiusValue(CSSTokenStream& input)
     auto second = consumeLengthOrPercent(input, false, false);
     if(second == nullptr)
         second = first;
-    return CSSPairValue::create(first, second);
+    return CSSPairValue::create(m_heap, first, second);
 }
 
 RefPtr<CSSValue> CSSParser::consumeClip(CSSTokenStream& input)
@@ -1827,7 +1827,7 @@ RefPtr<CSSValue> CSSParser::consumeClip(CSSTokenStream& input)
     auto left = consumeLengthOrPercentOrAuto(block, true, true);
     if(left == nullptr || !block.empty())
         return nullptr;
-    return CSSRectValue::create(top, right, bottom, left);
+    return CSSRectValue::create(m_heap, top, right, bottom, left);
 }
 
 RefPtr<CSSValue> CSSParser::consumeDashList(CSSTokenStream& input)
@@ -1851,7 +1851,7 @@ RefPtr<CSSValue> CSSParser::consumeDashList(CSSTokenStream& input)
 
     if(!input.empty())
         return nullptr;
-    return CSSListValue::create(std::move(values));
+    return CSSListValue::create(m_heap, std::move(values));
 }
 
 RefPtr<CSSValue> CSSParser::consumeVerticalAlign(CSSTokenStream& input)
@@ -1865,7 +1865,7 @@ RefPtr<CSSValue> CSSParser::consumeVerticalAlign(CSSTokenStream& input)
         {"text-bottom", CSSValueID::TextBottom}
     };
 
-    if(auto value = consumeIdent(input, table))
+    if(auto value = consumeIdent(m_heap, input, table))
         return value;
     return consumeLengthOrPercent(input, true, true);
 }
@@ -1883,13 +1883,13 @@ RefPtr<CSSValue> CSSParser::consumeTextDecorationLine(CSSTokenStream& input)
 
     CSSValueList values(m_heap);
     while(!input.empty()) {
-        auto value = consumeIdent(input, table);
+        auto value = consumeIdent(m_heap, input, table);
         if(value == nullptr)
             return nullptr;
         values.push_back(std::move(value));
     }
 
-    return CSSListValue::create(std::move(values));
+    return CSSListValue::create(m_heap, std::move(values));
 }
 
 RefPtr<CSSValue> CSSParser::consumeBackgroundPosition(CSSTokenStream& input)
@@ -1908,7 +1908,7 @@ RefPtr<CSSValue> CSSParser::consumeBackgroundPosition(CSSTokenStream& input)
                 {"center", CSSValueID::Center}
             };
 
-            if(first = consumeIdent(input, table))
+            if(first = consumeIdent(m_heap, input, table))
                 continue;
         }
 
@@ -1919,7 +1919,7 @@ RefPtr<CSSValue> CSSParser::consumeBackgroundPosition(CSSTokenStream& input)
                 {"center", CSSValueID::Center}
             };
 
-            if(second = consumeIdent(input, table))
+            if(second = consumeIdent(m_heap, input, table))
                 continue;
         }
 
@@ -1929,10 +1929,10 @@ RefPtr<CSSValue> CSSParser::consumeBackgroundPosition(CSSTokenStream& input)
     if(first == nullptr && second == nullptr)
         return nullptr;
     if(first == nullptr)
-        first = CSSIdentValue::create(CSSValueID::Center);
+        first = CSSIdentValue::create(m_heap, CSSValueID::Center);
     if(second == nullptr)
-        second = CSSIdentValue::create(CSSValueID::Center);
-    return CSSPairValue::create(first, second);
+        second = CSSIdentValue::create(m_heap, CSSValueID::Center);
+    return CSSPairValue::create(m_heap, first, second);
 }
 
 RefPtr<CSSValue> CSSParser::consumeBackgroundSize(CSSTokenStream& input)
@@ -1942,7 +1942,7 @@ RefPtr<CSSValue> CSSParser::consumeBackgroundSize(CSSTokenStream& input)
         {"cover", CSSValueID::Cover}
     };
 
-    if(auto value = consumeIdent(input, table))
+    if(auto value = consumeIdent(m_heap, input, table))
         return value;
 
     auto first = consumeLengthOrPercentOrAuto(input, false, false);
@@ -1951,7 +1951,7 @@ RefPtr<CSSValue> CSSParser::consumeBackgroundSize(CSSTokenStream& input)
     auto second = consumeLengthOrPercentOrAuto(input, false, false);
     if(second == nullptr)
         second = first;
-    return CSSPairValue::create(first, second);
+    return CSSPairValue::create(m_heap, first, second);
 }
 
 RefPtr<CSSValue> CSSParser::consumeAngle(CSSTokenStream& input)
@@ -1975,7 +1975,7 @@ RefPtr<CSSValue> CSSParser::consumeAngle(CSSTokenStream& input)
         return nullptr;
     auto value = input->number();
     input.consumeIncludingWhitespace();
-    return CSSAngleValue::create(value, it->value);
+    return CSSAngleValue::create(m_heap, value, it->value);
 }
 
 RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
@@ -2090,7 +2090,7 @@ RefPtr<CSSValue> CSSParser::consumeTransformValue(CSSTokenStream& input)
     if(!block.empty())
         return nullptr;
     input.consumeWhitespace();
-    return CSSFunctionValue::create(it->value, std::move(values));
+    return CSSFunctionValue::create(m_heap, it->value, std::move(values));
 }
 
 RefPtr<CSSValue> CSSParser::consumeTransform(CSSTokenStream& input)
@@ -2106,7 +2106,7 @@ RefPtr<CSSValue> CSSParser::consumeTransform(CSSTokenStream& input)
         values.push_back(std::move(value));
     }
 
-    return CSSListValue::create(std::move(values));
+    return CSSListValue::create(m_heap, std::move(values));
 }
 
 RefPtr<CSSValue> CSSParser::consumePaintOrder(CSSTokenStream& input)
@@ -2122,13 +2122,13 @@ RefPtr<CSSValue> CSSParser::consumePaintOrder(CSSTokenStream& input)
 
     CSSValueList values(m_heap);
     while(!input.empty()) {
-        auto value = consumeIdent(input, table);
+        auto value = consumeIdent(m_heap, input, table);
         if(value == nullptr)
             return nullptr;
         values.push_back(std::move(value));
     }
 
-    return CSSListValue::create(std::move(values));
+    return CSSListValue::create(m_heap, std::move(values));
 }
 
 RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID id)
@@ -2283,7 +2283,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"local", CSSValueID::Local}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::BackgroundClip:
@@ -2294,7 +2294,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"content-box", CSSValueID::ContentBox}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::BackgroundRepeat: {
@@ -2305,7 +2305,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"no-repeat", CSSValueID::NoRepeat}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::FontStyle: {
@@ -2315,7 +2315,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"oblique", CSSValueID::Oblique}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::FontVariant: {
@@ -2324,7 +2324,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"small-caps", CSSValueID::SmallCaps}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::BorderCollapse: {
@@ -2333,7 +2333,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"separate", CSSValueID::Separate}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::BorderTopStyle:
@@ -2353,7 +2353,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"double", CSSValueID::Double}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::BoxSizing: {
@@ -2362,7 +2362,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"content-box", CSSValueID::ContentBox}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::CaptionSide: {
@@ -2371,7 +2371,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"bottom", CSSValueID::Bottom}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::Clear: {
@@ -2382,7 +2382,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"both", CSSValueID::Both}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::EmptyCells: {
@@ -2391,7 +2391,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"hide", CSSValueID::Hide}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::FillRule:
@@ -2401,7 +2401,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"evenodd", CSSValueID::Evenodd}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::Float: {
@@ -2411,7 +2411,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"right", CSSValueID::Right}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::Hyphens: {
@@ -2421,7 +2421,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"manual", CSSValueID::Manual}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::ListStyleType:  {
@@ -2440,7 +2440,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"upper-roman", CSSValueID::UpperRoman}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::ListStylePosition: {
@@ -2449,7 +2449,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"outside", CSSValueID::Outside}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::OutlineStyle: {
@@ -2466,7 +2466,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"double", CSSValueID::Double}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::OverflowWrap:
@@ -2477,7 +2477,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"anywhere", CSSValueID::Anywhere}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::OverflowX:
@@ -2491,7 +2491,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"clip", CSSValueID::Clip}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::ColumnBreakAfter:
@@ -2506,7 +2506,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"right", CSSValueID::Right}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::ColumnBreakInside:
@@ -2516,7 +2516,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"avoid", CSSValueID::Avoid}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::PageOrientation: {
@@ -2526,7 +2526,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"rotate-right", CSSValueID::RotateRight}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::Position: {
@@ -2537,7 +2537,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"fixed", CSSValueID::Fixed}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::StrokeLinecap: {
@@ -2547,7 +2547,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"square", CSSValueID::Square}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::StrokeLinejoin: {
@@ -2557,7 +2557,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"bevel", CSSValueID::Bevel}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::TableLayout: {
@@ -2566,7 +2566,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"fixed", CSSValueID::Fixed}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::TextAlign: {
@@ -2577,7 +2577,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"justify", CSSValueID::Justify}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::TextAnchor: {
@@ -2587,7 +2587,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"end", CSSValueID::End}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::TextDecorationStyle: {
@@ -2599,7 +2599,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"wavy", CSSValueID::Wavy}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::TextOverflow: {
@@ -2608,7 +2608,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"ellipsis", CSSValueID::Ellipsis}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::TextTransform: {
@@ -2619,7 +2619,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"lowercase", CSSValueID::Lowercase}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::MixBlendMode: {
@@ -2642,7 +2642,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"luminosity", CSSValueID::Luminosity}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::VectorEffect: {
@@ -2651,7 +2651,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"non-scaling-stroke", CSSValueID::NonScalingStroke}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::Visibility: {
@@ -2661,7 +2661,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"collapse", CSSValueID::Collapse}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::Display: {
@@ -2685,7 +2685,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"table-row-group", CSSValueID::TableRowGroup}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::FlexDirection: {
@@ -2696,7 +2696,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"column-reverse", CSSValueID::ColumnReverse}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::FlexWrap: {
@@ -2706,7 +2706,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"wrap-reverse", CSSValueID::WrapReverse}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::LineBreak: {
@@ -2718,7 +2718,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"anywhere", CSSValueID::Anywhere}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::WhiteSpace: {
@@ -2731,7 +2731,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"break-spaces", CSSValueID::BreakSpaces}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::WordBreak: {
@@ -2742,7 +2742,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"break-word", CSSValueID::BreakWord}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::Direction: {
@@ -2751,7 +2751,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"rtl", CSSValueID::Rtl}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::UnicodeBidi: {
@@ -2764,7 +2764,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"plaintext", CSSValueID::Plaintext}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::ColumnSpan: {
@@ -2773,7 +2773,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"all", CSSValueID::All}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::ColumnFill: {
@@ -2782,7 +2782,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"balance", CSSValueID::Balance}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::AlignContent:
@@ -2797,7 +2797,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"stretch", CSSValueID::Stretch}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::AlignItems: {
@@ -2809,7 +2809,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"baseline", CSSValueID::Baseline}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     case CSSPropertyID::AlignSelf: {
@@ -2822,7 +2822,7 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"baseline", CSSValueID::Baseline}
         };
 
-        return consumeIdent(input, table);
+        return consumeIdent(m_heap, input, table);
     }
 
     default:
@@ -2839,9 +2839,9 @@ bool CSSParser::consumeFlex(CSSTokenStream& input, CSSPropertyList& properties, 
         if(input->type() == CSSToken::Type::Ident) {
             if(!equals(input->data(), "none", false))
                 return false;
-            grow = CSSNumberValue::create(0.0);
-            shrink = CSSNumberValue::create(0.0);
-            basis = CSSIdentValue::create(CSSValueID::Auto);
+            grow = CSSNumberValue::create(m_heap, 0.0);
+            shrink = CSSNumberValue::create(m_heap, 0.0);
+            basis = CSSIdentValue::create(m_heap, CSSValueID::Auto);
             input.consumeIncludingWhitespace();
             break;
         }
@@ -2850,11 +2850,11 @@ bool CSSParser::consumeFlex(CSSTokenStream& input, CSSPropertyList& properties, 
             if(input->number() < 0.0)
                 return false;
             if(grow == nullptr)
-                grow = CSSNumberValue::create(input->number());
+                grow = CSSNumberValue::create(m_heap, input->number());
             else if(shrink == nullptr)
-                shrink = CSSNumberValue::create(input->number());
+                shrink = CSSNumberValue::create(m_heap, input->number());
             else if(input->number() == 0.0)
-                basis = CSSLengthValue::create(0.0, CSSLengthValue::Unit::None);
+                basis = CSSLengthValue::create(m_heap, 0.0, CSSLengthValue::Unit::None);
             else
                 return false;
             input.consumeIncludingWhitespace();
@@ -2996,7 +2996,7 @@ bool CSSParser::consumeFont(CSSTokenStream& input, CSSPropertyList& properties, 
             return false;
         addProperty(properties, CSSPropertyID::LineHeight, important, value);
     } else {
-        addProperty(properties, CSSPropertyID::LineHeight, important, CSSIdentValue::create(CSSValueID::Normal));
+        addProperty(properties, CSSPropertyID::LineHeight, important, nullptr);
     }
 
     auto family = consumeFontFamily(input);
@@ -3074,10 +3074,10 @@ bool CSSParser::consumeBorderRadius(CSSTokenStream& input, CSSPropertyList& prop
         return false;
     }
 
-    auto tl = CSSPairValue::create(horizontal[0], vertical[0]);
-    auto tr = CSSPairValue::create(horizontal[1], vertical[1]);
-    auto br = CSSPairValue::create(horizontal[2], vertical[2]);
-    auto bl = CSSPairValue::create(horizontal[3], vertical[3]);
+    auto tl = CSSPairValue::create(m_heap, horizontal[0], vertical[0]);
+    auto tr = CSSPairValue::create(m_heap, horizontal[1], vertical[1]);
+    auto br = CSSPairValue::create(m_heap, horizontal[2], vertical[2]);
+    auto bl = CSSPairValue::create(m_heap, horizontal[3], vertical[3]);
 
     addProperty(properties, CSSPropertyID::BorderTopLeftRadius, important, tl);
     addProperty(properties, CSSPropertyID::BorderTopRightRadius, important, tr);

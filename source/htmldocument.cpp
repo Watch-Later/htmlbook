@@ -2,7 +2,7 @@
 #include "htmlparser.h"
 #include "resource.h"
 #include "box.h"
-#include "counter.h"
+#include "counters.h"
 
 namespace htmlbook {
 
@@ -20,7 +20,7 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
 {
     if(pseudoType == PseudoType::Marker && !parent->isListItemBox())
         return;
-    auto style = document()->pseudoStyleForElement(this, *parent->style(), pseudoType);
+    auto style = document()->pseudoStyleForElement(this, parent->style(), pseudoType);
     if(style == nullptr || style->display() == Display::None)
         return;
 
@@ -41,17 +41,17 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
             return;
         }
 
-        auto textBox = new TextBox(nullptr, style);
-        textBox->setText(text);
-        box->addBox(textBox);
+        auto newBox = new (heap()) TextBox(nullptr, style);
+        newBox->setText(text);
+        box->addBox(newBox);
     };
 
     auto addImage = [&](const auto& image) {
         if(image == nullptr)
             return;
-        auto imageBox = new ImageBox(nullptr, style);
-        imageBox->setImage(image);
-        box->addBox(imageBox);
+        auto newBox = new (heap()) ImageBox(nullptr, style);
+        newBox->setImage(image);
+        box->addBox(newBox);
     };
 
     auto content = style->get(CSSPropertyID::Content);
@@ -99,7 +99,7 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
 
 void HTMLElement::buildBox(Counters& counters, Box* parent)
 {
-    auto style = document()->styleForElement(this, *parent->style());
+    auto style = document()->styleForElement(this, parent->style());
     if(style == nullptr || style->display() == Display::None)
         return;
     auto box = createBox(style);
@@ -177,7 +177,7 @@ RefPtr<Image> HTMLImageElement::image() const
 
 Box* HTMLImageElement::createBox(const RefPtr<BoxStyle>& style)
 {
-    auto box = new ImageBox(this, style);
+    auto box = new (heap()) ImageBox(this, style);
     box->setImage(image());
     box->setAlternativeText(altText());
     return box;
@@ -447,8 +447,9 @@ void HTMLLinkElement::finishParsingChildren()
     document()->addAuthorStyleSheet(resource->text());
 }
 
-HTMLDocument::HTMLDocument(const PageSize& size, PageOrientation orientation, const PageMargins& margins)
-    : m_pageSize(size), m_pageOrientation(orientation), m_pageMargins(margins)
+HTMLDocument::HTMLDocument(Heap* heap, Book* book)
+    : Document(heap)
+    , m_book(book)
 {
 }
 
@@ -459,7 +460,7 @@ bool HTMLDocument::load(const std::string_view& content)
 
 Box* HTMLDocument::createBox(const RefPtr<BoxStyle>& style)
 {
-    return new BlockBox(this, style);
+    return new (heap()) BlockBox(this, style);
 }
 
 } // namespace htmlbook

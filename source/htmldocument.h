@@ -132,24 +132,18 @@ public:
     void finishParsingChildren() final;
 };
 
+class Book;
+
 class HTMLDocument final : public Document {
 public:
-    HTMLDocument(const PageSize& size, PageOrientation orientation, const PageMargins& margins);
+    HTMLDocument(Heap* heap, Book* book);
 
     bool load(const std::string_view& content) final;
 
     Box* createBox(const RefPtr<BoxStyle>& style) final;
 
 private:
-    PageSize m_pageSize;
-    PageOrientation m_pageOrientation;
-    PageMargins m_pageMargins;
-    std::string m_title;
-    std::string m_subject;
-    std::string m_author;
-    std::string m_creator;
-    std::string m_creationDate;
-    std::string m_modificationDate;
+    Book* m_book;
 };
 
 } // namespace htmlbook

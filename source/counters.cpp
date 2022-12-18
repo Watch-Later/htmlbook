@@ -1,4 +1,4 @@
-#include "counter.h"
+#include "counters.h"
 #include "htmldocument.h"
 
 #include <cassert>
@@ -44,7 +44,7 @@ void Counters::update(const Box* box)
 void Counters::update(const Box* box, CSSPropertyID id)
 {
     auto value = box->style()->get(id);
-    if(value == nullptr && !value->isListValue())
+    if(value == nullptr || !value->isListValue())
         return;
     for(auto& counter : to<CSSListValue>(*value)->values()) {
         auto pair = to<CSSPairValue>(*counter);

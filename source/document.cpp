@@ -3,6 +3,7 @@
 #include "cssparser.h"
 #include "resource.h"
 #include "box.h"
+#include "counters.h"
 
 namespace htmlbook {
 
@@ -44,7 +45,7 @@ Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
 {
     if(m_data.empty())
         return nullptr;
-    auto box = new TextBox(this, style);
+    auto box = new (heap()) TextBox(this, style);
     box->setText(m_data);
     return box;
 }
@@ -359,89 +360,91 @@ void Element::serialize(std::ostream& o) const
     }
 }
 
-Document::Document()
-    : ContainerNode(nullptr)
-    , m_idCache(heap())
-    , m_resourceCache(heap())
+Document::Document(Heap* heap)
+    : ContainerNode(this)
+    , m_heap(heap)
+    , m_idCache(heap)
+    , m_resourceCache(heap)
+    , m_authorRules(heap)
+    , m_userRules(heap)
 {
 }
 
 TextNode* Document::createText(const std::string_view& value)
 {
-    return new TextNode(this, m_heap.createString(value));
+    return new (m_heap) TextNode(this, HeapString::create(m_heap, value));
 }
 
 Element* Document::createElement(const GlobalString& tagName, const GlobalString& namespaceUri)
 {
     if(namespaceUri == namespaceuri::xhtml) {
         if(tagName == bodyTag)
-            return new HTMLBodyElement(this);
+            return new (m_heap) HTMLBodyElement(this);
         if(tagName == imageTag)
-            return new HTMLImageElement(this);
+            return new (m_heap) HTMLImageElement(this);
         if(tagName == fontTag)
-            return new HTMLFontElement(this);
+            return new (m_heap) HTMLFontElement(this);
         if(tagName == hrTag)
-            return new HTMLHRElement(this);
+            return new (m_heap) HTMLHRElement(this);
         if(tagName == liTag)
-            return new HTMLLIElement(this);
+            return new (m_heap) HTMLLIElement(this);
         if(tagName == olTag)
-            return new HTMLOLElement(this);
+            return new (m_heap) HTMLOLElement(this);
         if(tagName == tableTag)
-            return new HTMLTableElement(this);
+            return new (m_heap) HTMLTableElement(this);
         if(tagName == theadTag || tagName == tbodyTag || tagName == tfootTag)
-            return new HTMLTableSectionElement(this, tagName);
+            return new (m_heap) HTMLTableSectionElement(this, tagName);
         if(tagName == captionTag)
-            return new HTMLTableCaptionElement(this);
+            return new (m_heap) HTMLTableCaptionElement(this);
         if(tagName == trTag)
-            return new HTMLTableRowElement(this);
+            return new (m_heap) HTMLTableRowElement(this);
         if(tagName == colTag || tagName == colgroupTag)
-            return new HTMLTableColElement(this, tagName);
+            return new (m_heap) HTMLTableColElement(this, tagName);
         if(tagName == tdTag || tagName == thTag)
-            return new HTMLTableCellElement(this, tagName);
+            return new (m_heap) HTMLTableCellElement(this, tagName);
         if(tagName == styleTag)
-            return new HTMLStyleElement(this);
+            return new (m_heap) HTMLStyleElement(this);
         if(tagName == linkTag)
-            return new HTMLLinkElement(this);
-        return new HTMLElement(this, tagName);
+            return new (m_heap) HTMLLinkElement(this);
+        return new (m_heap) HTMLElement(this, tagName);
     }
 
-    return new Element(this, tagName, namespaceUri);
+    return new (m_heap) Element(this, tagName, namespaceUri);
 }
 
 void Document::addAuthorStyleSheet(const std::string_view& content)
 {
-    assert(m_ruleCache == nullptr);
+    assert(m_styleSheet == nullptr);
     CSSParser parser(heap());
     parser.parseSheet(m_authorRules, content);
 }
 
 void Document::addUserStyleSheet(const std::string_view& content)
 {
-    assert(m_ruleCache == nullptr);
+    assert(m_styleSheet == nullptr);
     CSSParser parser(heap());
     parser.parseSheet(m_userRules, content);
 }
 
-const CSSRuleCache* Document::ruleCache()
+const CSSStyleSheet* Document::styleSheet() const
 {
-    if(m_ruleCache == nullptr)
-        m_ruleCache = CSSRuleCache::create(this);
-    return m_ruleCache.get();
+    assert(m_styleSheet != nullptr);
+    return m_styleSheet.get();
 }
 
-RefPtr<BoxStyle> Document::styleForElement(Element* element, const BoxStyle& parentStyle)
+RefPtr<BoxStyle> Document::styleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle)
 {
-    return ruleCache()->styleForElement(element, parentStyle);
+    return styleSheet()->styleForElement(element, parentStyle);
 }
 
-RefPtr<BoxStyle> Document::pseudoStyleForElement(Element* element, const BoxStyle& parentStyle, PseudoType pseudoType)
+RefPtr<BoxStyle> Document::pseudoStyleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle, PseudoType pseudoType)
 {
-    return ruleCache()->pseudoStyleForElement(element, parentStyle, pseudoType);
+    return styleSheet()->pseudoStyleForElement(element, parentStyle, pseudoType);
 }
 
 RefPtr<FontFace> Document::getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight)
 {
-    return ruleCache()->getFontFace(family, italic, smallCaps, weight);
+    return styleSheet()->getFontFace(family, italic, smallCaps, weight);
 }
 
 RefPtr<TextResource> Document::fetchTextResource(const std::string_view& url)
@@ -481,13 +484,20 @@ float Document::viewportHeight() const
     return 0.0;
 }
 
+void Document::build()
+{
+    m_styleSheet = CSSStyleSheet::create(this);
+    Counters counters;
+    buildBox(counters, nullptr);
+}
+
 void Document::buildBox(Counters& counters, Box* parent)
 {
     assert(parent == nullptr);
-    auto style = BoxStyle::create(this, PseudoType::None);
-    style->set(CSSPropertyID::Display, CSSIdentValue::create(CSSValueID::Block));
-    style->set(CSSPropertyID::Position, CSSIdentValue::create(CSSValueID::Absolute));
-    style->set(CSSPropertyID::ZIndex, CSSIntegerValue::create(0));
+    auto style = BoxStyle::create(this, PseudoType::None, Display::Block);
+    style->set(CSSPropertyID::Display, CSSIdentValue::create(m_heap, CSSValueID::Block));
+    style->set(CSSPropertyID::Position, CSSIdentValue::create(m_heap, CSSValueID::Absolute));
+    style->set(CSSPropertyID::ZIndex, CSSIntegerValue::create(m_heap, 0));
 
     auto box = createBox(style);
     ContainerNode::buildBox(counters, box);

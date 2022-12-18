@@ -1,5 +1,5 @@
-#ifndef COUNTER_H
-#define COUNTER_H
+#ifndef COUNTERS_H
+#define COUNTERS_H
 
 #include "box.h"
 
@@ -38,4 +38,4 @@ private:
 
 } // namespace htmlbook
 
-#endif // COUNTER_H
+#endif // COUNTERS_H

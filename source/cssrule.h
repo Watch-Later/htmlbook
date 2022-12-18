@@ -13,7 +13,7 @@ namespace htmlbook {
 
 class Document;
 
-class CSSValue : public RefCounted<CSSValue> {
+class CSSValue : public HeapMember, public RefCounted<CSSValue> {
 public:
     virtual ~CSSValue() = default;
     virtual bool isInitialValue() const { return false; }
@@ -43,7 +43,7 @@ using CSSValueList = std::pmr::vector<RefPtr<CSSValue>>;
 
 class CSSInitialValue final : public CSSValue {
 public:
-    static RefPtr<CSSInitialValue> create();
+    static RefPtr<CSSInitialValue> create(Heap* heap);
 
     bool isInitialValue() const final { return true; }
 
@@ -58,7 +58,7 @@ struct is<CSSInitialValue> {
 
 class CSSInheritValue final : public CSSValue {
 public:
-    static RefPtr<CSSInheritValue> create();
+    static RefPtr<CSSInheritValue> create(Heap* heap);
 
     bool isInheritValue() const final { return true; }
 
@@ -275,7 +275,7 @@ enum class CSSValueID {
 
 class CSSIdentValue final : public CSSValue {
 public:
-    static RefPtr<CSSIdentValue> create(CSSValueID value);
+    static RefPtr<CSSIdentValue> create(Heap* heap, CSSValueID value);
 
     CSSValueID value() const { return m_value; }
     bool isIdentValue() const final { return true; }
@@ -292,7 +292,7 @@ struct is<CSSIdentValue> {
 
 class CSSCustomIdentValue final : public CSSValue {
 public:
-    static RefPtr<CSSCustomIdentValue> create(const HeapString& value);
+    static RefPtr<CSSCustomIdentValue> create(Heap* heap, const HeapString& value);
 
     const HeapString& value() const { return m_value; }
     bool isCustomIdentValue() const final { return true; }
@@ -309,7 +309,7 @@ struct is<CSSCustomIdentValue> {
 
 class CSSIntegerValue final : public CSSValue {
 public:
-    static RefPtr<CSSIntegerValue> create(int value);
+    static RefPtr<CSSIntegerValue> create(Heap* heap, int value);
 
     int value() const { return m_value; }
     bool isIntegerValue() const final { return true; }
@@ -326,7 +326,7 @@ struct is<CSSIntegerValue> {
 
 class CSSNumberValue final : public CSSValue {
 public:
-    static RefPtr<CSSNumberValue> create(double value);
+    static RefPtr<CSSNumberValue> create(Heap* heap, double value);
 
     double value() const { return m_value; }
     bool isNumberValue() const final { return true; }
@@ -343,7 +343,7 @@ struct is<CSSNumberValue> {
 
 class CSSPercentValue final : public CSSValue {
 public:
-    static RefPtr<CSSPercentValue> create(double value);
+    static RefPtr<CSSPercentValue> create(Heap* heap, double value);
 
     double value() const { return m_value; }
     bool isPercentValue() const final { return true; }
@@ -367,7 +367,7 @@ public:
         Turns,
     };
 
-    static RefPtr<CSSAngleValue> create(double value, Unit unit);
+    static RefPtr<CSSAngleValue> create(Heap* heap, double value, Unit unit);
 
     double value() const { return m_value; }
     Unit unit() const { return m_unit; }
@@ -407,7 +407,7 @@ public:
         Chs
     };
 
-    static RefPtr<CSSLengthValue> create(double value, Unit unit);
+    static RefPtr<CSSLengthValue> create(Heap* heap, double value, Unit unit);
 
     double value() const { return m_value; }
     Unit unit() const { return m_unit; }
@@ -429,7 +429,7 @@ struct is<CSSLengthValue> {
 
 class CSSStringValue final : public CSSValue {
 public:
-    static RefPtr<CSSStringValue> create(const HeapString& value);
+    static RefPtr<CSSStringValue> create(Heap* heap, const HeapString& value);
 
     const HeapString& value() const { return m_value; }
     bool isStringValue() const final { return true; }
@@ -446,7 +446,7 @@ struct is<CSSStringValue> {
 
 class CSSUrlValue final : public CSSValue {
 public:
-    static RefPtr<CSSUrlValue> create(const HeapString& value);
+    static RefPtr<CSSUrlValue> create(Heap* heap, const HeapString& value);
 
     const HeapString& value() const { return m_value; }
     bool isUrlValue() const final { return true; }
@@ -465,7 +465,7 @@ class Image;
 
 class CSSImageValue final : public CSSValue {
 public:
-    static RefPtr<CSSImageValue> create(const HeapString& value);
+    static RefPtr<CSSImageValue> create(Heap* heap, const HeapString& value);
 
     const HeapString& value() const { return m_value; }
     const RefPtr<Image>& image() const { return m_image; }
@@ -485,8 +485,8 @@ struct is<CSSImageValue> {
 
 class CSSColorValue final : public CSSValue {
 public:
-    static RefPtr<CSSColorValue> create(uint32_t value);
-    static RefPtr<CSSColorValue> create(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+    static RefPtr<CSSColorValue> create(Heap* heap, uint32_t value);
+    static RefPtr<CSSColorValue> create(Heap* heap, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
     uint32_t value() const { return m_value; }
     bool isColorValue() const final { return true; }
@@ -518,7 +518,7 @@ enum class ListStyleType : uint8_t {
 
 class CSSCounterValue final : public CSSValue {
 public:
-    static RefPtr<CSSCounterValue> create(const GlobalString& identifier, ListStyleType listStyle, const HeapString& separator);
+    static RefPtr<CSSCounterValue> create(Heap* heap, const GlobalString& identifier, ListStyleType listStyle, const HeapString& separator);
 
     const GlobalString& identifier() const { return m_identifier; }
     ListStyleType listStyle() const { return m_listStyle; }
@@ -542,7 +542,7 @@ struct is<CSSCounterValue> {
 
 class CSSPairValue final : public CSSValue {
 public:
-    static RefPtr<CSSPairValue> create(RefPtr<CSSValue> first, RefPtr<CSSValue> second);
+    static RefPtr<CSSPairValue> create(Heap* heap, RefPtr<CSSValue> first, RefPtr<CSSValue> second);
 
     const RefPtr<CSSValue>& first() const { return m_first; }
     const RefPtr<CSSValue>& second() const { return m_second; }
@@ -564,7 +564,7 @@ struct is<CSSPairValue> {
 
 class CSSRectValue final : public CSSValue {
 public:
-    static RefPtr<CSSRectValue> create(RefPtr<CSSValue> top, RefPtr<CSSValue> right, RefPtr<CSSValue> bottom, RefPtr<CSSValue> left);
+    static RefPtr<CSSRectValue> create(Heap* heap, RefPtr<CSSValue> top, RefPtr<CSSValue> right, RefPtr<CSSValue> bottom, RefPtr<CSSValue> left);
 
     const RefPtr<CSSValue>& top() const { return m_top; }
     const RefPtr<CSSValue>& right() const { return m_right; }
@@ -590,7 +590,7 @@ struct is<CSSRectValue> {
 
 class CSSListValue : public CSSValue {
 public:
-    static RefPtr<CSSListValue> create(CSSValueList values);
+    static RefPtr<CSSListValue> create(Heap* heap, CSSValueList values);
 
     size_t size() const { return m_values.size(); }
     const RefPtr<CSSValue>& front() const { return m_values.front(); }
@@ -611,8 +611,8 @@ struct is<CSSListValue> {
 
 class CSSFunctionValue final : public CSSListValue {
 public:
-    static RefPtr<CSSFunctionValue> create(CSSValueID id, CSSValueList values);
-    static RefPtr<CSSFunctionValue> create(CSSValueID id, RefPtr<CSSValue> value);
+    static RefPtr<CSSFunctionValue> create(Heap* heap, CSSValueID id, CSSValueList values);
+    static RefPtr<CSSFunctionValue> create(Heap* heap, CSSValueID id, RefPtr<CSSValue> value);
 
     CSSValueID id() const { return m_id; }
     bool isFunctionValue() const final { return true; }
@@ -834,7 +834,7 @@ private:
 };
 
 using CSSPropertyList = std::pmr::list<CSSProperty>;
-using CSSPropertyMap = std::map<CSSPropertyID, RefPtr<CSSValue>>;
+using CSSPropertyMap = std::pmr::map<CSSPropertyID, RefPtr<CSSValue>>;
 
 class CSSShorthand {
 public:
@@ -971,7 +971,7 @@ private:
     CSSCompoundSelector m_compoundSelector;
 };
 
-class CSSRule {
+class CSSRule : public HeapMember {
 public:
     enum class Type {
         Style,
@@ -988,11 +988,11 @@ protected:
     CSSRule() = default;
 };
 
-using CSSRuleList = std::vector<std::unique_ptr<CSSRule>>;
+using CSSRuleList = std::pmr::list<std::unique_ptr<CSSRule>>;
 
 class CSSStyleRule final : public CSSRule {
 public:
-    static std::unique_ptr<CSSStyleRule> create(CSSSelectorList selectors, CSSPropertyList properties);
+    static std::unique_ptr<CSSStyleRule> create(Heap* heap, CSSSelectorList selectors, CSSPropertyList properties);
 
     const CSSSelectorList& selectors() const { return m_selectors; }
     const CSSPropertyList& properties() const { return m_properties; }
@@ -1014,16 +1014,20 @@ struct is<CSSStyleRule> {
 
 class CSSImportRule final : public CSSRule {
 public:
-    static std::unique_ptr<CSSImportRule> create(const HeapString& href);
+    static std::unique_ptr<CSSImportRule> create(Heap* heap, const HeapString& href);
 
     const HeapString& href() const { return m_href; }
     Type type() const final { return Type::Import; }
     const CSSRuleList& fetch(Document* document) const;
 
 private:
-    CSSImportRule(const HeapString& href) : m_href(href) {}
+    CSSImportRule(Heap* heap, const HeapString& href)
+        : m_href(href), m_rules(heap), m_heap(heap)
+    {}
+
     HeapString m_href;
     mutable CSSRuleList m_rules;
+    Heap* m_heap;
 };
 
 template<>
@@ -1033,7 +1037,7 @@ struct is<CSSImportRule> {
 
 class CSSFontFaceRule : public CSSRule {
 public:
-    static std::unique_ptr<CSSFontFaceRule> create(CSSPropertyList properties);
+    static std::unique_ptr<CSSFontFaceRule> create(Heap* heap, CSSPropertyList properties);
 
     const CSSPropertyList& properties() const { return m_properties; }
     Type type() const final { return Type::FontFace; }
@@ -1072,7 +1076,7 @@ public:
         RightBottom
     };
 
-    static std::unique_ptr<CSSPageMarginRule> create(MarginType marginType, CSSPropertyList properties);
+    static std::unique_ptr<CSSPageMarginRule> create(Heap* heap, MarginType marginType, CSSPropertyList properties);
 
     MarginType marginType() const { return m_marginType; }
     const CSSPropertyList& properties() const { return m_properties; }
@@ -1096,7 +1100,7 @@ using CSSPageMarginRuleList = std::pmr::list<std::unique_ptr<CSSPageMarginRule>>
 
 class CSSPageRule : public CSSRule {
 public:
-    static std::unique_ptr<CSSPageRule> create(CSSPageSelectorList selectors, CSSPageMarginRuleList margins, CSSPropertyList properties);
+    static std::unique_ptr<CSSPageRule> create(Heap* heap, CSSPageSelectorList selectors, CSSPageMarginRuleList margins, CSSPropertyList properties);
 
     const CSSPageSelectorList& selectors() const { return m_selectors; }
     const CSSPageMarginRuleList& margins() const { return m_margins; }
@@ -1266,16 +1270,16 @@ private:
 
 class BoxStyle;
 
-class CSSRuleCache {
+class CSSStyleSheet {
 public:
-    static std::unique_ptr<CSSRuleCache> create(Document* document);
+    static std::unique_ptr<CSSStyleSheet> create(Document* document);
 
-    RefPtr<BoxStyle> styleForElement(Element* element, const BoxStyle& parentStyle) const;
-    RefPtr<BoxStyle> pseudoStyleForElement(Element* element, const BoxStyle& parentStyle, PseudoType pseudoType) const;
+    RefPtr<BoxStyle> styleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle) const;
+    RefPtr<BoxStyle> pseudoStyleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle, PseudoType pseudoType) const;
     RefPtr<FontFace> getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight) const;
 
 private:
-    CSSRuleCache(Document* document);
+    CSSStyleSheet(Document* document);
 
     void addRules(Document* document, uint32_t& position, const CSSRuleList& rules);
     void addStyleRule(uint32_t position, const CSSStyleRule* rule);
@@ -1294,9 +1298,7 @@ private:
 
 class CSSStyleBuilder {
 public:
-    CSSStyleBuilder(Element* element, const BoxStyle& parentStyle, PseudoType pseudoType)
-        : m_pseudoType(pseudoType), m_element(element), m_parentStyle(parentStyle)
-    {}
+    CSSStyleBuilder(Element* element, const RefPtr<BoxStyle>& parentStyle, PseudoType pseudoType);
 
     void add(const CSSRuleDataList* rules);
     void add(const CSSPropertyList& properties);
@@ -1306,7 +1308,7 @@ public:
 private:
     PseudoType m_pseudoType;
     Element* m_element;
-    const BoxStyle& m_parentStyle;
+    RefPtr<BoxStyle> m_parentStyle;
     CSSPropertyList m_properties;
     CSSRuleDataList m_rules;
 };

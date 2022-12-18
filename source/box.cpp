@@ -128,38 +128,38 @@ Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
 {
     if(style->pseudoType() == PseudoType::Marker) {
         if(style->listStylePosition() == ListStylePosition::Inside)
-            return new InsideListMarkerBox(style);
-        return new OutsideListMarkerBox(style);
+            return new (style->heap()) InsideListMarkerBox(style);
+        return new (style->heap()) OutsideListMarkerBox(style);
     }
 
     switch(style->display()) {
     case Display::Inline:
-        return new InlineBox(node, style);
+        return new (style->heap()) InlineBox(node, style);
     case Display::Block:
     case Display::InlineBlock:
-        return new BlockFlowBox(node, style);
+        return new (style->heap()) BlockFlowBox(node, style);
     case Display::Flex:
     case Display::InlineFlex:
-        return new FlexibleBox(node, style);
+        return new (style->heap()) FlexibleBox(node, style);
     case Display::Table:
     case Display::InlineTable:
-        return new TableBox(node, style);
+        return new (style->heap()) TableBox(node, style);
     case Display::ListItem:
-        return new ListItemBox(node, style);
+        return new (style->heap()) ListItemBox(node, style);
     case Display::TableCell:
-        return new TableCellBox(node, style);
+        return new (style->heap()) TableCellBox(node, style);
     case Display::TableColumn:
-        return new TableColumnBox(node, style);
+        return new (style->heap()) TableColumnBox(node, style);
     case Display::TableColumnGroup:
-        return new TableColumnGroupBox(node, style);
+        return new (style->heap()) TableColumnGroupBox(node, style);
     case Display::TableRow:
-        return new TableRowBox(node, style);
+        return new (style->heap()) TableRowBox(node, style);
     case Display::TableRowGroup:
     case Display::TableHeaderGroup:
     case Display::TableFooterGroup:
-        return new TableSectionBox(node, style);
+        return new (style->heap()) TableSectionBox(node, style);
     case Display::TableCaption:
-        return new TableCaptionBox(node, style);
+        return new (style->heap()) TableCaptionBox(node, style);
     default:
         assert(false);
     }
@@ -167,14 +167,15 @@ Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
 
 Box* Box::createAnonymous(const RefPtr<BoxStyle>& parentStyle, Display display)
 {
-    auto newBox = create(nullptr, BoxStyle::create(*parentStyle, display));
+    auto newBox = create(nullptr, BoxStyle::create(parentStyle, display));
     newBox->setAnonymous(true);
     return newBox;
 }
 
 BlockFlowBox* Box::createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle)
 {
-    auto newBlock = new BlockFlowBox(nullptr, BoxStyle::create(*parentStyle, Display::Block));
+    auto newStyle = BoxStyle::create(parentStyle, Display::Block);
+    auto newBlock = new (newStyle->heap()) BlockFlowBox(nullptr, newStyle);
     newBlock->setAnonymous(true);
     return newBlock;
 }
@@ -264,8 +265,13 @@ void BoxList::remove(Box* parent, Box* box)
     box->setNextBox(nullptr);
 }
 
+std::unique_ptr<BoxLayer> BoxLayer::create(BoxModel* box, BoxLayer* parent)
+{
+    return std::unique_ptr<BoxLayer>(new (box->heap()) BoxLayer(box, parent));
+}
+
 BoxLayer::BoxLayer(BoxModel* box, BoxLayer* parent)
-    : m_box(box), m_parent(parent)
+    : m_box(box), m_parent(parent), m_children(box->heap())
 {
     m_index = box->style()->zIndex().value_or(0);
     if(parent == nullptr)
@@ -277,6 +283,7 @@ BoxLayer::BoxLayer(BoxModel* box, BoxLayer* parent)
 
 TextBox::TextBox(Node* node, const RefPtr<BoxStyle>& style)
     : Box(node, style)
+    , m_lines(style->heap())
 {
     setInline(true);
 }
@@ -289,7 +296,7 @@ BoxModel::BoxModel(Node* node, const RefPtr<BoxStyle>& style)
 void BoxModel::buildBox(BoxLayer* parent)
 {
     if(parent == nullptr || requiresLayer()) {
-        m_layer = std::make_unique<BoxLayer>(this, parent);
+        m_layer = BoxLayer::create(this, parent);
         parent = m_layer.get();
     }
 
@@ -325,6 +332,7 @@ BoxFrame::BoxFrame(Node* node, const RefPtr<BoxStyle>& style)
 
 InlineBox::InlineBox(Node* node, const RefPtr<BoxStyle>& style)
     : BoxModel(node, style)
+    , m_lines(style->heap())
 {
     setInline(true);
 }
@@ -365,14 +373,14 @@ void InlineBox::addBox(Box* box)
         children->append(block, postBlock);
     }
 
-    auto clone = new InlineBox(nullptr, style());
+    auto clone = new (heap()) InlineBox(nullptr, style());
     Box* currentParent = parentBox();
     Box* currentChild = this;
     auto currentClone = clone;
     while(currentParent != preBlock) {
         auto parent = to<InlineBox>(currentParent);
         assert(parent->continuation() == nullptr);
-        auto clone = new InlineBox(nullptr, parent->style());
+        auto clone = new (heap()) InlineBox(nullptr, parent->style());
         clone->appendChild(currentClone);
         parent->setContinuation(clone);
 
@@ -440,6 +448,7 @@ void BlockBox::addBox(Box* box)
 
 BlockFlowBox::BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
+    , m_lines(style->heap())
 {
     setChildrenInline(true);
 }

@@ -1,7 +1,6 @@
 #ifndef DOCUMENT_H
 #define DOCUMENT_H
 
-#include "htmlbook.h"
 #include "cssrule.h"
 #include "url.h"
 
@@ -16,7 +15,7 @@ class Box;
 class BoxStyle;
 class Counters;
 
-class Node {
+class Node : public HeapMember {
 public:
     Node(Document* document);
 
@@ -31,6 +30,7 @@ public:
 
     void reparent(ContainerNode* newParent);
 
+    Heap* heap() const;
     Document* document() const { return m_document; }
     ContainerNode* parentNode() const { return m_parentNode; }
     Node* nextSibling() const { return m_nextSibling; }
@@ -47,8 +47,6 @@ public:
     virtual Box* createBox(const RefPtr<BoxStyle>& style) { return nullptr; }
     virtual void buildBox(Counters& counters, Box* parent) {}
     virtual void serialize(std::ostream& o) const = 0;
-
-    Heap* heap() const;
 
 private:
     Document* m_document;
@@ -208,10 +206,11 @@ class FontFace;
 
 class Document : public ContainerNode {
 public:
-    Document();
+    Document(Heap* heap);
 
     bool isDocumentNode() const final { return true; }
 
+    Heap* heap() const { return m_heap; }
     TextNode* createText(const std::string_view& value);
     Element* createElement(const GlobalString& tagName, const GlobalString& namespaceUri);
 
@@ -225,10 +224,10 @@ public:
 
     const CSSRuleList& authorRules() const { return m_authorRules; }
     const CSSRuleList& userRules() const { return m_userRules; }
-    const CSSRuleCache* ruleCache();
+    const CSSStyleSheet* styleSheet() const;
 
-    RefPtr<BoxStyle> styleForElement(Element* element, const BoxStyle& parentStyle);
-    RefPtr<BoxStyle> pseudoStyleForElement(Element* element, const BoxStyle& parentStyle, PseudoType pseudoType);
+    RefPtr<BoxStyle> styleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle);
+    RefPtr<BoxStyle> pseudoStyleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle, PseudoType pseudoType);
     RefPtr<FontFace> getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight);
 
     RefPtr<TextResource> fetchTextResource(const std::string_view& url);
@@ -241,20 +240,20 @@ public:
     float viewportWidth() const;
     float viewportHeight() const;
 
-    void buildBox(Counters& counters, Box* parent) override;
+    void build();
 
-    Heap* heap() const { return &m_heap; }
+    void buildBox(Counters& counters, Box* parent) override;
 
 private:
     template<typename ResourceType>
     RefPtr<ResourceType> fetchResource(const std::string_view& url);
-    mutable Heap m_heap{8192};
+    Heap* m_heap;
     Url m_baseUrl;
-    CSSRuleList m_authorRules;
-    CSSRuleList m_userRules;
-    std::unique_ptr<CSSRuleCache> m_ruleCache;
+    std::unique_ptr<CSSStyleSheet> m_styleSheet;
     std::pmr::map<HeapString, Element*> m_idCache;
     std::pmr::map<Url, RefPtr<Resource>> m_resourceCache;
+    CSSRuleList m_authorRules;
+    CSSRuleList m_userRules;
 };
 
 template<>

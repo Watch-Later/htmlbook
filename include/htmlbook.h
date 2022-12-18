@@ -23,6 +23,8 @@
 #ifndef HTMLBOOK_H
 #define HTMLBOOK_H
 
+#include <memory_resource>
+#include <string_view>
 #include <string>
 #include <ostream>
 #include <memory>
@@ -129,7 +131,7 @@ public:
      * @param data
      * @return
      */
-    virtual bool loadUrl(std::string_view url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data) = 0;
+    virtual bool loadUrl(const std::string_view& url, std::string& mimeType, std::string& textEncoding, std::vector<char>& data) = 0;
 
     /**
      * @brief loadFont
@@ -140,8 +142,10 @@ public:
      * @param data
      * @return
      */
-    virtual bool loadFont(std::string_view family, bool italic, bool smallCaps, int weight, std::vector<char>& data) = 0;
+    virtual bool loadFont(const std::string_view& family, bool italic, bool smallCaps, int weight, std::vector<char>& data) = 0;
 };
+
+using Heap = std::pmr::monotonic_buffer_resource;
 
 class HTMLDocument;
 
@@ -149,11 +153,18 @@ class HTMLBOOK_API Book {
 public:
     /**
      * @brief Book
+     * @param upstream
+     */
+    explicit Book(std::pmr::memory_resource* upstream = std::pmr::get_default_resource());
+
+    /**
+     * @brief Book
      * @param size
      * @param orientation
      * @param margins
+     * @param upstream
      */
-    Book(const PageSize& size, PageOrientation orientation = PageOrientation::Portrait, const PageMargins& margins = PageMargins());
+    Book(const PageSize& size, PageOrientation orientation = PageOrientation::Portrait, const PageMargins& margins = PageMargins(), std::pmr::memory_resource* upstream = std::pmr::get_default_resource());
 
     /**
      * @brief ~Book
@@ -176,7 +187,7 @@ public:
      * @brief setTitle
      * @param title
      */
-    void setTitle(std::string_view title);
+    void setTitle(const std::string_view& title);
 
     /**
      * @brief title
@@ -188,7 +199,7 @@ public:
      * @brief setSubject
      * @param subject
      */
-    void setSubject(std::string_view subject);
+    void setSubject(const std::string_view& subject);
 
     /**
      * @brief subject
@@ -200,7 +211,7 @@ public:
      * @brief setAuthor
      * @param author
      */
-    void setAuthor(std::string_view author);
+    void setAuthor(const std::string_view& author);
 
     /**
      * @brief author
@@ -212,7 +223,7 @@ public:
      * @brief setCreator
      * @param creator
      */
-    void setCreator(std::string_view creator);
+    void setCreator(const std::string_view& creator);
 
     /**
      * @brief creator
@@ -224,7 +235,7 @@ public:
      * @brief setCreationDate
      * @param creationDate
      */
-    void setCreationDate(std::string_view creationDate);
+    void setCreationDate(const std::string_view& creationDate);
 
     /**
      * @brief creationDate
@@ -236,7 +247,7 @@ public:
      * @brief setModificationDate
      * @param modificationDate
      */
-    void setModificationDate(std::string_view modificationDate);
+    void setModificationDate(const std::string_view& modificationDate);
 
     /**
      * @brief modificationDate
@@ -245,42 +256,29 @@ public:
     const std::string& modificationDate() const;
 
     /**
-     * @brief setBaseUrl
-     * @param baseUrl
-     */
-    void setBaseUrl(std::string_view baseUrl);
-
-    /**
-     * @brief baseUrl
-     * @return
-     */
-    const std::string& baseUrl() const;
-
-    /**
      * @brief loadUrl
      * @param url
+     * @param userStyle
      */
-    void loadUrl(std::string_view url);
+    void loadUrl(const std::string_view& url, const std::string_view& userStyle = {});
 
     /**
-     * @brief load
+     * @brief loadData
      * @param data
      * @param length
      * @param textEncoding
+     * @param baseUrl
+     * @param userStyle
      */
-    void load(const char* data, size_t length, std::string_view textEncoding);
+    void loadData(const char* data, size_t length, const std::string_view& textEncoding = {}, const std::string_view& baseUrl = {}, const std::string_view& userStyle = {});
 
     /**
      * @brief load
      * @param content
+     * @param baseUrl
+     * @param userStyle
      */
-    void load(std::string_view content);
-
-    /**
-     * @brief addUserStyleSheet
-     * @param content
-     */
-    void addUserStyleSheet(std::string_view content);
+    void load(const std::string_view& content, const std::string_view& baseUrl = {}, const std::string_view& userStyle = {});
 
     /**
      * @brief clear
@@ -321,10 +319,20 @@ public:
      * @brief document
      * @return
      */
-    HTMLDocument* document() const;
+    HTMLDocument* document() const { return m_document; }
 
 private:
-    std::unique_ptr<HTMLDocument> m_document;
+    Heap m_heap;
+    HTMLDocument* m_document{nullptr};
+    PageSize m_pageSize;
+    PageOrientation m_pageOrientation;
+    PageMargins m_pageMargins;
+    std::string m_title;
+    std::string m_subject;
+    std::string m_author;
+    std::string m_creator;
+    std::string m_creationDate;
+    std::string m_modificationDate;
 };
 
 inline std::ostream& operator<<(std::ostream& o, const Book& book)

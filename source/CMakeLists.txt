@@ -12,7 +12,7 @@ PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/boxstyle.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/box.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/linebox.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/counter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/counters.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/resource.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/url.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/globalstring.cpp"

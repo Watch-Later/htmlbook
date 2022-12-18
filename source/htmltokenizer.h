@@ -85,7 +85,7 @@ public:
     void endAttribute() {
         assert(m_type == Type::StartTag || m_type == Type::EndTag);
         GlobalString name(m_attributeName);
-        m_attributes.emplace_back(name, m_heap->createString(m_attributeValue));
+        m_attributes.emplace_back(name, HeapString::create(m_heap, m_attributeValue));
     }
 
     void beginComment() {

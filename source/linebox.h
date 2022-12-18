@@ -13,7 +13,7 @@ class Box;
 class FlowLineBox;
 class RootLineBox;
 
-class LineBox {
+class LineBox : public HeapMember {
 public:
     LineBox(Box* box);
 
@@ -56,7 +56,7 @@ private:
     float m_height{0};
 };
 
-using LineBoxList = std::list<std::unique_ptr<LineBox>>;
+using LineBoxList = std::pmr::list<std::unique_ptr<LineBox>>;
 
 class TextBox;
 

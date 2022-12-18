@@ -6,74 +6,64 @@
 
 namespace htmlbook {
 
-RefPtr<CSSInitialValue> CSSInitialValue::create()
+RefPtr<CSSInitialValue> CSSInitialValue::create(Heap* heap)
 {
-    static auto value = adoptPtr(new CSSInitialValue);
-    return value;
+    return adoptPtr(new (heap) CSSInitialValue);
 }
 
-RefPtr<CSSInheritValue> CSSInheritValue::create()
+RefPtr<CSSInheritValue> CSSInheritValue::create(Heap* heap)
 {
-    static auto value = adoptPtr(new CSSInheritValue);
-    return value;
+    return adoptPtr(new (heap) CSSInheritValue);
 }
 
-RefPtr<CSSIdentValue> CSSIdentValue::create(CSSValueID value)
+RefPtr<CSSIdentValue> CSSIdentValue::create(Heap* heap, CSSValueID value)
 {
-    static std::map<CSSValueID, RefPtr<CSSIdentValue>> table;
-    auto it = table.find(value);
-    if(it == table.end()) {
-        auto item = adoptPtr(new CSSIdentValue(value));
-        table.emplace(value, item);
-        return item;
-    }
-
-    return it->second;
+    return adoptPtr(new (heap) CSSIdentValue(value));
 }
 
-RefPtr<CSSCustomIdentValue> CSSCustomIdentValue::create(const HeapString& value)
+RefPtr<CSSCustomIdentValue> CSSCustomIdentValue::create(Heap* heap, const HeapString& value)
 {
-    return adoptPtr(new CSSCustomIdentValue(value));
+    return adoptPtr(new (heap) CSSCustomIdentValue(value));
 }
 
-RefPtr<CSSIntegerValue> CSSIntegerValue::create(int value)
+RefPtr<CSSIntegerValue> CSSIntegerValue::create(Heap* heap, int value)
 {
-    return adoptPtr(new CSSIntegerValue(value));
+    return adoptPtr(new (heap) CSSIntegerValue(value));
 }
 
-RefPtr<CSSNumberValue> CSSNumberValue::create(double value)
+RefPtr<CSSNumberValue> CSSNumberValue::create(Heap* heap, double value)
 {
-    return adoptPtr(new CSSNumberValue(value));
+    return adoptPtr(new (heap) CSSNumberValue(value));
 }
 
-RefPtr<CSSPercentValue> CSSPercentValue::create(double value)
+RefPtr<CSSPercentValue> CSSPercentValue::create(Heap* heap, double value)
 {
-    return adoptPtr(new CSSPercentValue(value));
+    return adoptPtr(new (heap) CSSPercentValue(value));
 }
 
-RefPtr<CSSAngleValue> CSSAngleValue::create(double value, Unit unit)
+RefPtr<CSSAngleValue> CSSAngleValue::create(Heap* heap, double value, Unit unit)
 {
-    return adoptPtr(new CSSAngleValue(value, unit));
+    return adoptPtr(new (heap) CSSAngleValue(value, unit));
 }
 
-RefPtr<CSSLengthValue> CSSLengthValue::create(double value, Unit unit)
+RefPtr<CSSLengthValue> CSSLengthValue::create(Heap* heap, double value, Unit unit)
 {
-    return adoptPtr(new CSSLengthValue(value, unit));
+    return adoptPtr(new (heap) CSSLengthValue(value, unit));
 }
 
-RefPtr<CSSStringValue> CSSStringValue::create(const HeapString& value)
+RefPtr<CSSStringValue> CSSStringValue::create(Heap* heap, const HeapString& value)
 {
-    return adoptPtr(new CSSStringValue(value));
+    return adoptPtr(new (heap) CSSStringValue(value));
 }
 
-RefPtr<CSSUrlValue> CSSUrlValue::create(const HeapString& value)
+RefPtr<CSSUrlValue> CSSUrlValue::create(Heap* heap, const HeapString& value)
 {
-    return adoptPtr(new CSSUrlValue(value));
+    return adoptPtr(new (heap) CSSUrlValue(value));
 }
 
-RefPtr<CSSImageValue> CSSImageValue::create(const HeapString& value)
+RefPtr<CSSImageValue> CSSImageValue::create(Heap* heap, const HeapString& value)
 {
-    return adoptPtr(new CSSImageValue(value));
+    return adoptPtr(new (heap) CSSImageValue(value));
 }
 
 RefPtr<Image> CSSImageValue::fetch(Document* document) const
@@ -93,46 +83,46 @@ CSSImageValue::CSSImageValue(const HeapString& value)
 {
 }
 
-RefPtr<CSSColorValue> CSSColorValue::create(uint32_t value)
+RefPtr<CSSColorValue> CSSColorValue::create(Heap* heap, uint32_t value)
 {
-    return adoptPtr(new CSSColorValue(value));
+    return adoptPtr(new (heap) CSSColorValue(value));
 }
 
-RefPtr<CSSColorValue> CSSColorValue::create(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+RefPtr<CSSColorValue> CSSColorValue::create(Heap* heap, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
-    return adoptPtr(new CSSColorValue(a << 24 | r << 16 | g << 8 | b));
+    return adoptPtr(new (heap) CSSColorValue(a << 24 | r << 16 | g << 8 | b));
 }
 
-RefPtr<CSSCounterValue> CSSCounterValue::create(const GlobalString& identifier, ListStyleType listStyle, const HeapString& separator)
+RefPtr<CSSCounterValue> CSSCounterValue::create(Heap* heap, const GlobalString& identifier, ListStyleType listStyle, const HeapString& separator)
 {
-    return adoptPtr(new CSSCounterValue(identifier, listStyle, separator));
+    return adoptPtr(new (heap) CSSCounterValue(identifier, listStyle, separator));
 }
 
-RefPtr<CSSPairValue> CSSPairValue::create(RefPtr<CSSValue> first, RefPtr<CSSValue> second)
+RefPtr<CSSPairValue> CSSPairValue::create(Heap* heap, RefPtr<CSSValue> first, RefPtr<CSSValue> second)
 {
-    return adoptPtr(new CSSPairValue(std::move(first), std::move(second)));
+    return adoptPtr(new (heap) CSSPairValue(std::move(first), std::move(second)));
 }
 
-RefPtr<CSSRectValue> CSSRectValue::create(RefPtr<CSSValue> top, RefPtr<CSSValue> right, RefPtr<CSSValue> bottom, RefPtr<CSSValue> left)
+RefPtr<CSSRectValue> CSSRectValue::create(Heap* heap, RefPtr<CSSValue> top, RefPtr<CSSValue> right, RefPtr<CSSValue> bottom, RefPtr<CSSValue> left)
 {
-    return adoptPtr(new CSSRectValue(std::move(top), std::move(right), std::move(bottom), std::move(left)));
+    return adoptPtr(new (heap) CSSRectValue(std::move(top), std::move(right), std::move(bottom), std::move(left)));
 }
 
-RefPtr<CSSListValue> CSSListValue::create(CSSValueList values)
+RefPtr<CSSListValue> CSSListValue::create(Heap* heap, CSSValueList values)
 {
-    return adoptPtr(new CSSListValue(std::move(values)));
+    return adoptPtr(new (heap) CSSListValue(std::move(values)));
 }
 
-RefPtr<CSSFunctionValue> CSSFunctionValue::create(CSSValueID id, CSSValueList values)
+RefPtr<CSSFunctionValue> CSSFunctionValue::create(Heap* heap, CSSValueID id, CSSValueList values)
 {
-    return adoptPtr(new CSSFunctionValue(id, std::move(values)));
+    return adoptPtr(new (heap) CSSFunctionValue(id, std::move(values)));
 }
 
-RefPtr<CSSFunctionValue> CSSFunctionValue::create(CSSValueID id, RefPtr<CSSValue> value)
+RefPtr<CSSFunctionValue> CSSFunctionValue::create(Heap* heap, CSSValueID id, RefPtr<CSSValue> value)
 {
-    CSSValueList values;
+    CSSValueList values(heap);
     values.push_back(std::move(value));
-    return adoptPtr(new CSSFunctionValue(id, std::move(values)));;
+    return adoptPtr(new (heap) CSSFunctionValue(id, std::move(values)));;
 }
 
 CSSShorthand CSSShorthand::longhand(CSSPropertyID id)
@@ -594,14 +584,14 @@ bool CSSSimpleSelector::matchnth(int count) const
     return (b - count) % -a == 0;
 }
 
-std::unique_ptr<CSSStyleRule> CSSStyleRule::create(CSSSelectorList selectors, CSSPropertyList properties)
+std::unique_ptr<CSSStyleRule> CSSStyleRule::create(Heap* heap, CSSSelectorList selectors, CSSPropertyList properties)
 {
-    return std::unique_ptr<CSSStyleRule>(new CSSStyleRule(std::move(selectors), std::move(properties)));
+    return std::unique_ptr<CSSStyleRule>(new (heap) CSSStyleRule(std::move(selectors), std::move(properties)));
 }
 
-std::unique_ptr<CSSImportRule> CSSImportRule::create(const HeapString& href)
+std::unique_ptr<CSSImportRule> CSSImportRule::create(Heap* heap, const HeapString& href)
 {
-    return std::unique_ptr<CSSImportRule>(new CSSImportRule(href));
+    return std::unique_ptr<CSSImportRule>(new (heap) CSSImportRule(heap, href));
 }
 
 const CSSRuleList& CSSImportRule::fetch(Document* document) const
@@ -609,26 +599,26 @@ const CSSRuleList& CSSImportRule::fetch(Document* document) const
     if(!m_rules.empty())
         return m_rules;
     if(auto textResource = document->fetchTextResource(m_href)) {
-        CSSParser parser(document->heap());
+        CSSParser parser(m_heap);
         parser.parseSheet(m_rules, textResource->text());
     }
 
     return m_rules;
 }
 
-std::unique_ptr<CSSFontFaceRule> CSSFontFaceRule::create(CSSPropertyList properties)
+std::unique_ptr<CSSFontFaceRule> CSSFontFaceRule::create(Heap* heap, CSSPropertyList properties)
 {
-    return std::unique_ptr<CSSFontFaceRule>(new CSSFontFaceRule(std::move(properties)));
+    return std::unique_ptr<CSSFontFaceRule>(new (heap) CSSFontFaceRule(std::move(properties)));
 }
 
-std::unique_ptr<CSSPageMarginRule> CSSPageMarginRule::create(MarginType marginType, CSSPropertyList properties)
+std::unique_ptr<CSSPageMarginRule> CSSPageMarginRule::create(Heap* heap, MarginType marginType, CSSPropertyList properties)
 {
-    return std::unique_ptr<CSSPageMarginRule>(new CSSPageMarginRule(marginType, std::move(properties)));
+    return std::unique_ptr<CSSPageMarginRule>(new (heap) CSSPageMarginRule(marginType, std::move(properties)));
 }
 
-std::unique_ptr<CSSPageRule> CSSPageRule::create(CSSPageSelectorList selectors, CSSPageMarginRuleList margins, CSSPropertyList properties)
+std::unique_ptr<CSSPageRule> CSSPageRule::create(Heap* heap, CSSPageSelectorList selectors, CSSPageMarginRuleList margins, CSSPropertyList properties)
 {
-    return std::unique_ptr<CSSPageRule>(new CSSPageRule(std::move(selectors), std::move(margins), std::move(properties)));
+    return std::unique_ptr<CSSPageRule>(new (heap) CSSPageRule(std::move(selectors), std::move(margins), std::move(properties)));
 }
 
 bool CSSRuleData::match(const Element* element, PseudoType pseudoType) const
@@ -989,12 +979,12 @@ void CSSFontFaceCache::add(const HeapString& family, bool italic, bool smallCaps
     m_fontFaceDataMap[family].emplace_back(italic, smallCaps, weight, std::move(face));
 }
 
-std::unique_ptr<CSSRuleCache> CSSRuleCache::create(Document* document)
+std::unique_ptr<CSSStyleSheet> CSSStyleSheet::create(Document* document)
 {
-    return std::unique_ptr<CSSRuleCache>(new CSSRuleCache(document));
+    return std::unique_ptr<CSSStyleSheet>(new CSSStyleSheet(document));
 }
 
-RefPtr<BoxStyle> CSSRuleCache::styleForElement(Element* element, const BoxStyle& parentStyle) const
+RefPtr<BoxStyle> CSSStyleSheet::styleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle) const
 {
     CSSStyleBuilder builder(element, parentStyle, PseudoType::None);
     builder.add(m_idRules.get(element->id()));
@@ -1005,14 +995,14 @@ RefPtr<BoxStyle> CSSRuleCache::styleForElement(Element* element, const BoxStyle&
     return builder.build();
 }
 
-RefPtr<BoxStyle> CSSRuleCache::pseudoStyleForElement(Element* element, const BoxStyle& parentStyle, PseudoType pseudoType) const
+RefPtr<BoxStyle> CSSStyleSheet::pseudoStyleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle, PseudoType pseudoType) const
 {
     CSSStyleBuilder builder(element, parentStyle, pseudoType);
     builder.add(m_pseudoRules.get(pseudoType));
     return builder.build();
 }
 
-RefPtr<FontFace> CSSRuleCache::getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight) const
+RefPtr<FontFace> CSSStyleSheet::getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight) const
 {
     if(auto face = m_fontFaceCache.get(family, italic, smallCaps, weight))
         return face;
@@ -1024,7 +1014,7 @@ static const CSSRuleList& userAgentRules() {
     return userAgentRules;
 }
 
-CSSRuleCache::CSSRuleCache(Document* document)
+CSSStyleSheet::CSSStyleSheet(Document* document)
 {
     uint32_t position = 0;
     addRules(document, position, userAgentRules());
@@ -1032,7 +1022,7 @@ CSSRuleCache::CSSRuleCache(Document* document)
     addRules(document, position, document->userRules());
 }
 
-void CSSRuleCache::addRules(Document* document, uint32_t& position, const CSSRuleList& rules)
+void CSSStyleSheet::addRules(Document* document, uint32_t& position, const CSSRuleList& rules)
 {
     for(const auto& rule : rules) {
         if(auto styleRule = to<CSSStyleRule>(*rule)) {
@@ -1051,7 +1041,7 @@ void CSSRuleCache::addRules(Document* document, uint32_t& position, const CSSRul
     }
 }
 
-void CSSRuleCache::addStyleRule(uint32_t position, const CSSStyleRule* rule)
+void CSSStyleSheet::addStyleRule(uint32_t position, const CSSStyleRule* rule)
 {
     for(auto& selector : rule->selectors()) {
         uint32_t specificity = 0;
@@ -1108,7 +1098,7 @@ void CSSRuleCache::addStyleRule(uint32_t position, const CSSStyleRule* rule)
     }
 }
 
-void CSSRuleCache::addPageRule(uint32_t position, const CSSPageRule* rule)
+void CSSStyleSheet::addPageRule(uint32_t position, const CSSPageRule* rule)
 {
     for(auto& selector : rule->selectors()) {
         uint32_t specificity = 0;
@@ -1135,7 +1125,7 @@ void CSSRuleCache::addPageRule(uint32_t position, const CSSPageRule* rule)
     }
 }
 
-void CSSRuleCache::addFontFaceRule(Document* document, const CSSFontFaceRule* rule)
+void CSSStyleSheet::addFontFaceRule(Document* document, const CSSFontFaceRule* rule)
 {
     RefPtr<CSSValue> fontFamily;
     RefPtr<CSSValue> fontStyle;
@@ -1254,6 +1244,11 @@ void CSSRuleCache::addFontFaceRule(Document* document, const CSSFontFaceRule* ru
     }
 }
 
+CSSStyleBuilder::CSSStyleBuilder(Element* element, const RefPtr<BoxStyle>& parentStyle, PseudoType pseudoType)
+    : m_pseudoType(pseudoType), m_element(element), m_parentStyle(parentStyle)
+{
+}
+
 void CSSStyleBuilder::add(const CSSRuleDataList* rules)
 {
     if(rules == nullptr)
@@ -1296,8 +1291,8 @@ RefPtr<BoxStyle> CSSStyleBuilder::build()
         return nullptr;
     }
 
-    auto newStyle = BoxStyle::create(m_element->document(), m_pseudoType);
-    newStyle->inheritFrom(m_parentStyle);
+    auto newStyle = BoxStyle::create(m_element, m_pseudoType, Display::Inline);
+    newStyle->inheritFrom(*m_parentStyle);
     for(auto& property : m_properties) {
         auto id = property.id();
         auto value = property.value();
@@ -1306,7 +1301,7 @@ RefPtr<BoxStyle> CSSStyleBuilder::build()
             continue;
         }
 
-        if(value->isInheritValue() && !(value = m_parentStyle.get(id)))
+        if(value->isInheritValue() && !(value = m_parentStyle->get(id)))
             continue;
         newStyle->set(id, std::move(value));
     }

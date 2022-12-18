@@ -6,8 +6,11 @@
 #include <vector>
 #include <ostream>
 #include <cstring>
+#include <iostream>
 
 namespace htmlbook {
+
+using Heap = std::pmr::monotonic_buffer_resource;
 
 class HeapString {
 public:
@@ -33,26 +36,18 @@ public:
     const std::string_view& value() const { return m_value; }
     operator const std::string_view&() const { return m_value; }
 
+    static HeapString create(Heap* heap, const char* data) { return create(heap, data, std::strlen(data)); }
+    static HeapString create(Heap* heap, const std::string_view& value) { return create(heap, value.data(), value.length()); }
+    static HeapString create(Heap* heap, const char* data, size_t length);
+
 private:
     HeapString(const std::string_view& value) : m_value(value) {}
     std::string_view m_value;
-    friend class Heap;
 };
 
-using HeapBase = std::pmr::monotonic_buffer_resource;
-
-class Heap : public HeapBase {
-public:
-    explicit Heap(size_t capacity) : HeapBase(capacity) {}
-
-    HeapString createString(const char* data) { return createString(data, std::strlen(data)); }
-    HeapString createString(const std::string_view& value) { return createString(value.data(), value.length()); }
-    HeapString createString(const char* data, size_t length);
-};
-
-inline HeapString Heap::createString(const char* data, size_t length)
+inline HeapString HeapString::create(Heap* heap, const char* data, size_t length)
 {
-    auto content = static_cast<char*>(allocate(length, alignof(char)));
+    auto content = static_cast<char*>(heap->allocate(length, alignof(char)));
     std::memcpy(content, data, length);
     return HeapString({content, length});
 }

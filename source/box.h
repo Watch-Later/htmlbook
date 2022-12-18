@@ -13,7 +13,7 @@ class BoxLayer;
 class BlockBox;
 class BlockFlowBox;
 
-class Box {
+class Box : public HeapMember {
 public:
     Box(Node* node, const RefPtr<BoxStyle>& style);
 
@@ -91,6 +91,7 @@ public:
     void setPositioned(bool value) { m_positioned = value; }
     void setChildrenInline(bool value) { m_childrenInline = value; }
 
+    Heap* heap() const { return m_style->heap(); }
     Display display() const { return m_style->display(); }
     Position position() const { return m_style->position(); }
 
@@ -128,19 +129,20 @@ private:
 
 class BoxModel;
 
-class BoxLayer {
+class BoxLayer : public HeapMember {
 public:
-    BoxLayer(BoxModel* box, BoxLayer* parent);
+    static std::unique_ptr<BoxLayer> create(BoxModel* box, BoxLayer* parent);
 
     int index() const { return m_index; }
     BoxModel* box() const { return m_box; }
     BoxLayer* parent() const { return m_parent; }
 
 private:
+    BoxLayer(BoxModel* box, BoxLayer* parent);
     int m_index;
     BoxModel* m_box;
     BoxLayer* m_parent;
-    std::list<BoxLayer*> m_children;
+    std::pmr::list<BoxLayer*> m_children;
 };
 
 class TextBox : public Box {

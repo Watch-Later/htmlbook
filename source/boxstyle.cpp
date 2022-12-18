@@ -25,20 +25,30 @@ const LengthRect LengthRect::Auto(Length::Auto, Length::Auto, Length::Auto, Leng
 const LengthRect LengthRect::ZeroPercent(Length::ZeroPercent, Length::ZeroPercent, Length::ZeroPercent, Length::ZeroPercent);
 const LengthRect LengthRect::ZeroFixed(Length::ZeroFixed, Length::ZeroFixed, Length::ZeroFixed, Length::ZeroFixed);
 
-RefPtr<BoxStyle> BoxStyle::create(Document* document, PseudoType pseudoType)
+RefPtr<BoxStyle> BoxStyle::create(Node* node, PseudoType pseudoType, Display display)
 {
-    return adoptPtr(new BoxStyle(document, pseudoType, Display::Inline));
+    return adoptPtr(new (node->heap()) BoxStyle(node, pseudoType, display));
 }
 
-RefPtr<BoxStyle> BoxStyle::create(const BoxStyle& parentStyle, Display display)
+RefPtr<BoxStyle> BoxStyle::create(const RefPtr<BoxStyle>& parentStyle, Display display)
 {
-    auto newStyle = adoptPtr(new BoxStyle(parentStyle.document(), PseudoType::None, display));
-    newStyle->inheritFrom(parentStyle);
+    auto newStyle = create(parentStyle->node(), PseudoType::None, display);
+    newStyle->inheritFrom(*parentStyle);
     return newStyle;
 }
 
-BoxStyle::BoxStyle(Document* document, PseudoType pseudoType, Display display)
-    : m_document(document), m_pseudoType(pseudoType), m_display(display)
+Document* BoxStyle::document() const
+{
+    return m_node->document();
+}
+
+Heap* BoxStyle::heap() const
+{
+    return m_node->heap();
+}
+
+BoxStyle::BoxStyle(Node* node, PseudoType pseudoType, Display display)
+    : m_node(node), m_properties(node->heap()), m_pseudoType(pseudoType), m_display(display)
 {
 }
 
@@ -52,7 +62,7 @@ RefPtr<FontFace> BoxStyle::fontFace() const
     if(fontFamily && fontFamily->isListValue()) {
         for(auto& value : to<CSSListValue>(*fontFamily)->values()) {
             auto family = to<CSSStringValue>(*value);
-            m_fontFace = m_document->getFontFace(family->value(), italic, smallCaps, m_fontWeight);
+            m_fontFace = document()->getFontFace(family->value(), italic, smallCaps, m_fontWeight);
             if(m_fontFace.empty())
                 continue;
             return m_fontFace;
@@ -60,7 +70,7 @@ RefPtr<FontFace> BoxStyle::fontFace() const
     }
 
     static const std::string family("sans-serif");
-    m_fontFace = m_document->getFontFace(family, italic, smallCaps, m_fontWeight);
+    m_fontFace = document()->getFontFace(family, italic, smallCaps, m_fontWeight);
     return m_fontFace;
 }
 
@@ -1229,29 +1239,29 @@ float BoxStyle::chFontSize() const
 
 float BoxStyle::remFontSize() const
 {
-    if(auto style = m_document->rootStyle())
+    if(auto style = document()->rootStyle())
         return style->fontSize();
     return 12.0;
 }
 
 float BoxStyle::viewportWidth() const
 {
-    return m_document->viewportWidth();
+    return document()->viewportWidth();
 }
 
 float BoxStyle::viewportHeight() const
 {
-    return m_document->viewportHeight();
+    return document()->viewportHeight();
 }
 
 float BoxStyle::viewportMin() const
 {
-    return std::min(m_document->viewportWidth(), m_document->viewportHeight());
+    return std::min(document()->viewportWidth(), document()->viewportHeight());
 }
 
 float BoxStyle::viewportMax() const
 {
-    return std::max(m_document->viewportWidth(), m_document->viewportHeight());
+    return std::max(document()->viewportWidth(), document()->viewportHeight());
 }
 
 float BoxStyle::convertLengthValue(const CSSValue& value) const
@@ -1455,7 +1465,7 @@ RefPtr<Image> BoxStyle::convertImage(const CSSValue& value) const
 {
     assert(value.isImageValue());
     auto image = to<CSSImageValue>(value);
-    return image->fetch(m_document);
+    return image->fetch(document());
 }
 
 RefPtr<Image> BoxStyle::convertImageOrNone(const CSSValue& value) const

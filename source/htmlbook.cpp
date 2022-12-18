@@ -13,44 +13,48 @@ const PageSize PageSize::Letter(612, 792);
 const PageSize PageSize::Legal(612, 1008);
 const PageSize PageSize::Ledger(1224, 792);
 
-Book::Book(const PageSize& size, PageOrientation orientation, const PageMargins& margins)
-    : m_document(new HTMLDocument(size, orientation, margins))
+Book::Book(std::pmr::memory_resource* upstream)
+    : Book(PageSize::A4, PageOrientation::Portrait, PageMargins(), upstream)
 {
 }
 
-Book::~Book() = default;
-
-void Book::setBaseUrl(std::string_view baseUrl)
+Book::Book(const PageSize& size, PageOrientation orientation, const PageMargins& margins, std::pmr::memory_resource* upstream)
+    : m_pageSize(size)
+    , m_pageOrientation(orientation)
+    , m_pageMargins(margins)
+    , m_heap(1024* 5, upstream)
 {
-    m_document->setBaseUrl(baseUrl);
 }
 
-const std::string& Book::baseUrl() const
+Book::~Book()
 {
-    return m_document->baseUrl();
+    delete m_document;
 }
 
-void Book::loadUrl(std::string_view url)
+void Book::loadUrl(const std::string_view& url, const std::string_view& userStyle)
 {
-    auto textResource = m_document->fetchTextResource(url);
-    if(textResource == nullptr)
+    std::string mimeType;
+    std::string textEncoding;
+    std::vector<char> data;
+    if(!resourceLoader()->loadUrl(url, mimeType, textEncoding, data))
         return;
-    load(textResource->text());
+    load(TextResource::decode(data.data(), data.size(), mimeType, textEncoding), url, userStyle);
 }
 
-void Book::load(const char* data, size_t length, std::string_view textEncoding)
+void Book::loadData(const char* data, size_t length, const std::string_view& textEncoding, const std::string_view& baseUrl, const std::string_view& userStyle)
 {
-    load(TextResource::decode(data, length, "text/html", textEncoding));
+    load(TextResource::decode(data, length, "text/html", textEncoding), baseUrl, userStyle);
 }
 
-void Book::load(std::string_view content)
+void Book::load(const std::string_view& content, const std::string_view& baseUrl, const std::string_view& userStyle)
 {
+    delete m_document;
+    m_heap.release();
+
+    m_document = new (&m_heap) HTMLDocument(&m_heap, this);
+    m_document->setBaseUrl(baseUrl);
+    m_document->addUserStyleSheet(userStyle);
     m_document->load(content);
-}
-
-void Book::addUserStyleSheet(std::string_view content)
-{
-    m_document->addUserStyleSheet(content);
 }
 
 void Book::save(const std::string& filename)
@@ -60,11 +64,6 @@ void Book::save(const std::string& filename)
 void Book::serialize(std::ostream& o) const
 {
     m_document->serialize(o);
-}
-
-HTMLDocument* Book::document() const
-{
-    return m_document.get();
 }
 
 } // namespace htmlbook

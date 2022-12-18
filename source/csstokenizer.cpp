@@ -99,7 +99,7 @@ HeapString CSSTokenizer::consumeName()
         }
     }
 
-    return m_heap->createString(m_characterBuffer);
+    return HeapString::create(m_heap, m_characterBuffer);
 }
 
 uint32_t CSSTokenizer::consumeEscape()
@@ -169,7 +169,7 @@ CSSToken CSSTokenizer::consumeStringToken()
 
     if(m_characterBuffer.empty())
         return CSSToken(CSSToken::Type::String);
-    return CSSToken(CSSToken::Type::String, m_heap->createString(m_characterBuffer));
+    return CSSToken(CSSToken::Type::String, HeapString::create(m_heap, m_characterBuffer));
 }
 
 CSSToken CSSTokenizer::consumeNumericToken()
@@ -314,7 +314,7 @@ CSSToken CSSTokenizer::consumeUrlToken()
         m_input.advance();
     }
 
-    return CSSToken(CSSToken::Type::Url, m_heap->createString(m_characterBuffer));
+    return CSSToken(CSSToken::Type::Url, HeapString::create(m_heap, m_characterBuffer));
 }
 
 CSSToken CSSTokenizer::consumeBadUrlRemnants()
