@@ -365,8 +365,7 @@ Document::Document(Heap* heap)
     , m_heap(heap)
     , m_idCache(heap)
     , m_resourceCache(heap)
-    , m_authorRules(heap)
-    , m_userRules(heap)
+    , m_styleSheet(this)
 {
 }
 
@@ -412,39 +411,24 @@ Element* Document::createElement(const GlobalString& tagName, const GlobalString
     return new (m_heap) Element(this, tagName, namespaceUri);
 }
 
-void Document::addAuthorStyleSheet(const std::string_view& content)
+void Document::addStyleSheet(const std::string_view& content)
 {
-    assert(m_styleSheet == nullptr);
-    CSSParser parser(heap());
-    parser.parseSheet(m_authorRules, content);
-}
-
-void Document::addUserStyleSheet(const std::string_view& content)
-{
-    assert(m_styleSheet == nullptr);
-    CSSParser parser(heap());
-    parser.parseSheet(m_userRules, content);
-}
-
-const CSSStyleSheet* Document::styleSheet() const
-{
-    assert(m_styleSheet != nullptr);
-    return m_styleSheet.get();
+    m_styleSheet.parseStyle(content);
 }
 
 RefPtr<BoxStyle> Document::styleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle)
 {
-    return styleSheet()->styleForElement(element, parentStyle);
+    return m_styleSheet.styleForElement(element, parentStyle);
 }
 
 RefPtr<BoxStyle> Document::pseudoStyleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle, PseudoType pseudoType)
 {
-    return styleSheet()->pseudoStyleForElement(element, parentStyle, pseudoType);
+    return m_styleSheet.pseudoStyleForElement(element, parentStyle, pseudoType);
 }
 
 RefPtr<FontFace> Document::getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight)
 {
-    return styleSheet()->getFontFace(family, italic, smallCaps, weight);
+    return m_styleSheet.getFontFace(family, italic, smallCaps, weight);
 }
 
 RefPtr<TextResource> Document::fetchTextResource(const std::string_view& url)
@@ -484,13 +468,6 @@ float Document::viewportHeight() const
     return 0.0;
 }
 
-void Document::build()
-{
-    m_styleSheet = CSSStyleSheet::create(this);
-    Counters counters;
-    buildBox(counters, nullptr);
-}
-
 void Document::buildBox(Counters& counters, Box* parent)
 {
     assert(parent == nullptr);
@@ -502,6 +479,12 @@ void Document::buildBox(Counters& counters, Box* parent)
     auto box = createBox(style);
     ContainerNode::buildBox(counters, box);
     box->buildBox(nullptr);
+}
+
+void Document::build()
+{
+    Counters counters(this);
+    buildBox(counters, nullptr);
 }
 
 template<typename ResourceType>

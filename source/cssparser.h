@@ -16,13 +16,13 @@ public:
     void parseStyle(CSSPropertyList& properties, const std::string_view& content);
 
 private:
-    std::unique_ptr<CSSRule> consumeRule(CSSTokenStream& input);
-    std::unique_ptr<CSSRule> consumeStyleRule(CSSTokenStream& input);
-    std::unique_ptr<CSSRule> consumeAtRule(CSSTokenStream& input);
-    std::unique_ptr<CSSRule> consumeImportRule(CSSTokenStream& input);
-    std::unique_ptr<CSSRule> consumeFontFaceRule(CSSTokenStream& prelude, CSSTokenStream& block);
-    std::unique_ptr<CSSRule> consumePageRule(CSSTokenStream& prelude, CSSTokenStream& block);
-    std::unique_ptr<CSSPageMarginRule> consumePageMarginRule(CSSTokenStream& input);
+    RefPtr<CSSRule> consumeRule(CSSTokenStream& input);
+    RefPtr<CSSRule> consumeStyleRule(CSSTokenStream& input);
+    RefPtr<CSSRule> consumeAtRule(CSSTokenStream& input);
+    RefPtr<CSSRule> consumeImportRule(CSSTokenStream& input);
+    RefPtr<CSSRule> consumeFontFaceRule(CSSTokenStream& prelude, CSSTokenStream& block);
+    RefPtr<CSSRule> consumePageRule(CSSTokenStream& prelude, CSSTokenStream& block);
+    RefPtr<CSSPageMarginRule> consumePageMarginRule(CSSTokenStream& input);
 
     bool consumePageSelector(CSSTokenStream& input, CSSPageSelector& selector);
     bool consumePageSelectorList(CSSTokenStream& input, CSSPageSelectorList& selectors);

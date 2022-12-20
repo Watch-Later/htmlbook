@@ -34,14 +34,14 @@ void CSSParser::parseStyle(CSSPropertyList& properties, const std::string_view& 
     consumeDeclaractionList(input, properties);
 }
 
-std::unique_ptr<CSSRule> CSSParser::consumeRule(CSSTokenStream& input)
+RefPtr<CSSRule> CSSParser::consumeRule(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::AtKeyword)
         return consumeAtRule(input);
     return consumeStyleRule(input);
 }
 
-std::unique_ptr<CSSRule> CSSParser::consumeStyleRule(CSSTokenStream& input)
+RefPtr<CSSRule> CSSParser::consumeStyleRule(CSSTokenStream& input)
 {
     auto preludeBegin = input.begin();
     while(!input.empty() && input->type() != CSSToken::Type::LeftCurlyBracket) {
@@ -62,7 +62,7 @@ std::unique_ptr<CSSRule> CSSParser::consumeStyleRule(CSSTokenStream& input)
     return CSSStyleRule::create(m_heap, std::move(selectors), std::move(properties));
 }
 
-std::unique_ptr<CSSRule> CSSParser::consumeAtRule(CSSTokenStream& input)
+RefPtr<CSSRule> CSSParser::consumeAtRule(CSSTokenStream& input)
 {
     assert(input->type() == CSSToken::Type::AtKeyword);
     auto name = input->data();
@@ -92,7 +92,7 @@ std::unique_ptr<CSSRule> CSSParser::consumeAtRule(CSSTokenStream& input)
     return nullptr;
 }
 
-std::unique_ptr<CSSRule> CSSParser::consumeImportRule(CSSTokenStream& input)
+RefPtr<CSSRule> CSSParser::consumeImportRule(CSSTokenStream& input)
 {
     HeapString href;
     input.consumeWhitespace();
@@ -122,7 +122,7 @@ std::unique_ptr<CSSRule> CSSParser::consumeImportRule(CSSTokenStream& input)
     return CSSImportRule::create(m_heap, href);
 }
 
-std::unique_ptr<CSSRule> CSSParser::consumeFontFaceRule(CSSTokenStream& prelude, CSSTokenStream& block)
+RefPtr<CSSRule> CSSParser::consumeFontFaceRule(CSSTokenStream& prelude, CSSTokenStream& block)
 {
     prelude.consumeWhitespace();
     if(!prelude.empty())
@@ -133,7 +133,7 @@ std::unique_ptr<CSSRule> CSSParser::consumeFontFaceRule(CSSTokenStream& prelude,
     return CSSFontFaceRule::create(m_heap, std::move(properties));
 }
 
-std::unique_ptr<CSSRule> CSSParser::consumePageRule(CSSTokenStream& prelude, CSSTokenStream& block)
+RefPtr<CSSRule> CSSParser::consumePageRule(CSSTokenStream& prelude, CSSTokenStream& block)
 {
     CSSPageSelectorList selectors(m_heap);
     if(!consumePageSelectorList(prelude, selectors))
@@ -164,7 +164,7 @@ std::unique_ptr<CSSRule> CSSParser::consumePageRule(CSSTokenStream& prelude, CSS
     return CSSPageRule::create(m_heap, std::move(selectors), std::move(margins), std::move(properties));
 }
 
-std::unique_ptr<CSSPageMarginRule> CSSParser::consumePageMarginRule(CSSTokenStream& input)
+RefPtr<CSSPageMarginRule> CSSParser::consumePageMarginRule(CSSTokenStream& input)
 {
     assert(input->type() == CSSToken::Type::AtKeyword);
     auto name = input->data();
@@ -222,7 +222,7 @@ bool CSSParser::consumePageSelector(CSSTokenStream& input, CSSPageSelector& sele
     }
 
     if(input->type() == CSSToken::Type::Ident) {
-        selector.emplace_back(CSSSimpleSelector::MatchType::Tag, input->data());
+        selector.emplace_back(CSSSimpleSelector::MatchType::Id, input->data());
         input.consume();
     }
 
@@ -430,8 +430,9 @@ bool CSSParser::consumeAttributeSelector(CSSTokenStream& input, CSSCompoundSelec
 
     if(matchType != CSSSimpleSelector::MatchType::AttributeEquals) {
         block.consume();
-        if(block->type() != CSSToken::Type::Delim && block->delim() != '=')
+        if(block->type() != CSSToken::Type::Delim && block->delim() != '=') {
             return false;
+        }
     }
 
     block.consumeIncludingWhitespace();

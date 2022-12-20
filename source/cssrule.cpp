@@ -584,14 +584,14 @@ bool CSSSimpleSelector::matchnth(int count) const
     return (b - count) % -a == 0;
 }
 
-std::unique_ptr<CSSStyleRule> CSSStyleRule::create(Heap* heap, CSSSelectorList selectors, CSSPropertyList properties)
+RefPtr<CSSStyleRule> CSSStyleRule::create(Heap* heap, CSSSelectorList selectors, CSSPropertyList properties)
 {
-    return std::unique_ptr<CSSStyleRule>(new (heap) CSSStyleRule(std::move(selectors), std::move(properties)));
+    return adoptPtr(new (heap) CSSStyleRule(std::move(selectors), std::move(properties)));
 }
 
-std::unique_ptr<CSSImportRule> CSSImportRule::create(Heap* heap, const HeapString& href)
+RefPtr<CSSImportRule> CSSImportRule::create(Heap* heap, const HeapString& href)
 {
-    return std::unique_ptr<CSSImportRule>(new (heap) CSSImportRule(heap, href));
+    return adoptPtr(new (heap) CSSImportRule(heap, href));
 }
 
 const CSSRuleList& CSSImportRule::fetch(Document* document) const
@@ -606,19 +606,19 @@ const CSSRuleList& CSSImportRule::fetch(Document* document) const
     return m_rules;
 }
 
-std::unique_ptr<CSSFontFaceRule> CSSFontFaceRule::create(Heap* heap, CSSPropertyList properties)
+RefPtr<CSSFontFaceRule> CSSFontFaceRule::create(Heap* heap, CSSPropertyList properties)
 {
-    return std::unique_ptr<CSSFontFaceRule>(new (heap) CSSFontFaceRule(std::move(properties)));
+    return adoptPtr(new (heap) CSSFontFaceRule(std::move(properties)));
 }
 
-std::unique_ptr<CSSPageMarginRule> CSSPageMarginRule::create(Heap* heap, MarginType marginType, CSSPropertyList properties)
+RefPtr<CSSPageMarginRule> CSSPageMarginRule::create(Heap* heap, MarginType marginType, CSSPropertyList properties)
 {
-    return std::unique_ptr<CSSPageMarginRule>(new (heap) CSSPageMarginRule(marginType, std::move(properties)));
+    return adoptPtr(new (heap) CSSPageMarginRule(marginType, std::move(properties)));
 }
 
-std::unique_ptr<CSSPageRule> CSSPageRule::create(Heap* heap, CSSPageSelectorList selectors, CSSPageMarginRuleList margins, CSSPropertyList properties)
+RefPtr<CSSPageRule> CSSPageRule::create(Heap* heap, CSSPageSelectorList selectors, CSSPageMarginRuleList margins, CSSPropertyList properties)
 {
-    return std::unique_ptr<CSSPageRule>(new (heap) CSSPageRule(std::move(selectors), std::move(margins), std::move(properties)));
+    return adoptPtr(new (heap) CSSPageRule(std::move(selectors), std::move(margins), std::move(properties)));
 }
 
 bool CSSRuleData::match(const Element* element, PseudoType pseudoType) const
@@ -979,9 +979,15 @@ void CSSFontFaceCache::add(const HeapString& family, bool italic, bool smallCaps
     m_fontFaceDataMap[family].emplace_back(italic, smallCaps, weight, std::move(face));
 }
 
-std::unique_ptr<CSSStyleSheet> CSSStyleSheet::create(Document* document)
+static const CSSRuleList& userAgentRules() {
+    static CSSRuleList userAgentRules;
+    return userAgentRules;
+}
+
+CSSStyleSheet::CSSStyleSheet(Document* document)
+    : m_document(document)
 {
-    return std::unique_ptr<CSSStyleSheet>(new CSSStyleSheet(document));
+    addRules(userAgentRules());
 }
 
 RefPtr<BoxStyle> CSSStyleSheet::styleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle) const
@@ -1009,39 +1015,34 @@ RefPtr<FontFace> CSSStyleSheet::getFontFace(const std::string_view& family, bool
     return resourceLoader()->loadFont(family, italic, smallCaps, weight);
 }
 
-static const CSSRuleList& userAgentRules() {
-    static CSSRuleList userAgentRules;
-    return userAgentRules;
-}
-
-CSSStyleSheet::CSSStyleSheet(Document* document)
+void CSSStyleSheet::parseStyle(const std::string_view& content)
 {
-    uint32_t position = 0;
-    addRules(document, position, userAgentRules());
-    addRules(document, position, document->authorRules());
-    addRules(document, position, document->userRules());
+    CSSRuleList rules(m_document->heap());
+    CSSParser parser(m_document->heap());
+    parser.parseSheet(rules, content);
+    addRules(rules);
 }
 
-void CSSStyleSheet::addRules(Document* document, uint32_t& position, const CSSRuleList& rules)
+void CSSStyleSheet::addRules(const CSSRuleList& rules)
 {
     for(const auto& rule : rules) {
         if(auto styleRule = to<CSSStyleRule>(*rule)) {
-            addStyleRule(position, styleRule);
+            addStyleRule(styleRule);
         } else if(auto pageRule = to<CSSPageRule>(*rule)) {
-            addPageRule(position, pageRule);
+            addPageRule(pageRule);
         } else if(auto fontFaceRule = to<CSSFontFaceRule>(*rule)) {
-            addFontFaceRule(document, fontFaceRule);
+            addFontFaceRule(fontFaceRule);
         } else if(auto importRule = to<CSSImportRule>(*rule)) {
-            addRules(document, position, importRule->fetch(document));
+            addRules(importRule->fetch(m_document));
         } else {
             assert(false);
         }
 
-        position += 1;
+        m_position += 1;
     }
 }
 
-void CSSStyleSheet::addStyleRule(uint32_t position, const CSSStyleRule* rule)
+void CSSStyleSheet::addStyleRule(const RefPtr<CSSStyleRule>& rule)
 {
     for(auto& selector : rule->selectors()) {
         uint32_t specificity = 0;
@@ -1065,13 +1066,14 @@ void CSSStyleSheet::addStyleRule(uint32_t position, const CSSStyleRule* rule)
             }
         }
 
-        CSSRuleData ruleData(rule, selector, specificity, position);
+        CSSRuleData ruleData(rule, &selector, specificity, m_position);
+        assert(lastSimpleSelector != nullptr);
         switch(lastSimpleSelector->matchType()) {
         case CSSSimpleSelector::MatchType::Id:
-            m_idRules.add(lastSimpleSelector->name(), ruleData);
+            m_idRules.add(lastSimpleSelector->value(), ruleData);
             break;
         case CSSSimpleSelector::MatchType::Class:
-            m_classRules.add(lastSimpleSelector->name(), ruleData);
+            m_classRules.add(lastSimpleSelector->value(), ruleData);
             break;
         case CSSSimpleSelector::MatchType::Tag:
             m_tagRules.add(lastSimpleSelector->name(), ruleData);
@@ -1098,13 +1100,13 @@ void CSSStyleSheet::addStyleRule(uint32_t position, const CSSStyleRule* rule)
     }
 }
 
-void CSSStyleSheet::addPageRule(uint32_t position, const CSSPageRule* rule)
+void CSSStyleSheet::addPageRule(const RefPtr<CSSPageRule>& rule)
 {
     for(auto& selector : rule->selectors()) {
         uint32_t specificity = 0;
         for(auto& sel : selector) {
             switch(sel.matchType()) {
-            case CSSSimpleSelector::MatchType::Tag:
+            case CSSSimpleSelector::MatchType::Id:
                 specificity += 0x10000;
                 break;
             case CSSSimpleSelector::MatchType::PseudoPageFirst:
@@ -1120,12 +1122,12 @@ void CSSStyleSheet::addPageRule(uint32_t position, const CSSPageRule* rule)
             }
         }
 
-        CSSPageRuleData ruleData(rule, selector, specificity, position);
+        CSSPageRuleData ruleData(rule, &selector, specificity, m_position);
         m_pageRules.insert(ruleData);
     }
 }
 
-void CSSStyleSheet::addFontFaceRule(Document* document, const CSSFontFaceRule* rule)
+void CSSStyleSheet::addFontFaceRule(const RefPtr<CSSFontFaceRule>& rule)
 {
     RefPtr<CSSValue> fontFamily;
     RefPtr<CSSValue> fontStyle;
@@ -1227,7 +1229,7 @@ void CSSStyleSheet::addFontFaceRule(Document* document, const CSSFontFaceRule* r
             }
         }
 
-        auto fontResource = document->fetchFontResource(url->value());
+        auto fontResource = m_document->fetchFontResource(url->value());
         if(fontResource == nullptr)
             return nullptr;
         return fontResource->face();

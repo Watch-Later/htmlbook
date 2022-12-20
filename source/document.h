@@ -214,17 +214,12 @@ public:
     TextNode* createText(const std::string_view& value);
     Element* createElement(const GlobalString& tagName, const GlobalString& namespaceUri);
 
-    const std::string& baseUrl() const { return m_baseUrl.value(); }
-    void setBaseUrl(const std::string_view& value) { m_baseUrl = value; }
+    const Url& baseUrl() const { return m_baseUrl; }
+    void setBaseUrl(Url value) { m_baseUrl = std::move(value); }
 
     virtual bool load(const std::string_view& content) = 0;
 
-    void addAuthorStyleSheet(const std::string_view& content);
-    void addUserStyleSheet(const std::string_view& content);
-
-    const CSSRuleList& authorRules() const { return m_authorRules; }
-    const CSSRuleList& userRules() const { return m_userRules; }
-    const CSSStyleSheet* styleSheet() const;
+    void addStyleSheet(const std::string_view& content);
 
     RefPtr<BoxStyle> styleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle);
     RefPtr<BoxStyle> pseudoStyleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle, PseudoType pseudoType);
@@ -236,24 +231,22 @@ public:
 
     Element* rootElement() const;
     RefPtr<BoxStyle> rootStyle() const;
+    const CSSStyleSheet& styleSheet() const { return m_styleSheet; }
 
     float viewportWidth() const;
     float viewportHeight() const;
 
-    void build();
-
     void buildBox(Counters& counters, Box* parent) override;
+    void build();
 
 private:
     template<typename ResourceType>
     RefPtr<ResourceType> fetchResource(const std::string_view& url);
     Heap* m_heap;
     Url m_baseUrl;
-    std::unique_ptr<CSSStyleSheet> m_styleSheet;
     std::pmr::map<HeapString, Element*> m_idCache;
     std::pmr::map<Url, RefPtr<Resource>> m_resourceCache;
-    CSSRuleList m_authorRules;
-    CSSRuleList m_userRules;
+    CSSStyleSheet m_styleSheet;
 };
 
 template<>

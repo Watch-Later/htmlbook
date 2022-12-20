@@ -971,7 +971,7 @@ private:
     CSSCompoundSelector m_compoundSelector;
 };
 
-class CSSRule : public HeapMember {
+class CSSRule : public HeapMember, public RefCounted<CSSRule> {
 public:
     enum class Type {
         Style,
@@ -988,11 +988,11 @@ protected:
     CSSRule() = default;
 };
 
-using CSSRuleList = std::pmr::list<std::unique_ptr<CSSRule>>;
+using CSSRuleList = std::pmr::list<RefPtr<CSSRule>>;
 
 class CSSStyleRule final : public CSSRule {
 public:
-    static std::unique_ptr<CSSStyleRule> create(Heap* heap, CSSSelectorList selectors, CSSPropertyList properties);
+    static RefPtr<CSSStyleRule> create(Heap* heap, CSSSelectorList selectors, CSSPropertyList properties);
 
     const CSSSelectorList& selectors() const { return m_selectors; }
     const CSSPropertyList& properties() const { return m_properties; }
@@ -1014,7 +1014,7 @@ struct is<CSSStyleRule> {
 
 class CSSImportRule final : public CSSRule {
 public:
-    static std::unique_ptr<CSSImportRule> create(Heap* heap, const HeapString& href);
+    static RefPtr<CSSImportRule> create(Heap* heap, const HeapString& href);
 
     const HeapString& href() const { return m_href; }
     Type type() const final { return Type::Import; }
@@ -1037,7 +1037,7 @@ struct is<CSSImportRule> {
 
 class CSSFontFaceRule : public CSSRule {
 public:
-    static std::unique_ptr<CSSFontFaceRule> create(Heap* heap, CSSPropertyList properties);
+    static RefPtr<CSSFontFaceRule> create(Heap* heap, CSSPropertyList properties);
 
     const CSSPropertyList& properties() const { return m_properties; }
     Type type() const final { return Type::FontFace; }
@@ -1076,7 +1076,7 @@ public:
         RightBottom
     };
 
-    static std::unique_ptr<CSSPageMarginRule> create(Heap* heap, MarginType marginType, CSSPropertyList properties);
+    static RefPtr<CSSPageMarginRule> create(Heap* heap, MarginType marginType, CSSPropertyList properties);
 
     MarginType marginType() const { return m_marginType; }
     const CSSPropertyList& properties() const { return m_properties; }
@@ -1096,11 +1096,11 @@ struct is<CSSPageMarginRule> {
     static bool check(const CSSRule& value) { return value.type() == CSSRule::Type::PageMargin; }
 };
 
-using CSSPageMarginRuleList = std::pmr::list<std::unique_ptr<CSSPageMarginRule>>;
+using CSSPageMarginRuleList = std::pmr::list<RefPtr<CSSPageMarginRule>>;
 
 class CSSPageRule : public CSSRule {
 public:
-    static std::unique_ptr<CSSPageRule> create(Heap* heap, CSSPageSelectorList selectors, CSSPageMarginRuleList margins, CSSPropertyList properties);
+    static RefPtr<CSSPageRule> create(Heap* heap, CSSPageSelectorList selectors, CSSPageMarginRuleList margins, CSSPropertyList properties);
 
     const CSSPageSelectorList& selectors() const { return m_selectors; }
     const CSSPageMarginRuleList& margins() const { return m_margins; }
@@ -1135,11 +1135,11 @@ class Element;
 
 class CSSRuleData {
 public:
-    CSSRuleData(const CSSStyleRule* rule, const CSSSelector& selector, uint32_t specificity, uint32_t position)
-        : m_rule(rule), m_selector(&selector), m_specificity(specificity), m_position(position)
+    CSSRuleData(const RefPtr<CSSStyleRule>& rule, const CSSSelector* selector, uint32_t specificity, uint32_t position)
+        : m_rule(rule), m_selector(selector), m_specificity(specificity), m_position(position)
     {}
 
-    const CSSStyleRule* rule() const { return m_rule; }
+    const RefPtr<CSSStyleRule>& rule() const { return m_rule; }
     const CSSSelector* selector() const { return m_selector; }
     const CSSPropertyList& properties() const { return m_rule->properties(); }
     const uint32_t& specificity() const { return m_specificity; }
@@ -1191,7 +1191,7 @@ private:
     static bool matchPseudoClassNthLastOfTypeSelector(const Element* element, const CSSSimpleSelector& selector);
 
 private:
-    const CSSStyleRule* m_rule;
+    RefPtr<CSSStyleRule> m_rule;
     const CSSSelector* m_selector;
     uint32_t m_specificity;
     uint32_t m_position;
@@ -1231,18 +1231,19 @@ const CSSRuleDataList* CSSRuleDataMap<T>::get(const T& name) const
 
 class CSSPageRuleData {
 public:
-    CSSPageRuleData(const CSSPageRule* rule, const CSSPageSelector& selector, uint32_t specificity, uint32_t position)
-        : m_rule(rule), m_selector(&selector), m_specificity(specificity), m_position(position)
+    CSSPageRuleData(const RefPtr<CSSPageRule>& rule, const CSSPageSelector* selector, uint32_t specificity, uint32_t position)
+        : m_rule(rule), m_selector(selector), m_specificity(specificity), m_position(position)
     {}
 
-    const CSSPageRule* rule() const { return m_rule; }
+    const RefPtr<CSSPageRule>& rule() const { return m_rule; }
     const CSSPageSelector* selector() const { return m_selector; }
     const uint32_t& specificity() const { return m_specificity; }
     const uint32_t& position() const { return m_position; }
-    bool match(const GlobalString& pageName, size_t pageIndex) const;
+
+    bool match(const std::string_view& pageName, size_t pageIndex) const;
 
 private:
-    const CSSPageRule* m_rule;
+    RefPtr<CSSPageRule> m_rule;
     const CSSPageSelector* m_selector;
     uint32_t m_specificity;
     uint32_t m_position;
@@ -1272,20 +1273,21 @@ class BoxStyle;
 
 class CSSStyleSheet {
 public:
-    static std::unique_ptr<CSSStyleSheet> create(Document* document);
+    explicit CSSStyleSheet(Document* document);
 
     RefPtr<BoxStyle> styleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle) const;
     RefPtr<BoxStyle> pseudoStyleForElement(Element* element, const RefPtr<BoxStyle>& parentStyle, PseudoType pseudoType) const;
     RefPtr<FontFace> getFontFace(const std::string_view& family, bool italic, bool smallCaps, int weight) const;
 
+    void parseStyle(const std::string_view& content);
+
 private:
-    CSSStyleSheet(Document* document);
+    void addRules(const CSSRuleList& rules);
+    void addStyleRule(const RefPtr<CSSStyleRule>& rule);
+    void addPageRule(const RefPtr<CSSPageRule>& rule);
+    void addFontFaceRule(const RefPtr<CSSFontFaceRule>& rule);
 
-    void addRules(Document* document, uint32_t& position, const CSSRuleList& rules);
-    void addStyleRule(uint32_t position, const CSSStyleRule* rule);
-    void addPageRule(uint32_t position, const CSSPageRule* rule);
-    void addFontFaceRule(Document* document, const CSSFontFaceRule* rule);
-
+    Document* m_document;
     CSSRuleDataMap<HeapString> m_idRules;
     CSSRuleDataMap<HeapString> m_classRules;
     CSSRuleDataMap<GlobalString> m_tagRules;
@@ -1294,6 +1296,8 @@ private:
     CSSRuleDataList m_universeRules;
     CSSPageRuleDataList m_pageRules;
     CSSFontFaceCache m_fontFaceCache;
+
+    uint32_t m_position{0};
 };
 
 class CSSStyleBuilder {

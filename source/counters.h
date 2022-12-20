@@ -5,11 +5,13 @@
 
 namespace htmlbook {
 
-using Counter = std::map<HeapString, int>;
+using Counter = std::pmr::map<HeapString, int>;
 
 class Counters {
 public:
-    Counters() = default;
+    explicit Counters(Document* document)
+        : m_document(document)
+    {}
 
     void push() { m_counters.push_back(nullptr); }
     void pop() { m_counters.pop_back(); }
@@ -21,7 +23,7 @@ public:
     void decreaseQuoteDepth() { --m_quoteDepth; }
     size_t quoteDepth() const { return m_quoteDepth; }
 
-    std::string format(const HeapString& name, ListStyleType listStyle, const std::string_view& separator) const;
+    std::string format(const HeapString& name, ListStyleType listStyle, const HeapString& separator) const;
 
     int value(const HeapString& name) const;
     std::vector<int> values(const HeapString& name) const;
@@ -32,7 +34,8 @@ public:
 
 private:
     Counter* find(const HeapString& name) const;
-    std::vector<std::unique_ptr<Counter>> m_counters;
+    Document* m_document;
+    std::pmr::vector<std::unique_ptr<Counter>> m_counters;
     size_t m_quoteDepth{0};
 };
 

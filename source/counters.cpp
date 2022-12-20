@@ -66,7 +66,7 @@ void Counters::update(const Box* box, CSSPropertyID id)
     }
 }
 
-std::string Counters::format(const HeapString& name, ListStyleType listStyle, const std::string_view& separator) const
+std::string Counters::format(const HeapString& name, ListStyleType listStyle, const HeapString& separator) const
 {
     std::string value;
     return value;
@@ -99,7 +99,7 @@ void Counters::reset(const HeapString& name, int value)
 {
     auto& counter = m_counters.back();
     if(counter == nullptr)
-        counter = std::make_unique<Counter>();
+        counter = std::make_unique<Counter>(m_document->heap());
     counter->operator[](name) = value;
 }
 

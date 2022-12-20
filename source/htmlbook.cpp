@@ -53,8 +53,8 @@ void Book::load(const std::string_view& content, const std::string_view& baseUrl
 
     m_document = new (&m_heap) HTMLDocument(&m_heap, this);
     m_document->setBaseUrl(baseUrl);
-    m_document->addUserStyleSheet(userStyle);
     m_document->load(content);
+    m_document->addStyleSheet(userStyle);
 }
 
 void Book::save(const std::string& filename)

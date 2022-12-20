@@ -414,7 +414,7 @@ void HTMLStyleElement::finishParsingChildren()
         child = child->nextSibling();
     }
 
-    document()->addAuthorStyleSheet(content);
+    document()->addStyleSheet(content);
 }
 
 HTMLLinkElement::HTMLLinkElement(Document* document)
@@ -444,7 +444,7 @@ void HTMLLinkElement::finishParsingChildren()
     auto resource = document()->fetchTextResource(href());
     if(resource == nullptr)
         return;
-    document()->addAuthorStyleSheet(resource->text());
+    document()->addStyleSheet(resource->text());
 }
 
 HTMLDocument::HTMLDocument(Heap* heap, Book* book)
