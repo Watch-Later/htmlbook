@@ -6,34 +6,34 @@
 
 namespace htmlbook {
 
-RefPtr<TextResource> TextResource::create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data)
+RefPtr<TextResource> TextResource::create(Heap* heap, const std::string_view& mimeType, const std::string_view& textEncoding, std::vector<char> data)
 {
     auto text = decode(data.data(), data.size(), mimeType, textEncoding);
     if(text.empty())
         return nullptr;
-    return adoptPtr(new TextResource(std::move(text)));
+    return adoptPtr(new (heap) TextResource(std::move(text)));
 }
 
-std::string TextResource::decode(const char* data, size_t length, std::string_view mimeType, std::string_view textEncoding)
+std::string TextResource::decode(const char* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding)
 {
     std::string value;
     return value;
 }
 
-RefPtr<ImageResource> ImageResource::create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data)
+RefPtr<ImageResource> ImageResource::create(Heap* heap, const std::string_view& mimeType, const std::string_view& textEncoding, std::vector<char> data)
 {
     auto image = Image::create(data.data(), data.size());
     if(image == nullptr)
         return nullptr;
-    return adoptPtr(new ImageResource(std::move(image)));
+    return adoptPtr(new (heap) ImageResource(std::move(image)));
 }
 
-RefPtr<FontResource> FontResource::create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data)
+RefPtr<FontResource> FontResource::create(Heap* heap, const std::string_view& mimeType, const std::string_view& textEncoding, std::vector<char> data)
 {
     auto face = FontFace::create(std::move(data));
     if(face == nullptr)
         return nullptr;
-    return adoptPtr(new FontResource(std::move(face)));
+    return adoptPtr(new (heap) FontResource(std::move(face)));
 }
 
 RefPtr<Image> Image::create(const char* data, size_t length)

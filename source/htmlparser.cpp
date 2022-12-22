@@ -462,6 +462,7 @@ Element* HTMLElementStack::furthestBlockForFormattingElement(const Element* form
     }
 
     assert(false);
+    return nullptr;
 }
 
 Element* HTMLElementStack::topmost(const GlobalString& tagName) const
@@ -490,6 +491,7 @@ Element* HTMLElementStack::previous(const Element* element) const
     }
 
     assert(false);
+    return nullptr;
 }
 
 template<bool isMarker(const Element*)>
@@ -506,6 +508,7 @@ bool HTMLElementStack::inScopeTemplate(const GlobalString& tagName) const
     }
 
     assert(false);
+    return false;
 }
 
 bool HTMLElementStack::inScope(const Element* element) const
@@ -520,6 +523,7 @@ bool HTMLElementStack::inScope(const Element* element) const
     }
 
     assert(false);
+    return false;
 }
 
 bool HTMLElementStack::inScope(const GlobalString& tagName) const
@@ -559,6 +563,7 @@ bool HTMLElementStack::isNumberedHeaderElementInScope() const
     }
 
     assert(false);
+    return false;
 }
 
 void HTMLElementStack::replace(const Element* element, Element* item)
@@ -1182,7 +1187,7 @@ void HTMLParser::insertTextNode(const std::string_view& data)
 {
     InsertionLocation location;
     location.parent = m_openElements.top();
-    location.child = m_document->createText(data);
+    location.child = m_document->createTextNode(data);
     if(shouldFosterParent())
         findFosterLocation(location);
     insert(location);
@@ -2741,7 +2746,7 @@ void HTMLParser::handleInForeignContentMode(HTMLTokenView& token)
             || token.tagName() == uTag
             || token.tagName() == ulTag
             || token.tagName() == varTag
-            || (token.tagName() == fontTag && (token.findAttribute(colorAttr) || token.findAttribute(faceAttr) || token.findAttribute(sizeAttr)))) {
+            || (token.tagName() == fontTag && (token.hasAttribute(colorAttr) || token.hasAttribute(faceAttr) || token.hasAttribute(sizeAttr)))) {
             handleErrorToken(token);
             m_openElements.popUntilForeignContentScopeMarker();
             handleToken(token, m_insertionMode);

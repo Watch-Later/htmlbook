@@ -369,7 +369,7 @@ Document::Document(Heap* heap)
 {
 }
 
-TextNode* Document::createText(const std::string_view& value)
+TextNode* Document::createTextNode(const std::string_view& value)
 {
     return new (m_heap) TextNode(this, HeapString::create(m_heap, value));
 }
@@ -501,7 +501,7 @@ RefPtr<ResourceType> Document::fetchResource(const std::string_view& url)
     std::vector<char> data;
     if(!resourceLoader()->loadUrl(completeUrl, mimeType, textEncoding, data))
         return nullptr;
-    auto resource = ResourceType::create(mimeType, textEncoding, std::move(data));
+    auto resource = ResourceType::create(m_heap, mimeType, textEncoding, std::move(data));
     m_resourceCache.emplace(std::move(completeUrl), resource);
     return resource;
 }

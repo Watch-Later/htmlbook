@@ -381,6 +381,8 @@ ListStyleType BoxStyle::listStyleType() const
     default:
         assert(false);
     }
+
+    return ListStyleType::Decimal;
 }
 
 ListStylePosition BoxStyle::listStylePosition() const
@@ -398,6 +400,8 @@ ListStylePosition BoxStyle::listStylePosition() const
     default:
         assert(false);
     }
+
+    return ListStylePosition::Inside;
 }
 
 RefPtr<Image> BoxStyle::listStyleImage() const
@@ -443,6 +447,8 @@ BackgroundRepeat BoxStyle::backgroundRepeat() const
     default:
         assert(false);
     }
+
+    return BackgroundRepeat::Repeat;
 }
 
 BackgroundBox BoxStyle::backgroundOrigin() const
@@ -478,6 +484,8 @@ BackgroundAttachment BoxStyle::backgroundAttachment() const
     default:
         assert(false);
     }
+
+    return BackgroundAttachment::Scroll;
 }
 
 BackgroundSize BoxStyle::backgroundSize() const
@@ -530,6 +538,8 @@ TableLayout BoxStyle::tableLayout() const
     default:
         assert(false);
     }
+
+    return TableLayout::Auto;
 }
 
 CaptionSide BoxStyle::captionSide() const
@@ -547,6 +557,8 @@ CaptionSide BoxStyle::captionSide() const
     default:
         assert(false);
     }
+
+    return CaptionSide::Top;
 }
 
 EmptyCells BoxStyle::emptyCells() const
@@ -564,6 +576,8 @@ EmptyCells BoxStyle::emptyCells() const
     default:
         assert(false);
     }
+
+    return EmptyCells::Show;
 }
 
 BorderCollapse BoxStyle::borderCollapse() const
@@ -581,6 +595,8 @@ BorderCollapse BoxStyle::borderCollapse() const
     default:
         assert(false);
     }
+
+    return BorderCollapse::Separate;
 }
 
 float BoxStyle::borderHorizontalSpacing() const
@@ -618,6 +634,8 @@ TextTransform BoxStyle::textTransform() const
     default:
         assert(false);
     }
+
+    return TextTransform::None;
 }
 
 TextOverflow BoxStyle::textOverflow() const
@@ -635,6 +653,8 @@ TextOverflow BoxStyle::textOverflow() const
     default:
         assert(false);
     }
+
+    return TextOverflow::Clip;
 }
 
 TextDecorationStyle BoxStyle::textDecorationStyle() const
@@ -658,6 +678,8 @@ TextDecorationStyle BoxStyle::textDecorationStyle() const
     default:
         assert(false);
     }
+
+    return TextDecorationStyle::Solid;
 }
 
 Color BoxStyle::textDecorationColor() const
@@ -689,6 +711,8 @@ LineBreak BoxStyle::lineBreak() const
     default:
         assert(false);
     }
+
+    return LineBreak::Normal;
 }
 
 WordBreak BoxStyle::wordBreak() const
@@ -710,6 +734,8 @@ WordBreak BoxStyle::wordBreak() const
     default:
         assert(false);
     }
+
+    return WordBreak::Normal;
 }
 
 WordWrap BoxStyle::wordWrap() const
@@ -729,6 +755,8 @@ WordWrap BoxStyle::wordWrap() const
     default:
         assert(false);
     }
+
+    return WordWrap::Normal;
 }
 
 Hyphens BoxStyle::hyphens() const
@@ -748,6 +776,8 @@ Hyphens BoxStyle::hyphens() const
     default:
         assert(false);
     }
+
+    return Hyphens::Manual;
 }
 
 float BoxStyle::tabSize() const
@@ -871,6 +901,8 @@ FlexDirection BoxStyle::flexDirection() const
     default:
         assert(false);
     }
+
+    return FlexDirection::Row;
 }
 
 FlexWrap BoxStyle::flexWrap() const
@@ -890,6 +922,8 @@ FlexWrap BoxStyle::flexWrap() const
     default:
         assert(false);
     }
+
+    return FlexWrap::Nowrap;
 }
 
 AlignContent BoxStyle::justifyContent() const
@@ -929,6 +963,8 @@ AlignItems BoxStyle::alignItems() const
     default:
         assert(false);
     }
+
+    return AlignItems::Stretch;
 }
 
 AlignSelf BoxStyle::alignSelf() const
@@ -954,6 +990,8 @@ AlignSelf BoxStyle::alignSelf() const
     default:
         assert(false);
     }
+
+    return AlignSelf::Auto;
 }
 
 float BoxStyle::outlineOffset() const
@@ -1019,6 +1057,8 @@ ColumnSpan BoxStyle::columnSpan() const
     default:
         assert(false);
     }
+
+    return ColumnSpan::None;
 }
 
 ColumnFill BoxStyle::columnFill() const
@@ -1036,6 +1076,8 @@ ColumnFill BoxStyle::columnFill() const
     default:
         assert(false);
     }
+
+    return ColumnFill::Auto;
 }
 
 std::optional<float> BoxStyle::columnWidth() const
@@ -1520,6 +1562,8 @@ Display BoxStyle::convertDisplay(const CSSValue& value)
     default:
         assert(false);
     }
+
+    return Display::None;
 }
 
 Position BoxStyle::convertPosition(const CSSValue& value)
@@ -1538,6 +1582,8 @@ Position BoxStyle::convertPosition(const CSSValue& value)
     default:
         assert(false);
     }
+
+    return Position::Static;
 }
 
 Float BoxStyle::convertFloat(const CSSValue& value)
@@ -1554,6 +1600,8 @@ Float BoxStyle::convertFloat(const CSSValue& value)
     default:
         assert(false);
     }
+
+    return Float::None;
 }
 
 Clear BoxStyle::convertClear(const CSSValue& value)
@@ -1572,6 +1620,8 @@ Clear BoxStyle::convertClear(const CSSValue& value)
     default:
         assert(false);
     }
+
+    return Clear::None;
 }
 
 Overflow BoxStyle::convertOverflow(const CSSValue& value)
@@ -1592,6 +1642,8 @@ Overflow BoxStyle::convertOverflow(const CSSValue& value)
     default:
         assert(false);
     }
+
+    return Overflow::Auto;
 }
 
 Visibility BoxStyle::convertVisibility(const CSSValue& value)
@@ -1608,6 +1660,8 @@ Visibility BoxStyle::convertVisibility(const CSSValue& value)
     default:
         assert(false);
     }
+
+    return Visibility::Visible;
 }
 
 BoxSizing BoxStyle::convertBoxSizing(const CSSValue& value)
@@ -1622,6 +1676,8 @@ BoxSizing BoxStyle::convertBoxSizing(const CSSValue& value)
     default:
         assert(false);
     }
+
+    return BoxSizing::BorderBox;
 }
 
 WhiteSpace BoxStyle::convertWhiteSpace(const CSSValue& value)
@@ -1644,6 +1700,8 @@ WhiteSpace BoxStyle::convertWhiteSpace(const CSSValue& value)
     default:
         assert(false);
     }
+
+    return WhiteSpace::Normal;
 }
 
 TextAlign BoxStyle::convertTextAlign(const CSSValue& value)
@@ -1678,6 +1736,8 @@ BackgroundBox BoxStyle::convertBackgroundBox(const CSSValue& value)
     default:
         assert(false);
     }
+
+    return BackgroundBox::BorderBox;
 }
 
 LineStyle BoxStyle::convertLineStyle(const CSSValue& value)
@@ -1710,6 +1770,8 @@ LineStyle BoxStyle::convertLineStyle(const CSSValue& value)
     default:
         assert(false);
     }
+
+    return LineStyle::None;
 }
 
 FontStyle BoxStyle::convertFontStyle(const CSSValue& value)
@@ -1726,6 +1788,8 @@ FontStyle BoxStyle::convertFontStyle(const CSSValue& value)
     default:
         assert(false);
     }
+
+    return FontStyle::Normal;
 }
 
 FontVariant BoxStyle::convertFontVariant(const CSSValue &value)
@@ -1740,6 +1804,8 @@ FontVariant BoxStyle::convertFontVariant(const CSSValue &value)
     default:
         assert(false);
     }
+
+    return FontVariant::Normal;
 }
 
 AlignContent BoxStyle::convertAlignContent(const CSSValue& value)
@@ -1764,6 +1830,8 @@ AlignContent BoxStyle::convertAlignContent(const CSSValue& value)
     default:
         assert(false);
     }
+
+    return AlignContent::FlexStart;
 }
 
 int BoxStyle::convertInteger(const CSSValue& value)

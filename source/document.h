@@ -211,7 +211,7 @@ public:
     bool isDocumentNode() const final { return true; }
 
     Heap* heap() const { return m_heap; }
-    TextNode* createText(const std::string_view& value);
+    TextNode* createTextNode(const std::string_view& value);
     Element* createElement(const GlobalString& tagName, const GlobalString& namespaceUri);
 
     const Url& baseUrl() const { return m_baseUrl; }

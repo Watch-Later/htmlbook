@@ -14,7 +14,7 @@
 
 namespace htmlbook {
 
-class Resource : public RefCounted<Resource> {
+class Resource : public HeapMember, public RefCounted<Resource> {
 public:
     enum class Type {
         Text,
@@ -31,8 +31,8 @@ protected:
 
 class TextResource final : public Resource {
 public:
-    static RefPtr<TextResource> create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data);
-    static std::string decode(const char* data, size_t length, std::string_view mimeType, std::string_view textEncoding);
+    static RefPtr<TextResource> create(Heap* heap, const std::string_view& mimeType, const std::string_view& textEncoding, std::vector<char> data);
+    static std::string decode(const char* data, size_t length, const std::string_view& mimeType, const std::string_view& textEncoding);
     const std::string& text() const { return m_text; }
     Type type() const final { return Type::Text; }
 
@@ -50,7 +50,7 @@ class Image;
 
 class ImageResource final : public Resource {
 public:
-    static RefPtr<ImageResource> create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data);
+    static RefPtr<ImageResource> create(Heap* heap, const std::string_view& mimeType, const std::string_view& textEncoding, std::vector<char> data);
     const RefPtr<Image>& image() const { return m_image; }
     Type type() const final { return Type::Image; }
 
@@ -68,7 +68,7 @@ class FontFace;
 
 class FontResource final : public Resource {
 public:
-    static RefPtr<FontResource> create(std::string_view mimeType, std::string_view textEncoding, std::vector<char> data);
+    static RefPtr<FontResource> create(Heap* heap, const std::string_view& mimeType, const std::string_view& textEncoding, std::vector<char> data);
     const RefPtr<FontFace>& face() const { return m_face; }
     Type type() const final { return Type::Font; }
 
