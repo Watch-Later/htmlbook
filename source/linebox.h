@@ -73,7 +73,7 @@ private:
 };
 
 template<>
-struct is<TextLineBox> {
+struct is_a<TextLineBox> {
     static bool check(const LineBox& line) { return line.isTextLineBox(); }
 };
 
@@ -87,7 +87,7 @@ public:
 };
 
 template<>
-struct is<ReplacedLineBox> {
+struct is_a<ReplacedLineBox> {
     static bool check(const LineBox& line) { return line.isReplacedLineBox(); }
 };
 
@@ -111,7 +111,7 @@ private:
 };
 
 template<>
-struct is<FlowLineBox> {
+struct is_a<FlowLineBox> {
     static bool check(const LineBox& line) { return line.isFlowLineBox(); }
 };
 
@@ -125,7 +125,7 @@ public:
 };
 
 template<>
-struct is<RootLineBox> {
+struct is_a<RootLineBox> {
     static bool check(const LineBox& line) { return line.isRootLineBox(); }
 };
 

@@ -42,7 +42,7 @@ private:
 };
 
 template<>
-struct is<TextResource> {
+struct is_a<TextResource> {
     static bool check(const Resource& value) { return value.type() == Resource::Type::Text; }
 };
 
@@ -60,7 +60,7 @@ private:
 };
 
 template<>
-struct is<ImageResource> {
+struct is_a<ImageResource> {
     static bool check(const Resource& value) { return value.type() == Resource::Type::Image; }
 };
 
@@ -78,7 +78,7 @@ private:
 };
 
 template<>
-struct is<FontResource> {
+struct is_a<FontResource> {
     static bool check(const Resource& value) { return value.type() == Resource::Type::Font; }
 };
 

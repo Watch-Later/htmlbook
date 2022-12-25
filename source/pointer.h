@@ -4,6 +4,7 @@
 #include <memory_resource>
 #include <algorithm>
 #include <cstdint>
+#include <cassert>
 
 namespace htmlbook {
 
@@ -213,49 +214,79 @@ inline bool operator!=(const RefPtr<T>& a, std::nullptr_t)
 }
 
 template<typename T>
-struct is {
+struct is_a {
     template<typename U>
     static bool check(const U& value);
 };
 
 template<typename T, typename U>
-constexpr bool is_a(U& value) {
-    return is<T>::check(value);
+constexpr bool is(U& value) {
+    return is_a<T>::check(value);
 }
 
 template<typename T, typename U>
-constexpr bool is_a(const U& value) {
-    return is<T>::check(value);
+constexpr bool is(const U& value) {
+    return is_a<T>::check(value);
 }
 
 template<typename T, typename U>
-constexpr bool is_a(U* value) {
-    return value && is<T>::check(*value);
+constexpr bool is(U* value) {
+    return value && is_a<T>::check(*value);
 }
 
 template<typename T, typename U>
-constexpr bool is_a(const U* value) {
-    return value && is<T>::check(*value);
+constexpr bool is(const U* value) {
+    return value && is_a<T>::check(*value);
 }
 
 template<typename T, typename U>
-constexpr T* to(U& value) {
-    return is_a<T>(value) ? static_cast<T*>(&value) : nullptr;
+constexpr bool is(const RefPtr<U>& value) {
+    return value && is_a<T>::check(*value);
 }
 
 template<typename T, typename U>
-constexpr const T* to(const U& value) {
-    return is_a<T>(value) ? static_cast<const T*>(&value) : nullptr;
+constexpr bool is(RefPtr<U>& value) {
+    return value && is_a<T>::check(*value);
+}
+
+template<typename T, typename U>
+constexpr T& to(U& value) {
+    assert(is<T>(value));
+    return static_cast<T&>(value);
+}
+
+template<typename T, typename U>
+constexpr const T& to(const U& value) {
+    assert(is<T>(value));
+    return static_cast<const T&>(value);
 }
 
 template<typename T, typename U>
 constexpr T* to(U* value) {
-    return is_a<T>(value) ? static_cast<T*>(value) : nullptr;
+    if(!is<T>(value))
+        return nullptr;
+    return static_cast<T*>(value);
 }
 
 template<typename T, typename U>
 constexpr const T* to(const U* value) {
-    return is_a<T>(value) ? static_cast<const T*>(value) : nullptr;
+    if(!is<T>(value))
+        return nullptr;
+    return static_cast<const T*>(value);
+}
+
+template<typename T, typename U>
+constexpr RefPtr<T> to(const RefPtr<U>& value) {
+    if(!is<T>(value))
+        return nullptr;
+    return static_cast<T*>(value.get());
+}
+
+template<typename T, typename U>
+constexpr RefPtr<T> to(RefPtr<U>& value) {
+    if(!is<T>(value))
+        return nullptr;
+    return static_cast<T*>(value.get());
 }
 
 } // namespace htmlbook

@@ -1,7 +1,6 @@
 #ifndef BOX_H
 #define BOX_H
 
-#include "geometry.h"
 #include "boxstyle.h"
 #include "linebox.h"
 
@@ -15,28 +14,32 @@ class BlockFlowBox;
 
 class Box : public HeapMember {
 public:
+    enum class Type {
+        Text,
+        Inline,
+        Block,
+        BlockFlow,
+        Flexible,
+        Replaced,
+        Image,
+        ListItem,
+        InsideListMarker,
+        OutsideListMarker,
+        Table,
+        TableCell,
+        TableColumn,
+        TableColumnGroup,
+        TableRow,
+        TableCaption,
+        TableSection
+    };
+
     Box(Node* node, const RefPtr<BoxStyle>& style);
 
     virtual ~Box();
-    virtual bool isTextBox() const { return false; }
     virtual bool isBoxModel() const { return false; }
     virtual bool isBoxFrame() const { return false; }
-    virtual bool isInlineBox() const { return false; }
-    virtual bool isBlockBox() const { return false; }
-    virtual bool isBlockFlowBox() const { return false; }
-    virtual bool isFlexibleBox() const { return false; }
-    virtual bool isReplacedBox() const { return false; }
-    virtual bool isImageBox() const { return false; }
-    virtual bool isListItemBox() const { return false; }
-    virtual bool isInsideListMarkerBox() const { return false; }
-    virtual bool isOutsideListMarkerBox() const { return false; }
-    virtual bool isTableBox() const { return false; }
-    virtual bool isTableCellBox() const { return false; }
-    virtual bool isTableColumnBox() const { return false; }
-    virtual bool isTableColumnGroupBox() const { return false; }
-    virtual bool isTableRowBox() const { return false; }
-    virtual bool isTableCaptionBox() const { return false; }
-    virtual bool isTableSectionBox() const { return false; }
+    virtual bool isOfType(Type type) const { return false; }
 
     virtual void computePreferredWidths(float& minWidth, float& maxWidth) const;
 
@@ -44,7 +47,7 @@ public:
     virtual LineBoxList* lines() const { return nullptr; }
 
     virtual void addBox(Box* box);
-    virtual void buildBox(BoxLayer* parent);
+    virtual void buildBox(BoxLayer* layer);
 
     LineBox* addLine(std::unique_ptr<LineBox> line);
     std::unique_ptr<LineBox> removeLine(LineBox* line);
@@ -74,8 +77,16 @@ public:
     static Box* createAnonymous(const RefPtr<BoxStyle>& parentStyle, Display display);
     static BlockFlowBox* createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle);
 
-    BlockBox* containingBlock() const;
+    static Box* containingBox(const Box& box);
+    static BlockBox* containingBlock(const Box& box);
 
+    BlockBox* containingBlockFixed() const;
+    BlockBox* containingBlockAbsolute() const;
+
+    Box* containingBox() const { return m_containingBox; }
+    BlockBox* containingBlock() const { return m_containingBlock; }
+
+    bool isRootBox() const { return !m_parentBox; }
     bool isAnonymous() const { return m_anonymous; }
     bool isReplaced() const { return m_replaced; }
     bool isInline() const { return m_inline; }
@@ -83,6 +94,7 @@ public:
     bool isPositioned() const { return m_positioned; }
     bool isFloatingOrPositioned() const { return m_floating || m_positioned; }
     bool isChildrenInline() const { return m_childrenInline; }
+    bool hasTransform() const { return m_hasTransform; }
 
     void setAnonymous(bool value) { m_anonymous = value; }
     void setReplaced(bool value) { m_replaced = value; }
@@ -90,8 +102,10 @@ public:
     void setFloating(bool value) { m_floating = value; }
     void setPositioned(bool value) { m_positioned = value; }
     void setChildrenInline(bool value) { m_childrenInline = value; }
+    void setHasTransform(bool value) { m_hasTransform = value; }
 
     Heap* heap() const { return m_style->heap(); }
+    Document* document() const { return m_style->document(); }
     Display display() const { return m_style->display(); }
     Position position() const { return m_style->position(); }
 
@@ -101,12 +115,15 @@ private:
     Box* m_parentBox{nullptr};
     Box* m_prevBox{nullptr};
     Box* m_nextBox{nullptr};
+    Box* m_containingBox{nullptr};
+    BlockBox* m_containingBlock{nullptr};
     bool m_anonymous{false};
     bool m_replaced{false};
     bool m_inline{true};
     bool m_floating{false};
     bool m_positioned{false};
     bool m_childrenInline{true};
+    bool m_hasTransform{false};
 };
 
 class BoxList {
@@ -145,92 +162,63 @@ private:
     std::pmr::list<BoxLayer*> m_children;
 };
 
-class TextBox : public Box {
-public:
-    TextBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    bool isTextBox() const final { return true; }
-
-    LineBoxList* lines() const final { return &m_lines; }
-    const std::string& text() const { return m_text; }
-    void setText(const std::string_view& text) { m_text = text; }
-    void appendText(const std::string_view& text) { m_text += text; }
-    void clearText() { m_text.clear(); }
-
-private:
-    std::string m_text;
-    mutable LineBoxList m_lines;
-};
-
-template<>
-struct is<TextBox> {
-    static bool check(const Box& box) { return box.isTextBox(); }
-};
-
 class BoxModel : public Box {
 public:
     BoxModel(Node* node, const RefPtr<BoxStyle>& style);
 
     bool isBoxModel() const final { return true; }
 
-    virtual bool requiresLayer() const { return false; }
-
     void addBox(Box* box) override;
-    void buildBox(BoxLayer* parent) override;
+    void buildBox(BoxLayer* layer) override;
+
+    virtual bool requiresLayer() const { return false; }
+    virtual void computeBorder(float& top, float& bottom, float& left, float& right) const;
+    virtual void computePadding(float& top, float& bottom, float& left, float& right) const;
+
+    float borderTop() const;
+    float borderBottom() const;
+    float borderLeft() const;
+    float borderRight() const;
+
+    float paddingTop() const;
+    float paddingBottom() const;
+    float paddingLeft() const;
+    float paddingRight() const;
 
     float marginTop() const { return m_marginTop; }
     float marginBottom() const { return m_marginBottom; }
     float marginLeft() const { return m_marginLeft; }
     float marginRight() const { return m_marginRight; }
 
-    float borderTop() const { return m_borderTop; }
-    float borderBottom() const { return m_borderBottom; }
-    float borderLeft() const { return m_borderLeft; }
-    float borderRight() const { return m_borderRight; }
-
-    float paddingTop() const { return m_paddingTop; }
-    float paddingBottom() const { return m_paddingBottom; }
-    float paddingLeft() const { return m_paddingLeft; }
-    float paddingRight() const { return m_paddingRight; }
-
     void setMarginTop(float value) { m_marginTop = value; }
     void setMarginBottom(float value) { m_marginBottom = value; }
     void setMarginLeft(float value) { m_marginLeft = value; }
     void setMarginRight(float value) { m_marginRight = value; }
-
-    void setBorderTop(float value) { m_borderTop = value; }
-    void setBorderBottom(float value) { m_borderBottom = value; }
-    void setBorderLeft(float value) { m_borderLeft = value; }
-    void setBorderRight(float value) { m_borderRight = value; }
-
-    void setPaddingTop(float value) { m_paddingTop = value; }
-    void setPaddingBottom(float value) { m_paddingBottom = value; }
-    void setPaddingLeft(float value) { m_paddingLeft = value; }
-    void setPaddingRight(float value) { m_paddingRight = value; }
 
     BoxLayer* layer() const { return m_layer.get(); }
 
 private:
     std::unique_ptr<BoxLayer> m_layer;
 
+    mutable float m_borderTop{-1};
+    mutable float m_borderBottom{-1};
+    mutable float m_borderLeft{-1};
+    mutable float m_borderRight{-1};
+
+    mutable float m_paddingTop{-1};
+    mutable float m_paddingBottom{-1};
+    mutable float m_paddingLeft{-1};
+    mutable float m_paddingRight{-1};
+
+protected:
     float m_marginTop{0};
     float m_marginBottom{0};
     float m_marginLeft{0};
     float m_marginRight{0};
-
-    float m_borderTop{0};
-    float m_borderBottom{0};
-    float m_borderLeft{0};
-    float m_borderRight{0};
-
-    float m_paddingTop{0};
-    float m_paddingBottom{0};
-    float m_paddingLeft{0};
-    float m_paddingRight{0};
 };
 
 template<>
-struct is<BoxModel> {
+struct is_a<BoxModel> {
     static bool check(const Box& box) { return box.isBoxModel(); }
 };
 
@@ -253,7 +241,20 @@ public:
     void setWidth(float width) { m_width = width; }
     void setHeight(float height) { m_height = height; }
 
+    void setLocation(float x, float y) { m_x = x; m_y = y; }
     void move(float dx, float dy) { m_x += dx; m_y += dy; }
+
+    float minPreferredWidth() const;
+    float maxPreferredWidth() const;
+
+    void updateWidth();
+    void updateHeight();
+
+    void computePositionedWidthReplaced(float& x, float& width, float& marginLeft, float& marginRight) const;
+    void computePositionedWidth(float& x, float& width, float& marginLeft, float& marginRight) const;
+
+    virtual void computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const;
+    virtual void computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
 
 private:
     std::unique_ptr<LineBox> m_line;
@@ -262,18 +263,43 @@ private:
     float m_y{0};
     float m_width{0};
     float m_height{0};
+
+    mutable float m_minPreferredWidth{-1};
+    mutable float m_maxPreferredWidth{-1};
 };
 
 template<>
-struct is<BoxFrame> {
+struct is_a<BoxFrame> {
     static bool check(const Box& box) { return box.isBoxFrame(); }
+};
+
+class TextBox : public Box {
+public:
+    TextBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isOfType(Type type) const override { return type == Type::Text || Box::isOfType(type); }
+
+    LineBoxList* lines() const final { return &m_lines; }
+    const std::string& text() const { return m_text; }
+    void setText(const std::string_view& text) { m_text = text; }
+    void appendText(const std::string_view& text) { m_text += text; }
+    void clearText() { m_text.clear(); }
+
+private:
+    std::string m_text;
+    mutable LineBoxList m_lines;
+};
+
+template<>
+struct is_a<TextBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::Text); }
 };
 
 class InlineBox : public BoxModel {
 public:
     InlineBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isInlineBox() const final { return true; }
+    bool isOfType(Type type) const override { return type == Type::Inline || BoxModel::isOfType(type); }
 
     BoxList* children() const final { return &m_children; }
     LineBoxList* lines() const final { return &m_lines; }
@@ -289,15 +315,17 @@ private:
 };
 
 template<>
-struct is<InlineBox> {
-    static bool check(const Box& box) { return box.isInlineBox(); }
+struct is_a<InlineBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::Inline); }
 };
 
 class BlockBox : public BoxFrame {
 public:
     BlockBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isBlockBox() const final { return true; }
+    bool isOfType(Type type) const override { return type == Type::Block || BoxFrame::isOfType(type); }
+
+    float availableWidth() const { return 0; }
 
     BoxList* children() const final { return &m_children; }
     Box* continuation() const { return m_continuation; }
@@ -311,15 +339,15 @@ protected:
 };
 
 template<>
-struct is<BlockBox> {
-    static bool check(const Box& box) { return box.isBlockBox(); }
+struct is_a<BlockBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::Block); }
 };
 
 class BlockFlowBox : public BlockBox {
 public:
     BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isBlockFlowBox() const final { return true; }
+    bool isOfType(Type type) const override { return type == Type::BlockFlow || BlockBox::isOfType(type); }
 
     LineBoxList* lines() const final { return &m_lines; }
     const RefPtr<BoxStyle>& firstLineStyle() const { return m_firstLineStyle; }
@@ -331,38 +359,42 @@ private:
 };
 
 template<>
-struct is<BlockFlowBox> {
-    static bool check(const Box& box) { return box.isBlockFlowBox(); }
+struct is_a<BlockFlowBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::BlockFlow); }
 };
 
 class FlexibleBox : public BlockBox {
 public:
     FlexibleBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isFlexibleBox() const final { return true; }
+    bool isOfType(Type type) const final { return type == Type::Flexible || BlockBox::isOfType(type); }
 };
 
 template<>
-struct is<FlexibleBox> {
-    static bool check(const Box& box) { return box.isFlexibleBox(); }
+struct is_a<FlexibleBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::Flexible); }
 };
 
 class ReplacedBox : public BoxFrame {
 public:
     ReplacedBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isReplacedBox() const final { return true; }
+    bool isOfType(Type type) const override { return type == Type::Replaced || BoxFrame::isOfType(type); }
 
-    const SizeF& intrinsicSize() const { return m_intrinsicSize; }
-    void setIntrinsicSize(const SizeF& size) { m_intrinsicSize = size; }
+    float intrinsicWidth() const { return m_intrinsicWidth; }
+    float intrinsicHeight() const { return m_intrinsicHeight; }
+
+    void setIntrinsicWidth(float width) { m_intrinsicWidth = width; }
+    void setIntrinsicHeight(float height) { m_intrinsicHeight = height; }
 
 private:
-    SizeF m_intrinsicSize;
+    float m_intrinsicWidth{0};
+    float m_intrinsicHeight{0};
 };
 
 template<>
-struct is<ReplacedBox> {
-    static bool check(const Box& box) { return box.isReplacedBox(); }
+struct is_a<ReplacedBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::Replaced); }
 };
 
 class Image;
@@ -371,7 +403,7 @@ class ImageBox : public ReplacedBox {
 public:
     ImageBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isImageBox() const final { return true; }
+    bool isOfType(Type type) const override { return type == Type::Image || ReplacedBox::isOfType(type); }
 
     const RefPtr<Image>& image() const { return m_image; }
     const std::string& alternativeText() const { return m_alternativeText; }
@@ -385,44 +417,44 @@ private:
 };
 
 template<>
-struct is<ImageBox> {
-    static bool check(const Box& box) { return box.isImageBox(); }
+struct is_a<ImageBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::Image); }
 };
 
 class ListItemBox final : public BlockFlowBox {
 public:
     ListItemBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isListItemBox() const final { return true; }
+    bool isOfType(Type type) const final { return type == Type::ListItem || BlockFlowBox::isOfType(type); }
 };
 
 template<>
-struct is<ListItemBox> {
-    static bool check(const Box& box) { return box.isListItemBox(); }
+struct is_a<ListItemBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::ListItem); }
 };
 
 class InsideListMarkerBox final : public InlineBox {
 public:
     InsideListMarkerBox(const RefPtr<BoxStyle>& style);
 
-    bool isInsideListMarkerBox() const final { return true; }
+    bool isOfType(Type type) const final { return type == Type::InsideListMarker || InlineBox::isOfType(type); }
 };
 
 template<>
-struct is<InsideListMarkerBox> {
-    static bool check(const Box& box) { return box.isInsideListMarkerBox(); }
+struct is_a<InsideListMarkerBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::InsideListMarker); }
 };
 
 class OutsideListMarkerBox final : public BlockFlowBox {
 public:
     OutsideListMarkerBox(const RefPtr<BoxStyle>& style);
 
-    bool isOutsideListMarkerBox() const final { return true; }
+    bool isOfType(Type type) const final { return type == Type::OutsideListMarker || BlockFlowBox::isOfType(type); }
 };
 
 template<>
-struct is<OutsideListMarkerBox> {
-    static bool check(const Box& box) { return box.isOutsideListMarkerBox(); }
+struct is_a<OutsideListMarkerBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::OutsideListMarker); }
 };
 
 class TableCaptionBox;
@@ -433,7 +465,7 @@ class TableBox final : public BlockBox {
 public:
     TableBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isTableBox() const final { return true; }
+    bool isOfType(Type type) const final { return type == Type::Table || BlockBox::isOfType(type); }
 
     TableSectionBox* header() const { return m_header; }
     TableSectionBox* footer() const { return m_footer; }
@@ -442,7 +474,7 @@ public:
     const std::vector<TableColumnBox*>& columns() const { return m_columns; }
 
     void addBox(Box* box) final;
-    void buildBox(BoxLayer* parent) final;
+    void buildBox(BoxLayer* layer) final;
 
 private:
     TableSectionBox* m_header{nullptr};
@@ -453,15 +485,15 @@ private:
 };
 
 template<>
-struct is<TableBox> {
-    static bool check(const Box& box) { return box.isTableBox(); }
+struct is_a<TableBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::Table); }
 };
 
 class TableSectionBox final : public Box {
 public:
     TableSectionBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isTableSectionBox() const final { return true; }
+    bool isOfType(Type type) const final { return type == Type::TableSection || Box::isOfType(type); }
 
     BoxList* children() const final { return &m_children; }
 
@@ -472,15 +504,15 @@ private:
 };
 
 template<>
-struct is<TableSectionBox> {
-    static bool check(const Box& box) { return box.isTableSectionBox(); }
+struct is_a<TableSectionBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::TableSection); }
 };
 
 class TableRowBox final : public Box {
 public:
     TableRowBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isTableRowBox() const final { return true; }
+    bool isOfType(Type type) const final { return type == Type::TableRow || Box::isOfType(type); }
 
     BoxList* children() const final { return &m_children; }
 
@@ -491,15 +523,15 @@ private:
 };
 
 template<>
-struct is<TableRowBox> {
-    static bool check(const Box& box) { return box.isTableRowBox(); }
+struct is_a<TableRowBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::TableRow); }
 };
 
 class TableCellBox final : public BlockFlowBox {
 public:
     TableCellBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isTableCellBox() const final { return true; }
+    bool isOfType(Type type) const final { return type == Type::TableCell || BlockFlowBox::isOfType(type); }
 
     int colSpan() const { return m_colSpan; }
     int rowSpan() const { return m_rowSpan; }
@@ -513,15 +545,15 @@ private:
 };
 
 template<>
-struct is<TableCellBox> {
-    static bool check(const Box& box) { return box.isTableCellBox(); }
+struct is_a<TableCellBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::TableCell); }
 };
 
 class TableColumnBox : public Box {
 public:
     TableColumnBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isTableColumnBox() const final { return true; }
+    bool isOfType(Type type) const override { return type == Type::TableColumn || Box::isOfType(type); }
 
     int span() const { return m_span; }
     void setSpan(int span) { m_span = span; }
@@ -531,15 +563,15 @@ private:
 };
 
 template<>
-struct is<TableColumnBox> {
-    static bool check(const Box& box) { return box.isTableColumnBox(); }
+struct is_a<TableColumnBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::TableColumn); }
 };
 
 class TableColumnGroupBox final : public TableColumnBox {
 public:
     TableColumnGroupBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isTableColumnGroupBox() const final { return true; }
+    bool isOfType(Type type) const final { return type == Type::TableColumnGroup || TableColumnBox::isOfType(type); }
 
     BoxList* children() const final { return &m_children; }
 
@@ -550,15 +582,15 @@ private:
 };
 
 template<>
-struct is<TableColumnGroupBox> {
-    static bool check(const Box& box) { return box.isTableColumnGroupBox(); }
+struct is_a<TableColumnGroupBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::TableColumnGroup); }
 };
 
 class TableCaptionBox final : public BlockFlowBox {
 public:
     TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style);
 
-    bool isTableCaptionBox() const final { return true; }
+    bool isOfType(Type type) const final { return type == Type::TableCaption || BlockFlowBox::isOfType(type); }
 
     CaptionSide captionSide() const { return m_captionSide; }
 
@@ -567,8 +599,8 @@ private:
 };
 
 template<>
-struct is<TableCaptionBox> {
-    static bool check(const Box& box) { return box.isTableCaptionBox(); }
+struct is_a<TableCaptionBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::TableCaption); }
 };
 
 } // namespace htmlbook

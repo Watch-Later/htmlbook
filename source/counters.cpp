@@ -13,7 +13,7 @@ void Counters::update(const Box* box)
 
     static const GlobalString listItem("list-item");
     auto node = box->node();
-    if(box->isListItemBox()) {
+    if(is<ListItemBox>(box)) {
         if(node && node->tagName() == liTag) {
             auto element = static_cast<HTMLLIElement*>(node);
             if(auto value = element->value()) {
@@ -44,21 +44,21 @@ void Counters::update(const Box* box)
 void Counters::update(const Box* box, CSSPropertyID id)
 {
     auto value = box->style()->get(id);
-    if(value == nullptr || !value->isListValue())
+    if(value == nullptr || !is<CSSListValue>(*value))
         return;
-    for(auto& counter : to<CSSListValue>(*value)->values()) {
-        auto pair = to<CSSPairValue>(*counter);
-        auto name = to<CSSCustomIdentValue>(*pair->first());
-        auto value = to<CSSIntegerValue>(*pair->second());
+    for(auto& counter : to<CSSListValue>(*value).values()) {
+        auto& pair = to<CSSPairValue>(*counter);
+        auto& name = to<CSSCustomIdentValue>(*pair.first());
+        auto& value = to<CSSIntegerValue>(*pair.second());
         switch(id) {
         case CSSPropertyID::CounterReset:
-            reset(name->value(), value->value());
+            reset(name.value(), value.value());
             break;
         case CSSPropertyID::CounterSet:
-            set(name->value(), value->value());
+            set(name.value(), value.value());
             break;
         case CSSPropertyID::CounterIncrement:
-            increment(name->value(), value->value());
+            increment(name.value(), value.value());
             break;
         default:
             assert(false);

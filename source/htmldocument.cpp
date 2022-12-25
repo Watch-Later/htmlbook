@@ -18,7 +18,7 @@ Box* HTMLElement::createBox(const RefPtr<BoxStyle>& style)
 
 void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pseudoType)
 {
-    if(pseudoType == PseudoType::Marker && !parent->isListItemBox())
+    if(pseudoType == PseudoType::Marker && !is<ListItemBox>(parent))
         return;
     auto style = document()->pseudoStyleForElement(this, parent->style(), pseudoType);
     if(style == nullptr || style->display() == Display::None)
@@ -35,7 +35,7 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
         if(text.empty())
             return;
         auto lastBox = box->lastBox();
-        if(lastBox && lastBox->isTextBox()) {
+        if(lastBox && is<TextBox>(lastBox)) {
             auto textBox = to<TextBox>(lastBox);
             textBox->appendText(text);
             return;
@@ -55,7 +55,7 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
     };
 
     auto content = style->get(CSSPropertyID::Content);
-    if(content == nullptr || !content->isListValue()) {
+    if(content == nullptr || !is<CSSListValue>(content)) {
         if(pseudoType != PseudoType::Marker)
             return;
         if(auto image = style->listStyleImage()) {
@@ -68,14 +68,14 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
         return;
     }
 
-    for(auto& value : to<CSSListValue>(*content)->values()) {
-        if(auto string = to<CSSStringValue>(*value)) {
+    for(auto& value : to<CSSListValue>(*content).values()) {
+        if(auto string = to<CSSStringValue>(value)) {
             addText(string->value());
-        } else if(auto image = to<CSSImageValue>(*value)) {
+        } else if(auto image = to<CSSImageValue>(value)) {
             addImage(image->fetch(document()));
-        } else if(auto counter = to<CSSCounterValue>(*value)) {
+        } else if(auto counter = to<CSSCounterValue>(value)) {
             addText(counters.format(counter->identifier(), counter->listStyle(), counter->separator()));
-        } else if(auto ident = to<CSSIdentValue>(*value)) {
+        } else if(auto ident = to<CSSIdentValue>(value)) {
             auto usequote = (ident->value() == CSSValueID::OpenQuote || ident->value() == CSSValueID::CloseQuote);
             auto openquote = (ident->value() == CSSValueID::OpenQuote || ident->value() == CSSValueID::NoOpenQuote);
             if(counters.quoteDepth() > 0 && !openquote)
@@ -85,10 +85,10 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
             if(openquote)
                 counters.increaseQuoteDepth();
         } else {
-            auto function = to<CSSFunctionValue>(*value);
-            auto name = to<CSSCustomIdentValue>(*function->front());
+            auto& function = to<CSSFunctionValue>(*value);
+            auto& name = to<CSSCustomIdentValue>(*function.front());
             for(auto& attribute : attributes()) {
-                if(attribute.name() == name->value()) {
+                if(attribute.name() == name.value()) {
                     addText(attribute.value());
                     break;
                 }
@@ -341,9 +341,9 @@ int HTMLTableColElement::span() const
 Box* HTMLTableColElement::createBox(const RefPtr<BoxStyle>& style)
 {
     auto box = HTMLElement::createBox(style);
-    if(box->isTableColumnBox()) {
-        auto column = to<TableColumnBox>(*box);
-        column->setSpan(span());
+    if(is<TableColumnBox>(box)) {
+        auto& column = to<TableColumnBox>(*box);
+        column.setSpan(span());
     }
 
     return box;
@@ -382,10 +382,10 @@ int HTMLTableCellElement::rowSpan() const
 Box* HTMLTableCellElement::createBox(const RefPtr<BoxStyle>& style)
 {
     auto box = HTMLElement::createBox(style);
-    if(box->isTableCellBox()) {
-        auto cell = to<TableCellBox>(*box);
-        cell->setColSpan(colSpan());
-        cell->setRowSpan(rowSpan());
+    if(is<TableCellBox>(box)) {
+        auto& cell = to<TableCellBox>(*box);
+        cell.setColSpan(colSpan());
+        cell.setRowSpan(rowSpan());
     }
 
     return box;

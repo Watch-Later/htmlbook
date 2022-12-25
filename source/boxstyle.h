@@ -110,6 +110,11 @@ enum class FontVariant : uint8_t {
     SmallCaps
 };
 
+enum class TextDirection : uint8_t {
+    Ltr,
+    Rtl
+};
+
 enum class TextAlign : uint8_t {
     Left,
     Center,
@@ -306,10 +311,17 @@ public:
     static const Length ZeroPercent;
     static const Length ZeroFixed;
 
+    float calc(float maximum) const;
+
 private:
     Type m_type;
     float m_value;
 };
+
+inline float Length::calc(float maximum) const
+{
+    return m_value;
+}
 
 class LengthSize {
 public:
@@ -492,6 +504,7 @@ public:
     float borderHorizontalSpacing() const;
     float borderVerticalSpacing() const;
 
+    TextDirection direction() const { return m_direction; }
     TextAlign textAlign() const { return m_textAlign; }
     TextTransform textTransform() const;
     TextOverflow textOverflow() const;
@@ -538,6 +551,9 @@ public:
     int widows() const;
     int orphans() const;
 
+    bool isLeftToRightDirection() const { return m_direction == TextDirection::Ltr; }
+    bool hasTransform() const;
+
     const HeapString& getQuote(bool open, size_t depth) const;
 
     RefPtr<CSSValue> get(CSSPropertyID id) const;
@@ -578,6 +594,7 @@ public:
     static Visibility convertVisibility(const CSSValue& value);
     static BoxSizing convertBoxSizing(const CSSValue& value);
     static WhiteSpace convertWhiteSpace(const CSSValue& value);
+    static TextDirection convertTextDirection(const CSSValue& value);
     static TextAlign convertTextAlign(const CSSValue& value);
     static BackgroundBox convertBackgroundBox(const CSSValue& value);
     static LineStyle convertLineStyle(const CSSValue& value);
@@ -604,6 +621,7 @@ private:
     Overflow m_overflowY{Overflow::Visible};
     Visibility m_visibility{Visibility::Visible};
     BoxSizing m_boxSizing{BoxSizing::ContentBox};
+    TextDirection m_direction{TextDirection::Ltr};
     TextAlign m_textAlign{TextAlign::Left};
     WhiteSpace m_whiteSpace{WhiteSpace::Normal};
     FontStyle m_fontStyle{FontStyle::Normal};

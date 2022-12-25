@@ -74,7 +74,7 @@ private:
 };
 
 template<>
-struct is<TextNode> {
+struct is_a<TextNode> {
     static bool check(const Node& value) { return value.isTextNode(); }
 };
 
@@ -108,7 +108,7 @@ private:
 };
 
 template<>
-struct is<ContainerNode> {
+struct is_a<ContainerNode> {
     static bool check(const Node& value) { return value.isContainerNode(); }
 };
 
@@ -180,7 +180,7 @@ private:
 };
 
 template<>
-struct is<Element> {
+struct is_a<Element> {
     static bool check(const Node& value) { return value.isElementNode(); }
 };
 
@@ -250,7 +250,7 @@ private:
 };
 
 template<>
-struct is<Document> {
+struct is_a<Document> {
     static bool check(const Node& value) { return value.isDocumentNode(); }
 };
 

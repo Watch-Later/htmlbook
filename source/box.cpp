@@ -25,15 +25,12 @@ void Box::computePreferredWidths(float& minWidth, float& maxWidth) const
     maxWidth = 0;
 }
 
-void Box::buildBox(BoxLayer* parent)
+void Box::buildBox(BoxLayer* layer)
 {
-    auto children = this->children();
-    if(children == nullptr)
-        return;
-    auto box = children->firstBox();
-    while(box) {
-        box->buildBox(parent);
-        box = box->nextBox();
+    m_containingBox = containingBox(*this);
+    m_containingBlock = containingBlock(*this);
+    for(auto box = firstBox(); box; box = box->nextBox()) {
+        box->buildBox(layer);
     }
 }
 
@@ -163,6 +160,8 @@ Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
     default:
         assert(false);
     }
+
+    return nullptr;
 }
 
 Box* Box::createAnonymous(const RefPtr<BoxStyle>& parentStyle, Display display)
@@ -180,11 +179,67 @@ BlockFlowBox* Box::createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle)
     return newBlock;
 }
 
-BlockBox* Box::containingBlock() const
+Box* Box::containingBox(const Box& box)
+{
+    auto parent = box.parentBox();
+    if(!is<TextBox>(box)) {
+        if(box.position() == Position::Fixed)
+            return box.containingBlockFixed();
+        if(box.position() == Position::Absolute) {
+            while(parent && parent->position() == Position::Static) {
+                if(parent->isRootBox() || (parent->hasTransform() && is<BlockBox>(*parent)))
+                    break;
+                parent = parent->parentBox();
+            }
+        }
+    }
+
+    return parent;
+}
+
+BlockBox* Box::containingBlock(const Box& box)
+{
+    if(!is<TextBox>(box)) {
+        if(box.position() == Position::Fixed)
+            return box.containingBlockFixed();
+        if(box.position() == Position::Absolute) {
+            return box.containingBlockAbsolute();
+        }
+    }
+
+    auto parent = box.parentBox();
+    while(parent && ((parent->isInline() && !parent->isReplaced()) || !is<BlockBox>(*parent))) {
+        parent = parent->parentBox();
+    }
+
+    return to<BlockBox>(parent);
+}
+
+BlockBox* Box::containingBlockFixed() const
 {
     auto parent = parentBox();
-    while(parent && parent->isInline() && !parent->isReplaced())
+    while(parent && !(parent->isRootBox() || (parent->hasTransform() && is<BlockBox>(*parent)))) {
         parent = parent->parentBox();
+    }
+
+    return to<BlockBox>(parent);
+}
+
+BlockBox* Box::containingBlockAbsolute() const
+{
+    auto parent = parentBox();
+    while(parent && parent->position() == Position::Static) {
+        if(parent->isRootBox() || (parent->hasTransform() && is<BlockBox>(*parent)))
+            break;
+        parent = parent->parentBox();
+    }
+
+    if(parent && !is<BlockBox>(*parent))
+        parent = parent->containingBox();
+    while(parent && parent->isAnonymous()) {
+        parent = parent->containingBox();
+    }
+
     return to<BlockBox>(parent);
 }
 
@@ -291,31 +346,60 @@ TextBox::TextBox(Node* node, const RefPtr<BoxStyle>& style)
 BoxModel::BoxModel(Node* node, const RefPtr<BoxStyle>& style)
     : Box(node, style)
 {
-}
-
-void BoxModel::buildBox(BoxLayer* parent)
-{
-    if(parent == nullptr || requiresLayer()) {
-        m_layer = BoxLayer::create(this, parent);
-        parent = m_layer.get();
+    switch(style->floating()) {
+    case Float::None:
+        setFloating(false);
+        break;
+    default:
+        setFloating(true);
+        break;
     }
 
-    Box::buildBox(parent);
+    switch(style->position()) {
+    case Position::Static:
+        setPositioned(false);
+        break;
+    default:
+        setPositioned(true);
+        break;
+    }
+
+    switch(style->display()) {
+    case Display::Inline:
+    case Display::InlineBlock:
+    case Display::InlineFlex:
+    case Display::InlineTable:
+        setInline(true);
+        break;
+    default:
+        setInline(false);
+        break;
+    }
+}
+
+void BoxModel::buildBox(BoxLayer* layer)
+{
+    if(layer == nullptr || requiresLayer()) {
+        m_layer = BoxLayer::create(this, layer);
+        layer = m_layer.get();
+    }
+
+    Box::buildBox(layer);
 }
 
 void BoxModel::addBox(Box* box)
 {
     auto children = this->children();
     assert(children != nullptr);
-    if(!box->isTableCellBox() && !box->isTableRowBox()
-        && !box->isTableCaptionBox() && !box->isTableColumnBox()
-        && !box->isTableSectionBox()) {
+    if(!is<TableCellBox>(box) && !is<TableRowBox>(box)
+        && !is<TableCaptionBox>(box) && !is<TableColumnBox>(box)
+        && !is<TableSectionBox>(box)) {
         children->append(this, box);
         return;
     }
 
     auto lastChild = children->lastBox();
-    if(lastChild && lastChild->isAnonymous() && lastChild->isTableBox()) {
+    if(lastChild && lastChild->isAnonymous() && is<TableBox>(lastChild)) {
         lastChild->addBox(box);
         return;
     }
@@ -325,8 +409,133 @@ void BoxModel::addBox(Box* box)
     newTable->addBox(box);
 }
 
+void BoxModel::computeBorder(float& top, float& bottom, float& left, float& right) const
+{
+    top = style()->borderTopWidth();
+    bottom = style()->borderBottomWidth();
+    left = style()->borderLeftWidth();
+    right = style()->borderRightWidth();
+}
+
+void BoxModel::computePadding(float& top, float& bottom, float& left, float& right) const
+{
+    auto compute = [this](const auto& padding) {
+        return padding.calc(containingBlock()->availableWidth());
+    };
+
+    top = compute(style()->paddingTop());
+    bottom = compute(style()->paddingBottom());
+    left = compute(style()->paddingLeft());
+    right = compute(style()->paddingRight());
+}
+
+float BoxModel::borderTop() const
+{
+    if(m_borderTop < 0)
+        computeBorder(m_borderTop, m_borderBottom, m_borderLeft, m_borderRight);
+    return m_borderTop;
+}
+
+float BoxModel::borderBottom() const
+{
+    if(m_borderBottom < 0)
+        computeBorder(m_borderTop, m_borderBottom, m_borderLeft, m_borderRight);
+    return m_borderBottom;
+}
+
+float BoxModel::borderLeft() const
+{
+    if(m_borderLeft < 0)
+        computeBorder(m_borderTop, m_borderBottom, m_borderLeft, m_borderRight);
+    return m_borderLeft;
+}
+
+float BoxModel::borderRight() const
+{
+    if(m_borderRight < 0)
+        computeBorder(m_borderTop, m_borderBottom, m_borderLeft, m_borderRight);
+    return m_borderRight;
+}
+
+float BoxModel::paddingTop() const
+{
+    if(m_paddingTop < 0)
+        computePadding(m_paddingTop, m_paddingBottom, m_paddingLeft, m_paddingRight);
+    return m_paddingTop;
+}
+
+float BoxModel::paddingBottom() const
+{
+    if(m_paddingBottom < 0)
+        computePadding(m_paddingTop, m_paddingBottom, m_paddingLeft, m_paddingRight);
+    return m_paddingBottom;
+}
+
+float BoxModel::paddingLeft() const
+{
+    if(m_paddingLeft < 0)
+        computePadding(m_paddingTop, m_paddingBottom, m_paddingLeft, m_paddingRight);
+    return m_paddingLeft;
+}
+
+float BoxModel::paddingRight() const
+{
+    if(m_paddingRight < 0)
+        computePadding(m_paddingTop, m_paddingBottom, m_paddingLeft, m_paddingRight);
+    return m_paddingRight;
+}
+
 BoxFrame::BoxFrame(Node* node, const RefPtr<BoxStyle>& style)
     : BoxModel(node, style)
+{
+    setHasTransform(style->hasTransform());
+}
+
+float BoxFrame::minPreferredWidth() const
+{
+    if(m_minPreferredWidth < 0)
+        computePreferredWidths(m_minPreferredWidth, m_maxPreferredWidth);
+    return m_minPreferredWidth;
+}
+
+float BoxFrame::maxPreferredWidth() const
+{
+    if(m_maxPreferredWidth < 0)
+        computePreferredWidths(m_minPreferredWidth, m_maxPreferredWidth);
+    return m_maxPreferredWidth;
+}
+
+void BoxFrame::updateWidth()
+{
+    computeWidth(m_x, m_width, m_marginLeft, m_marginRight);
+}
+
+void BoxFrame::updateHeight()
+{
+    computeHeight(m_y, m_height, m_marginTop, m_marginBottom);
+}
+
+void BoxFrame::computePositionedWidthReplaced(float& x, float& width, float& marginLeft, float& marginRight) const
+{
+}
+
+void BoxFrame::computePositionedWidth(float& x, float& width, float& marginLeft, float& marginRight) const
+{
+    if(isReplaced()) {
+        computePositionedWidthReplaced(x, width, marginLeft, marginRight);
+        return;
+    }
+}
+
+void BoxFrame::computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const
+{
+    if(isPositioned()) {
+        computePositionedWidth(x, width, marginLeft, marginRight);
+        return;
+    }
+}
+
+void BoxFrame::computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const
 {
 }
 
@@ -400,7 +609,17 @@ void InlineBox::addBox(Box* box)
 BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
     : BoxFrame(node, style)
 {
-    setInline(false);
+    switch(style->display()) {
+    case Display::Inline:
+    case Display::InlineBlock:
+    case Display::InlineFlex:
+    case Display::InlineTable:
+        setReplaced(true);
+        break;
+    default:
+        setReplaced(false);
+        break;
+    }
 }
 
 void BlockBox::addBox(Box* box)
@@ -420,7 +639,7 @@ void BlockBox::addBox(Box* box)
         setChildrenInline(false);
     } else if(!isChildrenInline() && (box->isInline() || box->isFloatingOrPositioned())) {
         auto lastChild = m_children.lastBox();
-        if(lastChild && lastChild->isAnonymous() && lastChild->isBlockBox()) {
+        if(lastChild && lastChild->isAnonymous() && is<BlockBox>(lastChild)) {
             lastChild->addBox(box);
             return;
         }
@@ -501,7 +720,7 @@ TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
     setChildrenInline(false);
 }
 
-void TableBox::buildBox(BoxLayer* parent)
+void TableBox::buildBox(BoxLayer* layer)
 {
     for(auto child = m_children.firstBox(); child; child = child->nextBox()) {
         if(auto section = to<TableSectionBox>(child)) {
@@ -527,25 +746,25 @@ void TableBox::buildBox(BoxLayer* parent)
                 m_columns.push_back(column);
             }
         } else {
-            assert(child->isTableCaptionBox());
+            assert(is<TableCaptionBox>(child));
             auto caption = to<TableCaptionBox>(child);
             m_captions.push_back(caption);
         }
     }
 
-    BlockBox::buildBox(parent);
+    BlockBox::buildBox(layer);
 }
 
 void TableBox::addBox(Box* box)
 {
-    if(box->isTableCaptionBox() || box->isTableColumnBox()
-        || box->isTableSectionBox()) {
+    if(is<TableCaptionBox>(box) || is<TableColumnBox>(box)
+        || is<TableSectionBox>(box)) {
         m_children.append(this, box);
         return;
     }
 
     auto lastChild = m_children.lastBox();
-    if(lastChild && lastChild->isAnonymous() && lastChild->isTableSectionBox()) {
+    if(lastChild && lastChild->isAnonymous() && is<TableSectionBox>(lastChild)) {
         lastChild->addBox(box);
         return;
     }
@@ -562,13 +781,13 @@ TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableSectionBox::addBox(Box* box)
 {
-    if(box->isTableRowBox()) {
+    if(is<TableRowBox>(box)) {
         m_children.append(this, box);
         return;
     }
 
     auto lastChild = m_children.lastBox();
-    if(lastChild && lastChild->isAnonymous() && lastChild->isTableRowBox()) {
+    if(lastChild && lastChild->isAnonymous() && is<TableRowBox>(lastChild)) {
         lastChild->addBox(box);
         return;
     }
@@ -585,13 +804,13 @@ TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableRowBox::addBox(Box* box)
 {
-    if(box->isTableCellBox()) {
+    if(is<TableCellBox>(box)) {
         m_children.append(this, box);
         return;
     }
 
     auto lastChild = m_children.lastBox();
-    if(lastChild && lastChild->isAnonymous() && lastChild->isTableCellBox()) {
+    if(lastChild && lastChild->isAnonymous() && is<TableCellBox>(lastChild)) {
         lastChild->addBox(box);
         return;
     }

@@ -15,25 +15,29 @@ class Document;
 
 class CSSValue : public HeapMember, public RefCounted<CSSValue> {
 public:
+    enum class Type {
+        Initial,
+        Inherit,
+        Ident,
+        CustomIdent,
+        Integer,
+        Number,
+        Percent,
+        Angle,
+        Length,
+        String,
+        Url,
+        Image,
+        Color,
+        Counter,
+        Pair,
+        Rect,
+        List,
+        Function
+    };
+
     virtual ~CSSValue() = default;
-    virtual bool isInitialValue() const { return false; }
-    virtual bool isInheritValue() const { return false; }
-    virtual bool isIdentValue() const { return false; }
-    virtual bool isCustomIdentValue() const { return false; }
-    virtual bool isIntegerValue() const { return false; }
-    virtual bool isNumberValue() const { return false; }
-    virtual bool isPercentValue() const { return false; }
-    virtual bool isAngleValue() const { return false; }
-    virtual bool isLengthValue() const { return false; }
-    virtual bool isStringValue() const { return false; }
-    virtual bool isUrlValue() const { return false; }
-    virtual bool isImageValue() const { return false; }
-    virtual bool isColorValue() const { return false; }
-    virtual bool isCounterValue() const { return false; }
-    virtual bool isPairValue() const { return false; }
-    virtual bool isRectValue() const { return false; }
-    virtual bool isListValue() const { return false; }
-    virtual bool isFunctionValue() const { return false; }
+    virtual Type type() const = 0;
 
 protected:
     CSSValue() = default;
@@ -45,30 +49,30 @@ class CSSInitialValue final : public CSSValue {
 public:
     static RefPtr<CSSInitialValue> create(Heap* heap);
 
-    bool isInitialValue() const final { return true; }
+    Type type() const final { return Type::Initial; }
 
 private:
     CSSInitialValue() = default;
 };
 
 template<>
-struct is<CSSInitialValue> {
-    static bool check(const CSSValue& value) { return value.isInitialValue(); }
+struct is_a<CSSInitialValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Initial; }
 };
 
 class CSSInheritValue final : public CSSValue {
 public:
     static RefPtr<CSSInheritValue> create(Heap* heap);
 
-    bool isInheritValue() const final { return true; }
+    Type type() const final { return Type::Inherit; }
 
 private:
     CSSInheritValue() = default;
 };
 
 template<>
-struct is<CSSInheritValue> {
-    static bool check(const CSSValue& value) { return value.isInheritValue(); }
+struct is_a<CSSInheritValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Inherit; }
 };
 
 enum class CSSValueID {
@@ -278,7 +282,7 @@ public:
     static RefPtr<CSSIdentValue> create(Heap* heap, CSSValueID value);
 
     CSSValueID value() const { return m_value; }
-    bool isIdentValue() const final { return true; }
+    Type type() const final { return Type::Ident; }
 
 private:
     CSSIdentValue(CSSValueID value) : m_value(value) {}
@@ -286,8 +290,8 @@ private:
 };
 
 template<>
-struct is<CSSIdentValue> {
-    static bool check(const CSSValue& value) { return value.isIdentValue(); }
+struct is_a<CSSIdentValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Ident; }
 };
 
 class CSSCustomIdentValue final : public CSSValue {
@@ -295,7 +299,7 @@ public:
     static RefPtr<CSSCustomIdentValue> create(Heap* heap, const HeapString& value);
 
     const HeapString& value() const { return m_value; }
-    bool isCustomIdentValue() const final { return true; }
+    Type type() const final { return Type::CustomIdent; }
 
 private:
     CSSCustomIdentValue(const HeapString& value) : m_value(value) {}
@@ -303,8 +307,8 @@ private:
 };
 
 template<>
-struct is<CSSCustomIdentValue> {
-    static bool check(const CSSValue& value) { return value.isCustomIdentValue(); }
+struct is_a<CSSCustomIdentValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::CustomIdent; }
 };
 
 class CSSIntegerValue final : public CSSValue {
@@ -312,7 +316,7 @@ public:
     static RefPtr<CSSIntegerValue> create(Heap* heap, int value);
 
     int value() const { return m_value; }
-    bool isIntegerValue() const final { return true; }
+    Type type() const final { return Type::Integer; }
 
 private:
     CSSIntegerValue(int value) : m_value(value) {}
@@ -320,8 +324,8 @@ private:
 };
 
 template<>
-struct is<CSSIntegerValue> {
-    static bool check(const CSSValue& value) { return value.isIntegerValue(); }
+struct is_a<CSSIntegerValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Integer; }
 };
 
 class CSSNumberValue final : public CSSValue {
@@ -329,7 +333,7 @@ public:
     static RefPtr<CSSNumberValue> create(Heap* heap, double value);
 
     double value() const { return m_value; }
-    bool isNumberValue() const final { return true; }
+    Type type() const final { return Type::Number; }
 
 private:
     CSSNumberValue(double value) : m_value(value) {}
@@ -337,8 +341,8 @@ private:
 };
 
 template<>
-struct is<CSSNumberValue> {
-    static bool check(const CSSValue& value) { return value.isNumberValue(); }
+struct is_a<CSSNumberValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Number; }
 };
 
 class CSSPercentValue final : public CSSValue {
@@ -346,7 +350,7 @@ public:
     static RefPtr<CSSPercentValue> create(Heap* heap, double value);
 
     double value() const { return m_value; }
-    bool isPercentValue() const final { return true; }
+    Type type() const final { return Type::Percent; }
 
 private:
     CSSPercentValue(double value) : m_value(value) {}
@@ -354,8 +358,8 @@ private:
 };
 
 template<>
-struct is<CSSPercentValue> {
-    static bool check(const CSSValue& value) { return value.isPercentValue(); }
+struct is_a<CSSPercentValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Percent; }
 };
 
 class CSSAngleValue final : public CSSValue {
@@ -371,7 +375,7 @@ public:
 
     double value() const { return m_value; }
     Unit unit() const { return m_unit; }
-    bool isAngleValue() const final { return true; }
+    Type type() const final { return Type::Angle; }
 
 private:
     CSSAngleValue(double value, Unit unit)
@@ -383,8 +387,8 @@ private:
 };
 
 template<>
-struct is<CSSAngleValue> {
-    static bool check(const CSSValue& value) { return value.isAngleValue(); }
+struct is_a<CSSAngleValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Angle; }
 };
 
 class CSSLengthValue final : public CSSValue {
@@ -411,7 +415,7 @@ public:
 
     double value() const { return m_value; }
     Unit unit() const { return m_unit; }
-    bool isLengthValue() const final { return true; }
+    Type type() const final { return Type::Length; }
 
 private:
     CSSLengthValue(double value, Unit unit)
@@ -423,8 +427,8 @@ private:
 };
 
 template<>
-struct is<CSSLengthValue> {
-    static bool check(const CSSValue& value) { return value.isLengthValue(); }
+struct is_a<CSSLengthValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Length; }
 };
 
 class CSSStringValue final : public CSSValue {
@@ -432,7 +436,7 @@ public:
     static RefPtr<CSSStringValue> create(Heap* heap, const HeapString& value);
 
     const HeapString& value() const { return m_value; }
-    bool isStringValue() const final { return true; }
+    Type type() const final { return Type::String; }
 
 private:
     CSSStringValue(const HeapString& value) : m_value(value) {}
@@ -440,8 +444,8 @@ private:
 };
 
 template<>
-struct is<CSSStringValue> {
-    static bool check(const CSSValue& value) { return value.isStringValue(); }
+struct is_a<CSSStringValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::String; }
 };
 
 class CSSUrlValue final : public CSSValue {
@@ -449,7 +453,7 @@ public:
     static RefPtr<CSSUrlValue> create(Heap* heap, const HeapString& value);
 
     const HeapString& value() const { return m_value; }
-    bool isUrlValue() const final { return true; }
+    Type type() const final { return Type::Url; }
 
 private:
     CSSUrlValue(const HeapString& value) : m_value(value) {}
@@ -457,8 +461,8 @@ private:
 };
 
 template<>
-struct is<CSSUrlValue> {
-    static bool check(const CSSValue& value) { return value.isUrlValue(); }
+struct is_a<CSSUrlValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Url; }
 };
 
 class Image;
@@ -470,7 +474,7 @@ public:
     const HeapString& value() const { return m_value; }
     const RefPtr<Image>& image() const { return m_image; }
     RefPtr<Image> fetch(Document* document) const;
-    bool isImageValue() const final { return true; }
+    Type type() const final { return Type::Image; }
 
 private:
     CSSImageValue(const HeapString& value);
@@ -479,8 +483,8 @@ private:
 };
 
 template<>
-struct is<CSSImageValue> {
-    static bool check(const CSSValue& value) { return value.isImageValue(); }
+struct is_a<CSSImageValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Image; }
 };
 
 class CSSColorValue final : public CSSValue {
@@ -489,7 +493,7 @@ public:
     static RefPtr<CSSColorValue> create(Heap* heap, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
     uint32_t value() const { return m_value; }
-    bool isColorValue() const final { return true; }
+    Type type() const final { return Type::Color; }
 
 private:
     CSSColorValue(uint32_t value) : m_value(value) {}
@@ -497,8 +501,8 @@ private:
 };
 
 template<>
-struct is<CSSColorValue> {
-    static bool check(const CSSValue& value) { return value.isColorValue(); }
+struct is_a<CSSColorValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Color; }
 };
 
 enum class ListStyleType : uint8_t {
@@ -523,7 +527,7 @@ public:
     const GlobalString& identifier() const { return m_identifier; }
     ListStyleType listStyle() const { return m_listStyle; }
     const HeapString& separator() const { return m_separator; }
-    bool isCounterValue() const final { return true; }
+    Type type() const final { return Type::Counter; }
 
 private:
     CSSCounterValue(const GlobalString& identifier, ListStyleType listStyle, const HeapString& separator)
@@ -536,8 +540,8 @@ private:
 };
 
 template<>
-struct is<CSSCounterValue> {
-    static bool check(const CSSValue& value) { return value.isCounterValue(); }
+struct is_a<CSSCounterValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Counter; }
 };
 
 class CSSPairValue final : public CSSValue {
@@ -546,7 +550,7 @@ public:
 
     const RefPtr<CSSValue>& first() const { return m_first; }
     const RefPtr<CSSValue>& second() const { return m_second; }
-    bool isPairValue() const final { return true; }
+    Type type() const final { return Type::Pair; }
 
 private:
     CSSPairValue(RefPtr<CSSValue> first, RefPtr<CSSValue> second)
@@ -558,8 +562,8 @@ private:
 };
 
 template<>
-struct is<CSSPairValue> {
-    static bool check(const CSSValue& value) { return value.isPairValue(); }
+struct is_a<CSSPairValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Pair; }
 };
 
 class CSSRectValue final : public CSSValue {
@@ -570,7 +574,7 @@ public:
     const RefPtr<CSSValue>& right() const { return m_right; }
     const RefPtr<CSSValue>& bottom() const { return m_bottom; }
     const RefPtr<CSSValue>& left() const { return m_left; }
-    bool isRectValue() const final { return true; }
+    Type type() const final { return Type::Rect; }
 
 private:
     CSSRectValue(RefPtr<CSSValue> top, RefPtr<CSSValue> right, RefPtr<CSSValue> bottom, RefPtr<CSSValue> left)
@@ -584,20 +588,21 @@ private:
 };
 
 template<>
-struct is<CSSRectValue> {
-    static bool check(const CSSValue& value) { return value.isRectValue(); }
+struct is_a<CSSRectValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Rect; }
 };
 
 class CSSListValue : public CSSValue {
 public:
     static RefPtr<CSSListValue> create(Heap* heap, CSSValueList values);
 
-    size_t size() const { return m_values.size(); }
     const RefPtr<CSSValue>& front() const { return m_values.front(); }
     const RefPtr<CSSValue>& back() const { return m_values.back(); }
     const RefPtr<CSSValue>& at(size_t index) const { return m_values.at(index); }
     const CSSValueList& values() const { return m_values; }
-    bool isListValue() const final { return true; }
+    size_t size() const { return m_values.size(); }
+    bool empty() const { return m_values.empty(); }
+    Type type() const override { return Type::List; }
 
 protected:
     CSSListValue(CSSValueList values) : m_values(std::move(values)) {}
@@ -605,8 +610,8 @@ protected:
 };
 
 template<>
-struct is<CSSListValue> {
-    static bool check(const CSSValue& value) { return value.isListValue(); }
+struct is_a<CSSListValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::List; }
 };
 
 class CSSFunctionValue final : public CSSListValue {
@@ -615,7 +620,7 @@ public:
     static RefPtr<CSSFunctionValue> create(Heap* heap, CSSValueID id, RefPtr<CSSValue> value);
 
     CSSValueID id() const { return m_id; }
-    bool isFunctionValue() const final { return true; }
+    Type type() const final { return Type::Function; }
 
 private:
     CSSFunctionValue(CSSValueID id, CSSValueList values)
@@ -626,8 +631,8 @@ private:
 };
 
 template<>
-struct is<CSSFunctionValue> {
-    static bool check(const CSSValue& value) { return value.isFunctionValue(); }
+struct is_a<CSSFunctionValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Function; }
 };
 
 enum class CSSPropertyID {
@@ -1008,7 +1013,7 @@ private:
 };
 
 template<>
-struct is<CSSStyleRule> {
+struct is_a<CSSStyleRule> {
     static bool check(const CSSRule& value) { return value.type() == CSSRule::Type::Style; }
 };
 
@@ -1031,7 +1036,7 @@ private:
 };
 
 template<>
-struct is<CSSImportRule> {
+struct is_a<CSSImportRule> {
     static bool check(const CSSRule& value) { return value.type() == CSSRule::Type::Import; }
 };
 
@@ -1051,7 +1056,7 @@ private:
 };
 
 template<>
-struct is<CSSFontFaceRule> {
+struct is_a<CSSFontFaceRule> {
     static bool check(const CSSRule& value) { return value.type() == CSSRule::Type::FontFace; }
 };
 
@@ -1092,7 +1097,7 @@ private:
 };
 
 template<>
-struct is<CSSPageMarginRule> {
+struct is_a<CSSPageMarginRule> {
     static bool check(const CSSRule& value) { return value.type() == CSSRule::Type::PageMargin; }
 };
 
@@ -1118,7 +1123,7 @@ private:
 };
 
 template<>
-struct is<CSSPageRule> {
+struct is_a<CSSPageRule> {
     static bool check(const CSSRule& value) { return value.type() == CSSRule::Type::Page; }
 };
 

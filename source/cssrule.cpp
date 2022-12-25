@@ -1026,13 +1026,13 @@ void CSSStyleSheet::parseStyle(const std::string_view& content)
 void CSSStyleSheet::addRules(const CSSRuleList& rules)
 {
     for(const auto& rule : rules) {
-        if(auto styleRule = to<CSSStyleRule>(*rule)) {
+        if(auto styleRule = to<CSSStyleRule>(rule)) {
             addStyleRule(styleRule);
-        } else if(auto pageRule = to<CSSPageRule>(*rule)) {
+        } else if(auto pageRule = to<CSSPageRule>(rule)) {
             addPageRule(pageRule);
-        } else if(auto fontFaceRule = to<CSSFontFaceRule>(*rule)) {
+        } else if(auto fontFaceRule = to<CSSFontFaceRule>(rule)) {
             addFontFaceRule(fontFaceRule);
-        } else if(auto importRule = to<CSSImportRule>(*rule)) {
+        } else if(auto importRule = to<CSSImportRule>(rule)) {
             addRules(importRule->fetch(m_document));
         } else {
             assert(false);
@@ -1156,14 +1156,13 @@ void CSSStyleSheet::addFontFaceRule(const RefPtr<CSSFontFaceRule>& rule)
         }
     }
 
-    if(fontFamily == nullptr || !fontFamily->isListValue())
+    if(fontFamily == nullptr || !is<CSSListValue>(*fontFamily))
         return;
-    if(src == nullptr || !src->isListValue())
+    if(src == nullptr || !is<CSSListValue>(*src))
         return;
 
     bool italic = false;
-    if(fontStyle && fontStyle->isIdentValue()) {
-        auto ident = to<CSSIdentValue>(*fontStyle);
+    if(auto ident = to<CSSIdentValue>(fontStyle)) {
         switch(ident->value()) {
         case CSSValueID::Normal:
             italic = false;
@@ -1178,8 +1177,7 @@ void CSSStyleSheet::addFontFaceRule(const RefPtr<CSSFontFaceRule>& rule)
     }
 
     bool smallCaps = false;
-    if(fontVariant && fontVariant->isIdentValue()) {
-        auto ident = to<CSSIdentValue>(*fontVariant);
+    if(auto ident = to<CSSIdentValue>(fontVariant)) {
         switch(ident->value()) {
         case CSSValueID::Normal:
             smallCaps = false;
@@ -1193,55 +1191,51 @@ void CSSStyleSheet::addFontFaceRule(const RefPtr<CSSFontFaceRule>& rule)
     }
 
     int weight = 400;
-    if(fontWeight) {
-        if(fontWeight->isIdentValue()) {
-            auto ident = to<CSSIdentValue>(*fontWeight);
-            switch(ident->value()) {
-            case CSSValueID::Normal:
-            case CSSValueID::Lighter:
-                weight = 400;
-                break;
-            case CSSValueID::Bold:
-            case CSSValueID::Bolder:
-                weight = 700;
-                break;
-            default:
-                assert(false);
-            }
-        } else if(fontWeight->isIntegerValue()) {
-            auto integer = to<CSSIntegerValue>(*fontWeight);
-            weight = integer->value();
+    if(auto ident = to<CSSIdentValue>(fontWeight)) {
+        switch(ident->value()) {
+        case CSSValueID::Normal:
+        case CSSValueID::Lighter:
+            weight = 400;
+            break;
+        case CSSValueID::Bold:
+        case CSSValueID::Bolder:
+            weight = 700;
+            break;
+        default:
+            assert(false);
         }
+    } else if(auto integer = to<CSSIntegerValue>(fontWeight)) {
+        weight = integer->value();
     }
 
     auto fetch = [&](auto source) -> RefPtr<FontFace> {
-        if(auto function = to<CSSFunctionValue>(*source->front())) {
-            auto family = to<CSSStringValue>(*function->front());
-            return resourceLoader()->loadFont(family->value(), italic, smallCaps, weight);
+        if(auto function = to<CSSFunctionValue>(source.front())) {
+            auto& family = to<CSSStringValue>(*function->front());
+            return resourceLoader()->loadFont(family.value(), italic, smallCaps, weight);
         }
 
-        auto url = to<CSSUrlValue>(*source->front());
-        if(source->size() == 2) {
-            auto function = to<CSSFunctionValue>(*source->back());
-            auto format = to<CSSStringValue>(*function->front());
-            if(!equals(format->value(), "truetype", false) && !equals(format->value(), "opentype", false)) {
+        auto& url = to<CSSUrlValue>(*source.front());
+        if(source.size() == 2) {
+            auto& function = to<CSSFunctionValue>(*source.back());
+            auto& format = to<CSSStringValue>(*function.front());
+            if(!equals(format.value(), "truetype", false) && !equals(format.value(), "opentype", false)) {
                 return nullptr;
             }
         }
 
-        auto fontResource = m_document->fetchFontResource(url->value());
+        auto fontResource = m_document->fetchFontResource(url.value());
         if(fontResource == nullptr)
             return nullptr;
         return fontResource->face();
     };
 
-    for(auto& value : to<CSSListValue>(*src)->values()) {
+    for(auto& value : to<CSSListValue>(*src).values()) {
         auto face = fetch(to<CSSListValue>(*value));
         if(face == nullptr)
             continue;
-        for(auto& value : to<CSSListValue>(*fontFamily)->values()) {
-            auto family = to<CSSStringValue>(*value);
-            m_fontFaceCache.add(family->value(), italic, smallCaps, weight, face);
+        for(auto& value : to<CSSListValue>(*fontFamily).values()) {
+            auto& family = to<CSSStringValue>(*value);
+            m_fontFaceCache.add(family.value(), italic, smallCaps, weight, face);
         }
     }
 }
@@ -1298,12 +1292,12 @@ RefPtr<BoxStyle> CSSStyleBuilder::build()
     for(auto& property : m_properties) {
         auto id = property.id();
         auto value = property.value();
-        if(value->isInitialValue()) {
+        if(is<CSSInitialValue>(*value)) {
             newStyle->remove(id);
             continue;
         }
 
-        if(value->isInheritValue() && !(value = m_parentStyle->get(id)))
+        if(is<CSSInheritValue>(*value) && !(value = m_parentStyle->get(id)))
             continue;
         newStyle->set(id, std::move(value));
     }
