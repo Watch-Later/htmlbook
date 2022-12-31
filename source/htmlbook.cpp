@@ -13,23 +13,14 @@ const PageSize PageSize::Letter(612, 792);
 const PageSize PageSize::Legal(612, 1008);
 const PageSize PageSize::Ledger(1224, 792);
 
-Book::Book(std::pmr::memory_resource* upstream)
-    : Book(PageSize::A4, PageOrientation::Portrait, PageMargins(), upstream)
-{
-}
-
-Book::Book(const PageSize& size, PageOrientation orientation, const PageMargins& margins, std::pmr::memory_resource* upstream)
+Book::Book(const PageSize& size, PageOrientation orientation, const PageMargins& margins)
     : m_pageSize(size)
     , m_pageOrientation(orientation)
     , m_pageMargins(margins)
-    , m_heap(1024* 5, upstream)
 {
 }
 
-Book::~Book()
-{
-    delete m_document;
-}
+Book::~Book() = default;
 
 void Book::loadUrl(const std::string_view& url, const std::string_view& userStyle)
 {
@@ -48,13 +39,24 @@ void Book::loadData(const char* data, size_t length, const std::string_view& tex
 
 void Book::load(const std::string_view& content, const std::string_view& baseUrl, const std::string_view& userStyle)
 {
-    delete m_document;
-    m_heap.release();
+    m_document.reset();
+    m_heap = std::make_unique<Heap>(1024 * 25);
 
-    m_document = new (&m_heap) HTMLDocument(&m_heap, this);
+    m_document = HTMLDocument::create(this);
     m_document->setBaseUrl(baseUrl);
     m_document->load(content);
     m_document->addStyleSheet(userStyle);
+}
+
+void Book::clear()
+{
+    m_document.reset();
+    m_heap.reset();
+}
+
+bool Book::empty()
+{
+    return !!m_document;
 }
 
 void Book::save(const std::string& filename)
@@ -63,7 +65,8 @@ void Book::save(const std::string& filename)
 
 void Book::serialize(std::ostream& o) const
 {
-    m_document->serialize(o);
+    if(m_document)
+        m_document->serialize(o);
 }
 
 } // namespace htmlbook

@@ -1,5 +1,6 @@
 #include "counters.h"
 #include "htmldocument.h"
+#include "listitembox.h"
 
 #include <cassert>
 
@@ -66,10 +67,9 @@ void Counters::update(const Box* box, CSSPropertyID id)
     }
 }
 
-std::string Counters::format(const HeapString& name, ListStyleType listStyle, const HeapString& separator) const
+HeapString Counters::format(const HeapString& name, ListStyleType listStyle, const HeapString& separator) const
 {
-    std::string value;
-    return value;
+    return emptyGlo;
 }
 
 int Counters::value(const HeapString& name) const

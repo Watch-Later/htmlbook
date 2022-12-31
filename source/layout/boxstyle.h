@@ -302,6 +302,7 @@ public:
     bool isAuto() const { return m_type == Type::Auto; }
     bool isFixed() const { return m_type == Type::Fixed; }
     bool isPercent() const { return m_type == Type::Percent; }
+    bool isZero() const { return m_value == 0; }
 
     float value() const { return m_value; }
     Type type() const { return m_type; }
@@ -312,6 +313,7 @@ public:
     static const Length ZeroFixed;
 
     float calc(float maximum) const;
+    float calcMin(float maximum) const;
 
 private:
     Type m_type;
@@ -320,7 +322,26 @@ private:
 
 inline float Length::calc(float maximum) const
 {
-    return m_value;
+    switch(m_type) {
+    case Type::Fixed:
+        return m_value;
+    case Type::Percent:
+        return m_value * maximum / 100.f;
+    default:
+        return maximum;
+    }
+}
+
+inline float Length::calcMin(float maximum) const
+{
+    switch(m_type) {
+    case Type::Fixed:
+        return m_value;
+    case Type::Percent:
+        return m_value * maximum / 100.f;
+    default:
+        return 0;
+    }
 }
 
 class LengthSize {
@@ -552,6 +573,8 @@ public:
     int orphans() const;
 
     bool isLeftToRightDirection() const { return m_direction == TextDirection::Ltr; }
+    bool isColumnFlexDirection() const { return flexDirection() == FlexDirection::Column || flexDirection() == FlexDirection::ColumnReverse; }
+    bool isReverseFlexDirection() const { return flexDirection() == FlexDirection::RowReverse || flexDirection() == FlexDirection::ColumnReverse; }
     bool hasTransform() const;
 
     const HeapString& getQuote(bool open, size_t depth) const;

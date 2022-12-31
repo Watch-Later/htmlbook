@@ -1339,7 +1339,7 @@ float BoxStyle::convertLengthValue(const CSSValue& value) const
 float BoxStyle::convertLineWidth(const CSSValue& value) const
 {
     if(is<CSSIdentValue>(value)) {
-        auto ident = to<CSSIdentValue>(value);
+        auto& ident = to<CSSIdentValue>(value);
         switch(ident.value()) {
         case CSSValueID::Thin:
             return 1.0;
@@ -1396,7 +1396,7 @@ float BoxStyle::convertFontSize(const CSSValue& value) const
 int BoxStyle::convertFontWeight(const CSSValue& value) const
 {
     if(is<CSSIdentValue>(value)) {
-        auto ident = to<CSSIdentValue>(value);
+        auto& ident = to<CSSIdentValue>(value);
         switch(ident.value()) {
         case CSSValueID::Normal:
             return 400;
@@ -1413,7 +1413,7 @@ int BoxStyle::convertFontWeight(const CSSValue& value) const
 std::optional<float> BoxStyle::convertLengthOrAuto(const CSSValue& value) const
 {
     if(is<CSSIdentValue>(value)) {
-        auto ident = to<CSSIdentValue>(value);
+        auto& ident = to<CSSIdentValue>(value);
         assert(ident.value() == CSSValueID::Auto);
         return std::nullopt;
     }
@@ -1450,7 +1450,7 @@ Length BoxStyle::convertLengthOrPercent(const CSSValue& value) const
 Length BoxStyle::convertLengthOrPercentOrAuto(const CSSValue& value) const
 {
     if(is<CSSIdentValue>(value)) {
-        auto ident = to<CSSIdentValue>(value);
+        auto& ident = to<CSSIdentValue>(value);
         assert(ident.value() == CSSValueID::Auto);
         return Length::Auto;
     }
@@ -1461,7 +1461,7 @@ Length BoxStyle::convertLengthOrPercentOrAuto(const CSSValue& value) const
 Length BoxStyle::convertLengthOrPercentOrNone(const CSSValue& value) const
 {
     if(is<CSSIdentValue>(value)) {
-        auto ident = to<CSSIdentValue>(value);
+        auto& ident = to<CSSIdentValue>(value);
         assert(ident.value() == CSSValueID::None);
         return Length::None;
     }
@@ -1472,7 +1472,7 @@ Length BoxStyle::convertLengthOrPercentOrNone(const CSSValue& value) const
 Length BoxStyle::convertPositionLength(CSSValueID min, CSSValueID max, const CSSValue& value) const
 {
     if(is<CSSIdentValue>(value)) {
-        auto ident = to<CSSIdentValue>(value);
+        auto& ident = to<CSSIdentValue>(value);
         constexpr auto mid = CSSValueID::Center;
         if(min == ident.value())
             return Length(Length::Type::Percent, 0);

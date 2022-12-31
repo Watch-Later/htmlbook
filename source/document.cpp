@@ -2,8 +2,8 @@
 #include "htmldocument.h"
 #include "cssparser.h"
 #include "resource.h"
-#include "box.h"
 #include "counters.h"
+#include "textbox.h"
 
 namespace htmlbook {
 

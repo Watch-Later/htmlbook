@@ -1,5 +1,6 @@
 #include "linebox.h"
-#include "box.h"
+#include "textbox.h"
+#include "blockbox.h"
 
 #include <cassert>
 

@@ -1,8 +1,12 @@
 #include "htmldocument.h"
 #include "htmlparser.h"
+#include "htmlbook.h"
 #include "resource.h"
-#include "box.h"
 #include "counters.h"
+#include "replacedbox.h"
+#include "textbox.h"
+#include "listitembox.h"
+#include "tablebox.h"
 
 namespace htmlbook {
 
@@ -34,13 +38,6 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
     auto addText = [&](const auto& text) {
         if(text.empty())
             return;
-        auto lastBox = box->lastBox();
-        if(lastBox && is<TextBox>(lastBox)) {
-            auto textBox = to<TextBox>(lastBox);
-            textBox->appendText(text);
-            return;
-        }
-
         auto newBox = new (heap()) TextBox(nullptr, style);
         newBox->setText(text);
         box->addBox(newBox);
@@ -55,8 +52,8 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
     };
 
     auto content = style->get(CSSPropertyID::Content);
-    if(content == nullptr || !is<CSSListValue>(content)) {
-        if(pseudoType != PseudoType::Marker)
+    if(content == nullptr || !is<CSSListValue>(*content)) {
+        if(pseudoType != PseudoType::Marker || (content && content->id() == CSSValueID::None))
             return;
         if(auto image = style->listStyleImage()) {
             addImage(image);
@@ -341,11 +338,8 @@ int HTMLTableColElement::span() const
 Box* HTMLTableColElement::createBox(const RefPtr<BoxStyle>& style)
 {
     auto box = HTMLElement::createBox(style);
-    if(is<TableColumnBox>(box)) {
-        auto& column = to<TableColumnBox>(*box);
-        column.setSpan(span());
-    }
-
+    if(auto column = to<TableColumnBox>(box))
+        column->setSpan(span());
     return box;
 }
 
@@ -382,10 +376,9 @@ int HTMLTableCellElement::rowSpan() const
 Box* HTMLTableCellElement::createBox(const RefPtr<BoxStyle>& style)
 {
     auto box = HTMLElement::createBox(style);
-    if(is<TableCellBox>(box)) {
-        auto& cell = to<TableCellBox>(*box);
-        cell.setColSpan(colSpan());
-        cell.setRowSpan(rowSpan());
+    if(auto cell = to<TableCellBox>(box)) {
+        cell->setColSpan(colSpan());
+        cell->setRowSpan(rowSpan());
     }
 
     return box;
@@ -447,8 +440,13 @@ void HTMLLinkElement::finishParsingChildren()
     document()->addStyleSheet(resource->text());
 }
 
-HTMLDocument::HTMLDocument(Heap* heap, Book* book)
-    : Document(heap)
+std::unique_ptr<HTMLDocument> HTMLDocument::create(Book* book)
+{
+    return std::unique_ptr<HTMLDocument>(new (book->heap()) HTMLDocument(book));
+}
+
+HTMLDocument::HTMLDocument(Book* book)
+    : Document(book->heap())
     , m_book(book)
 {
 }

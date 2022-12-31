@@ -1208,7 +1208,7 @@ void CSSStyleSheet::addFontFaceRule(const RefPtr<CSSFontFaceRule>& rule)
         weight = integer->value();
     }
 
-    auto fetch = [&](auto source) -> RefPtr<FontFace> {
+    auto fetch = [&](const auto& source) -> RefPtr<FontFace> {
         if(auto function = to<CSSFunctionValue>(source.front())) {
             auto& family = to<CSSStringValue>(*function->front());
             return resourceLoader()->loadFont(family.value(), italic, smallCaps, weight);

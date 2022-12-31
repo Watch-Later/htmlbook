@@ -13,68 +13,6 @@ namespace htmlbook {
 
 class Document;
 
-class CSSValue : public HeapMember, public RefCounted<CSSValue> {
-public:
-    enum class Type {
-        Initial,
-        Inherit,
-        Ident,
-        CustomIdent,
-        Integer,
-        Number,
-        Percent,
-        Angle,
-        Length,
-        String,
-        Url,
-        Image,
-        Color,
-        Counter,
-        Pair,
-        Rect,
-        List,
-        Function
-    };
-
-    virtual ~CSSValue() = default;
-    virtual Type type() const = 0;
-
-protected:
-    CSSValue() = default;
-};
-
-using CSSValueList = std::pmr::vector<RefPtr<CSSValue>>;
-
-class CSSInitialValue final : public CSSValue {
-public:
-    static RefPtr<CSSInitialValue> create(Heap* heap);
-
-    Type type() const final { return Type::Initial; }
-
-private:
-    CSSInitialValue() = default;
-};
-
-template<>
-struct is_a<CSSInitialValue> {
-    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Initial; }
-};
-
-class CSSInheritValue final : public CSSValue {
-public:
-    static RefPtr<CSSInheritValue> create(Heap* heap);
-
-    Type type() const final { return Type::Inherit; }
-
-private:
-    CSSInheritValue() = default;
-};
-
-template<>
-struct is_a<CSSInheritValue> {
-    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Inherit; }
-};
-
 enum class CSSValueID {
     Unknown,
     A3,
@@ -277,6 +215,70 @@ enum class CSSValueID {
     XxxLarge
 };
 
+class CSSValue : public HeapMember, public RefCounted<CSSValue> {
+public:
+    enum class Type {
+        Initial,
+        Inherit,
+        Ident,
+        CustomIdent,
+        Integer,
+        Number,
+        Percent,
+        Angle,
+        Length,
+        String,
+        Url,
+        Image,
+        Color,
+        Counter,
+        Pair,
+        Rect,
+        List,
+        Function
+    };
+
+    virtual ~CSSValue() = default;
+    virtual Type type() const = 0;
+
+    CSSValueID id() const;
+
+protected:
+    CSSValue() = default;
+};
+
+using CSSValueList = std::pmr::vector<RefPtr<CSSValue>>;
+
+class CSSInitialValue final : public CSSValue {
+public:
+    static RefPtr<CSSInitialValue> create(Heap* heap);
+
+    Type type() const final { return Type::Initial; }
+
+private:
+    CSSInitialValue() = default;
+};
+
+template<>
+struct is_a<CSSInitialValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Initial; }
+};
+
+class CSSInheritValue final : public CSSValue {
+public:
+    static RefPtr<CSSInheritValue> create(Heap* heap);
+
+    Type type() const final { return Type::Inherit; }
+
+private:
+    CSSInheritValue() = default;
+};
+
+template<>
+struct is_a<CSSInheritValue> {
+    static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Inherit; }
+};
+
 class CSSIdentValue final : public CSSValue {
 public:
     static RefPtr<CSSIdentValue> create(Heap* heap, CSSValueID value);
@@ -293,6 +295,13 @@ template<>
 struct is_a<CSSIdentValue> {
     static bool check(const CSSValue& value) { return value.type() == CSSValue::Type::Ident; }
 };
+
+inline CSSValueID CSSValue::id() const
+{
+    if(auto ident = to<CSSIdentValue>(this))
+        return ident->value();
+    return CSSValueID::Unknown;
+}
 
 class CSSCustomIdentValue final : public CSSValue {
 public:

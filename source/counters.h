@@ -1,11 +1,13 @@
 #ifndef COUNTERS_H
 #define COUNTERS_H
 
-#include "box.h"
+#include "boxstyle.h"
 
 namespace htmlbook {
 
 using Counter = std::pmr::map<HeapString, int>;
+
+class Box;
 
 class Counters {
 public:
@@ -23,7 +25,7 @@ public:
     void decreaseQuoteDepth() { --m_quoteDepth; }
     size_t quoteDepth() const { return m_quoteDepth; }
 
-    std::string format(const HeapString& name, ListStyleType listStyle, const HeapString& separator) const;
+    HeapString format(const HeapString& name, ListStyleType listStyle, const HeapString& separator) const;
 
     int value(const HeapString& name) const;
     std::vector<int> values(const HeapString& name) const;

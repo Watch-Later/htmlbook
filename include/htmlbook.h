@@ -153,18 +153,11 @@ class HTMLBOOK_API Book {
 public:
     /**
      * @brief Book
-     * @param upstream
-     */
-    explicit Book(std::pmr::memory_resource* upstream = std::pmr::get_default_resource());
-
-    /**
-     * @brief Book
      * @param size
      * @param orientation
      * @param margins
-     * @param upstream
      */
-    Book(const PageSize& size, PageOrientation orientation = PageOrientation::Portrait, const PageMargins& margins = PageMargins(), std::pmr::memory_resource* upstream = std::pmr::get_default_resource());
+    Book(const PageSize& size, PageOrientation orientation = PageOrientation::Portrait, const PageMargins& margins = PageMargins());
 
     /**
      * @brief ~Book
@@ -319,11 +312,17 @@ public:
      * @brief document
      * @return
      */
-    HTMLDocument* document() const { return m_document; }
+    HTMLDocument* document() const { return m_document.get(); }
+
+    /**
+     * @brief heap
+     * @return
+     */
+    Heap* heap() const { return m_heap.get(); }
 
 private:
-    Heap m_heap;
-    HTMLDocument* m_document{nullptr};
+    std::unique_ptr<Heap> m_heap;
+    std::unique_ptr<HTMLDocument> m_document;
     PageSize m_pageSize;
     PageOrientation m_pageOrientation;
     PageMargins m_pageMargins;

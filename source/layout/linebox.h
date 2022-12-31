@@ -105,6 +105,11 @@ public:
     void addLine(LineBox* line);
     void removeLine(LineBox* line);
 
+    float borderTop() const { return 0; }
+    float borderBottom() const { return 0; }
+    float borderLeft() const { return 0; }
+    float borderRight() const { return 0; }
+
 private:
     LineBox* m_firstLine{nullptr};
     LineBox* m_lastLine{nullptr};

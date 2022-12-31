@@ -12,8 +12,14 @@ using Heap = std::pmr::monotonic_buffer_resource;
 
 class HeapMember {
 public:
+    HeapMember() = default;
+
     static void* operator new(size_t size, Heap* heap) { return heap->allocate(size); }
     static void operator delete(void* data) {}
+
+private:
+    HeapMember(const HeapMember&) = delete;
+    HeapMember& operator=(const HeapMember&) = delete;
 };
 
 template<typename T>
@@ -32,6 +38,8 @@ public:
     bool hasOneRefCount() const { return m_refCount == 1; }
 
 private:
+    RefCounted(const RefCounted&) = delete;
+    RefCounted& operator=(const RefCounted&) = delete;
     uint32_t m_refCount{1};
 };
 

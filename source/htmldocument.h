@@ -136,13 +136,14 @@ class Book;
 
 class HTMLDocument final : public Document {
 public:
-    HTMLDocument(Heap* heap, Book* book);
+    static std::unique_ptr<HTMLDocument> create(Book* book);
 
     bool load(const std::string_view& content) final;
 
     Box* createBox(const RefPtr<BoxStyle>& style) final;
 
 private:
+    HTMLDocument(Book* book);
     Book* m_book;
 };
 
