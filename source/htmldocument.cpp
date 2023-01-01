@@ -79,8 +79,9 @@ void HTMLElement::buildPseudoBox(Counters& counters, Box* parent, PseudoType pse
                 counters.decreaseQuoteDepth();
             if(usequote)
                 addText(style->getQuote(openquote, counters.quoteDepth()));
-            if(openquote)
+            if(openquote) {
                 counters.increaseQuoteDepth();
+            }
         } else {
             auto& function = to<CSSFunctionValue>(*value);
             auto& name = to<CSSCustomIdentValue>(*function.front());

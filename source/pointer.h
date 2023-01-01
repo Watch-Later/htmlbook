@@ -46,15 +46,17 @@ private:
 template<typename T>
 inline void refIfNotNull(T* ptr)
 {
-    if(ptr)
+    if(ptr) {
         ptr->ref();
+    }
 }
 
 template<typename T>
 inline void derefIfNotNull(T* ptr)
 {
-    if(ptr)
+    if(ptr) {
         ptr->deref();
+    }
 }
 
 template<typename T> class RefPtr;

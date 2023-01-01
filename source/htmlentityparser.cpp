@@ -2344,8 +2344,9 @@ constexpr const HTMLEntity* lowerentry(const HTMLEntity* left, const HTMLEntity*
         auto relation = compare(probe, offset, cc);
         if(relation < 0)
             left = probe;
-        else
+        else {
             right = probe;
+        }
     }
 
     assert(left + 1 == right);
@@ -2366,8 +2367,9 @@ constexpr const HTMLEntity* upperentry(const HTMLEntity* left, const HTMLEntity*
         auto relation = compare(probe, offset, cc);
         if(relation > 0)
             right = probe;
-        else
+        else {
             left = probe;
+        }
     }
 
     assert(left + 1 == right);
@@ -2404,7 +2406,6 @@ bool HTMLEntityParser::parse()
 
     if(cc == '#')
         return handleNumber(m_input.advance());
-
     return false;
 }
 
@@ -2436,7 +2437,6 @@ bool HTMLEntityParser::handleNumber(char cc)
 
     if(cc == 'x' || cc == 'X')
         return handleMaybeHex(m_input.advance());
-
     return false;
 }
 
@@ -2458,7 +2458,6 @@ bool HTMLEntityParser::handleMaybeHex(char cc)
 {
     if(isxdigit(cc))
         return handleHex(cc);
-
     return false;
 }
 

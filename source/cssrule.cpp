@@ -696,8 +696,9 @@ bool CSSRuleData::match(const Element* element, PseudoType pseudoType) const
 bool CSSRuleData::matchCompoundSelector(const Element* element, PseudoType pseudoType, const CSSCompoundSelector& selector)
 {
     for(auto& sel : selector) {
-        if(!matchSimpleSelector(element, pseudoType, sel))
+        if(!matchSimpleSelector(element, pseudoType, sel)) {
             return false;
+        }
     }
 
     return true;
@@ -706,8 +707,9 @@ bool CSSRuleData::matchCompoundSelector(const Element* element, PseudoType pseud
 bool CSSRuleData::matchCompoundSelectorList(const Element* element, PseudoType pseudoType, const CSSCompoundSelectorList& selectors)
 {
     for(auto& selector : selectors) {
-        if(!matchCompoundSelector(element, pseudoType, selector))
+        if(!matchCompoundSelector(element, pseudoType, selector)) {
             return false;
+        }
     }
 
     return true;
@@ -802,8 +804,9 @@ bool CSSRuleData::matchIdSelector(const Element* element, const CSSSimpleSelecto
 bool CSSRuleData::matchClassSelector(const Element* element, const CSSSimpleSelector& selector)
 {
     for(auto& name : element->classNames()) {
-        if(name == selector.name())
+        if(name == selector.name()) {
             return true;
+        }
     }
 
     return false;
@@ -1186,9 +1189,7 @@ void CSSStyleSheet::addFontFaceRule(const RefPtr<CSSFontFaceRule>& rule)
         }
     }
 
-    if(fontFamily == nullptr || !is<CSSListValue>(*fontFamily))
-        return;
-    if(src == nullptr || !is<CSSListValue>(*src))
+    if(!is<CSSListValue>(src) || !is<CSSListValue>(fontFamily)) 
         return;
 
     bool italic = false;

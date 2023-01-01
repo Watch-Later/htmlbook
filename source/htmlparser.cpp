@@ -503,8 +503,9 @@ bool HTMLElementStack::inScopeTemplate(const GlobalString& tagName) const
         auto element = *it;
         if(element->tagName() == tagName)
             return true;
-        if(isMarker(element))
+        if(isMarker(element)) {
             return false;
+        }
     }
 
     assert(false);
@@ -518,8 +519,9 @@ bool HTMLElementStack::inScope(const Element* element) const
     for(; it != end; ++it) {
         if(element == *it)
             return true;
-        if(isScopeMarker(*it))
+        if(isScopeMarker(*it)) {
             return false;
+        }
     }
 
     assert(false);
@@ -558,8 +560,9 @@ bool HTMLElementStack::isNumberedHeaderElementInScope() const
     for(; it != end; ++it) {
         if(isNumberedHeaderElement(*it))
             return true;
-        if(isScopeMarker(*it))
+        if(isScopeMarker(*it)) {
             return false;
+        }
     }
 
     assert(false);
@@ -648,8 +651,9 @@ void HTMLFormattingElementList::clearToLastMarker()
     while(!m_elements.empty()) {
         auto element = m_elements.back();
         m_elements.pop_back();
-        if(element == nullptr)
+        if(element == nullptr) {
             break;
+        }
     }
 }
 
@@ -707,8 +711,9 @@ Element* HTMLFormattingElementList::closestElementInScope(const GlobalString& ta
         auto element = *it;
         if(element == nullptr)
             break;
-        if(element->tagName() == tagName)
+        if(element->tagName() == tagName) {
             return element;
+        }
     }
 
     return nullptr;
@@ -746,8 +751,9 @@ void HTMLParser::insert(const InsertionLocation& location)
 
     auto child = to<ContainerNode>(location.child);
     child->beginParsingChildren();
-    if(location.selfClosing)
+    if(location.selfClosing) {
         child->finishParsingChildren();
+    }
 }
 
 void HTMLParser::append(ContainerNode* parent, Node* child, bool selfClosing)
@@ -1179,8 +1185,9 @@ void HTMLParser::insertForeignElement(HTMLTokenView& token, const GlobalString& 
 {
     auto element = createElement(token, namespaceUri);
     append(element, token.selfClosing());
-    if(!token.selfClosing())
+    if(!token.selfClosing()) {
         m_openElements.push(element);
+    }
 }
 
 void HTMLParser::insertTextNode(const std::string_view& data)
@@ -1277,8 +1284,9 @@ HTMLParser::InsertionMode HTMLParser::currentInsertionMode(HTMLTokenView& token)
             && token.tagName() != malignmarkTag)
             return m_insertionMode;
         if(token.type() == HTMLToken::Type::Character
-            || token.type() == HTMLToken::Type::SpaceCharacter)
+            || token.type() == HTMLToken::Type::SpaceCharacter) {
             return m_insertionMode;
+        }
     }
 
     if(element->namespaceUri() == namespaceuri::mathml
@@ -1292,8 +1300,9 @@ HTMLParser::InsertionMode HTMLParser::currentInsertionMode(HTMLTokenView& token)
         if(token.type() == HTMLToken::Type::StartTag)
             return m_insertionMode;
         if(token.type() == HTMLToken::Type::Character
-            || token.type() == HTMLToken::Type::SpaceCharacter)
+            || token.type() == HTMLToken::Type::SpaceCharacter) {
             return m_insertionMode;
+        }
     }
 
     if(token.type() == HTMLToken::Type::EndOfFile)
@@ -2768,8 +2777,10 @@ void HTMLParser::handleInForeignContentMode(HTMLTokenView& token)
     if(token.type() == HTMLToken::Type::EndTag) {
         auto index = m_openElements.size() - 1;
         auto node = m_openElements.at(index);
-        if(node->tagName() != token.tagName())
+        if(node->tagName() != token.tagName()) {
             handleErrorToken(token);
+        }
+
         do {
             if(node->tagName() == token.tagName()) {
                 m_openElements.popUntilPopped(node);
@@ -2778,8 +2789,9 @@ void HTMLParser::handleInForeignContentMode(HTMLTokenView& token)
 
             index -= 1;
             node = m_openElements.at(index);
-            if(node->namespaceUri() == namespaceuri::xhtml)
+            if(node->namespaceUri() == namespaceuri::xhtml) {
                 break;
+            }
         } while(true);
 
         handleToken(token, m_insertionMode);

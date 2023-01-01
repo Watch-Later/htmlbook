@@ -65,8 +65,9 @@ void Book::save(const std::string& filename)
 
 void Book::serialize(std::ostream& o) const
 {
-    if(m_document)
+    if(m_document) {
         m_document->serialize(o);
+    }
 }
 
 } // namespace htmlbook

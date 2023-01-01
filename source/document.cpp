@@ -347,7 +347,7 @@ void Element::serialize(std::ostream& o) const
         o << '"';
     }
 
-    if(firstChild() == nullptr) {
+    if(!firstChild()) {
         o << '/';
         o << '>';
     } else {
@@ -495,7 +495,7 @@ RefPtr<ResourceType> Document::fetchResource(const std::string_view& url)
         return nullptr;
     auto it = m_resourceCache.find(completeUrl);
     if(it != m_resourceCache.end())
-        return to<ResourceType>(it->second.get());
+        return to<ResourceType>(it->second);
     std::string mimeType;
     std::string textEncoding;
     std::vector<char> data;

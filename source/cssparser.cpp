@@ -883,8 +883,9 @@ inline CSSValueID matchIdent(const CSSTokenStream& input, const idententry_t(&ta
 
     auto name = input->data();
     for(auto& entry : table) {
-        if(equals(name, entry.name, false))
+        if(equals(name, entry.name, false)) {
             return entry.value;
+        }
     }
 
     return CSSValueID::Unknown;
@@ -1619,8 +1620,9 @@ RefPtr<CSSValue> CSSParser::consumeSize(CSSTokenStream& input)
                 {"letter", CSSValueID::Letter}
             };
 
-            if(size = consumeIdent(input, table))
+            if(size = consumeIdent(input, table)) {
                 continue;
+            }
         }
 
         if(orientation == nullptr) {
@@ -1629,8 +1631,9 @@ RefPtr<CSSValue> CSSParser::consumeSize(CSSTokenStream& input)
                 {"landscape", CSSValueID::Landscape}
             };
 
-            if(orientation = consumeIdent(input, table))
+            if(orientation = consumeIdent(input, table)) {
                 continue;
+            }
         }
 
         break;
@@ -1909,8 +1912,9 @@ RefPtr<CSSValue> CSSParser::consumeBackgroundPosition(CSSTokenStream& input)
                 {"center", CSSValueID::Center}
             };
 
-            if(first = consumeIdent(input, table))
+            if(first = consumeIdent(input, table)) {
                 continue;
+            }
         }
 
         if(second == nullptr) {
@@ -1920,8 +1924,9 @@ RefPtr<CSSValue> CSSParser::consumeBackgroundPosition(CSSTokenStream& input)
                 {"center", CSSValueID::Center}
             };
 
-            if(second = consumeIdent(input, table))
+            if(second = consumeIdent(input, table)) {
                 continue;
+            }
         }
 
         break;
@@ -3149,12 +3154,14 @@ bool CSSParser::consumeShorthand(CSSTokenStream& input, CSSPropertyList& propert
     while(!input.empty()) {
         bool consumed = false;
         for(size_t i = 0; i < longhand.length(); ++i) {
-            if(values[i] == nullptr && (values[i] = consumeLonghand(input, longhand.at(i))))
+            if(values[i] == nullptr && (values[i] = consumeLonghand(input, longhand.at(i)))) {
                 consumed = true;
+            }
         }
 
-        if(!consumed)
+        if(!consumed) {
             return false;
+        }
     }
 
     for(size_t i = 0; i < longhand.length(); ++i)
