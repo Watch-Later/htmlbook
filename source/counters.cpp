@@ -14,7 +14,7 @@ void Counters::update(const Box* box)
 
     static const GlobalString listItem("list-item");
     auto node = box->node();
-    if(is<ListItemBox>(box)) {
+    if(is<ListItemBox>(*box)) {
         if(node && node->tagName() == liTag) {
             auto element = static_cast<HTMLLIElement*>(node);
             if(auto value = element->value()) {

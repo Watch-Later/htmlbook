@@ -1,11 +1,11 @@
 #include "box.h"
+#include "resource.h"
+#include "document.h"
 #include "flexiblebox.h"
 #include "listitembox.h"
 #include "replacedbox.h"
 #include "tablebox.h"
 #include "textbox.h"
-#include "document.h"
-#include "resource.h"
 
 namespace htmlbook {
 
@@ -583,7 +583,7 @@ float BoxFrame::containingBlockWidthForPositioned(const BoxModel* containingBox)
     float fromRight = 0;
     if(containingBox->style()->isLeftToRightDirection()) {
         fromLeft = firstLine.x() + firstLine.borderLeft();
-        fromRight = lastLine.x() + lastLine.width() - firstLine.borderRight();
+        fromRight = lastLine.x() + lastLine.width() - lastLine.borderRight();
     } else {
         fromRight = firstLine.x() + firstLine.width() - firstLine.borderRight();
         fromLeft = lastLine.x() + lastLine.borderLeft();
@@ -741,21 +741,21 @@ void BoxFrame::computeHorizontalMargins(float& marginLeft, float& marginRight, f
     auto containingBlockTextAlign = containingBlock()->style()->textAlign();
     auto containingBlockDirection = containingBlock()->style()->direction();
     if(marginLeftLength.isAuto() && marginRightLength.isAuto() && childWidth < containerWidth
-        && (!marginLeftLength.isAuto() && !marginRightLength.isAuto() && containingBlockTextAlign == TextAlign::Center)) {
+        || (!marginLeftLength.isAuto() && !marginRightLength.isAuto() && containingBlockTextAlign == TextAlign::Center)) {
         marginLeft = std::max(0.f, (containerWidth - childWidth) / 2.f);
         marginRight = containerWidth - childWidth - marginLeft;
         return;
     }
 
     if(marginRightLength.isAuto() && childWidth < containerWidth
-        && (!marginLeftLength.isAuto() && containingBlockDirection == TextDirection::Rtl && containingBlockTextAlign == TextAlign::Left)) {
+        || (!marginLeftLength.isAuto() && containingBlockDirection == TextDirection::Rtl && containingBlockTextAlign == TextAlign::Left)) {
         marginLeft = marginLeftLength.calc(containerWidth);
         marginRight = containerWidth - childWidth - marginLeft;
         return;
     }
 
     if(marginLeftLength.isAuto() && childWidth < containerWidth
-        && (!marginRightLength.isAuto() && containingBlockDirection == TextDirection::Ltr && containingBlockTextAlign == TextAlign::Right)) {
+        || (!marginRightLength.isAuto() && containingBlockDirection == TextDirection::Ltr && containingBlockTextAlign == TextAlign::Right)) {
         marginRight = marginRightLength.calc(containerWidth);
         marginLeft = containerWidth - childWidth - marginRight;
         return;
@@ -845,7 +845,7 @@ std::optional<float> BoxFrame::computePercentageHeight(const Length& height) con
         container->computeHeight(y, computedHeight, marginTop, marginBottom);
         availableHeight = computedHeight - container->borderHeight() + container->paddingHeight();
     } else if(containerStyleHeight.isPercent()) {
-        auto computedHeight = computePercentageHeight(containerStyleHeight);
+        auto computedHeight = container->computePercentageHeight(containerStyleHeight);
         if(!computedHeight)
             return std::nullopt;
         availableHeight = container->computeContentBoxHeight(*computedHeight);
@@ -881,9 +881,9 @@ float BoxFrame::constrainHeightByMinMax(float height) const
     return height;
 }
 
-static float computePositionedLeftOffset(float left, float marginLeft, const BoxModel* container)
+static float computePositionedLeftOffset(float left, float marginLeft, const BoxModel* container, TextDirection containerDirection)
 {
-    if(is<InlineBox>(*container) && !container->style()->isLeftToRightDirection()) {
+    if(containerDirection == TextDirection::Rtl && is<InlineBox>(*container)) {
         auto lines = container->lines();
         if(lines->size() > 1) {
             auto& firstLine = to<FlowLineBox>(*lines->front());
@@ -905,7 +905,7 @@ void BoxFrame::computePositionedWidthUsing(const Length& widthLength, const BoxM
     auto rightLenghtIsAuto = rightLength.isAuto();
 
     float leftLengthValue = 0;
-    if(!widthLength.isAuto() && !leftLength.isAuto() && !rightLength.isAuto()) {
+    if(!widthLenghtIsAuto && !leftLenghtIsAuto && !rightLenghtIsAuto) {
         width = computeContentBoxWidth(widthLength.calc(containerWidth));
         leftLengthValue = leftLength.calc(containerWidth);
 
@@ -966,7 +966,7 @@ void BoxFrame::computePositionedWidthUsing(const Length& widthLength, const BoxM
         }
     }
 
-    x = computePositionedLeftOffset(leftLengthValue, marginLeft, container);
+    x = computePositionedLeftOffset(leftLengthValue, marginLeft, container, containerDirection);
 }
 
 void BoxFrame::computePositionedWidthReplaced(float& x, float& width, float& marginLeft, float& marginRight) const
@@ -975,17 +975,17 @@ void BoxFrame::computePositionedWidthReplaced(float& x, float& width, float& mar
     auto containerWidth = containingBlockWidthForPositioned(container);
     auto containerDirection = container->style()->direction();
 
-    Length marginLeftLength = style()->marginLeft();
-    Length marginRightLength = style()->marginRight();
+    auto marginLeftLength = style()->marginLeft();
+    auto marginRightLength = style()->marginRight();
 
-    Length leftLength = style()->left();
-    Length rightLength = style()->right();
+    auto leftLength = style()->left();
+    auto rightLength = style()->right();
 
     width = computeReplacedWidth() + borderWidth() + paddingWidth();
     auto availableSpace = containerWidth - width;
     if(leftLength.isAuto() && rightLength.isAuto()) {
         if(containerDirection == TextDirection::Ltr) {
-            auto staticPosition = layer()->staticLeft() - borderLeft();
+            auto staticPosition = layer()->staticLeft() - container->borderLeft();
             for(auto parent = parentBox(); parent && parent != container; parent = parent->parentBox()) {
                 if(auto box = to<BoxFrame>(parent)) {
                     staticPosition += box->x();
@@ -1061,12 +1061,14 @@ void BoxFrame::computePositionedWidthReplaced(float& x, float& width, float& mar
         marginRight = marginRightLength.calc(containerWidth);
         leftLengthValue = leftLength.calc(containerWidth);
         rightLengthValue = rightLength.calc(containerWidth);
-        if(containerDirection == TextDirection::Rtl) {
-            leftLengthValue = containerWidth - (width + leftLengthValue + rightLengthValue + marginLeft + marginRight);
-        }
     }
 
-    x = computePositionedLeftOffset(leftLengthValue, marginLeft, container);
+    auto totalWidth = width + leftLengthValue + rightLengthValue +  marginLeft + marginRight;
+    if(totalWidth > containerWidth && containerDirection == TextDirection::Rtl) {
+        leftLengthValue = containerWidth - (totalWidth - leftLengthValue);
+    }
+
+    x = computePositionedLeftOffset(leftLengthValue, marginLeft, container, containerDirection);
 }
 
 void BoxFrame::computePositionedWidth(float& x, float& width, float& marginLeft, float& marginRight) const
@@ -1080,11 +1082,11 @@ void BoxFrame::computePositionedWidth(float& x, float& width, float& marginLeft,
     auto containerWidth = containingBlockWidthForPositioned(container);
     auto containerDirection = container->style()->direction();
 
-    Length marginLeftLength = style()->marginLeft();
-    Length marginRightLength = style()->marginRight();
+    auto marginLeftLength = style()->marginLeft();
+    auto marginRightLength = style()->marginRight();
 
-    Length leftLength = style()->left();
-    Length rightLength = style()->right();
+    auto leftLength = style()->left();
+    auto rightLength = style()->right();
     if(leftLength.isAuto() && rightLength.isAuto()) {
         if(containerDirection == TextDirection::Ltr) {
             auto staticPosition = layer()->staticLeft() - borderLeft();
@@ -1216,16 +1218,16 @@ void BoxFrame::computePositionedHeightReplaced(float& y, float& height, float& m
     auto container = containingBoxModel();
     auto containerHeight = containingBlockHeightForPositioned(container);
 
-    Length marginTopLength = style()->marginTop();
-    Length marginBottomLength = style()->marginBottom();
+    auto marginTopLength = style()->marginTop();
+    auto marginBottomLength = style()->marginBottom();
 
-    Length topLength = style()->top();
-    Length bottomLength = style()->bottom();
+    auto topLength = style()->top();
+    auto bottomLength = style()->bottom();
 
     height = computeReplacedHeight() + borderHeight() + paddingHeight();
     auto availableSpace = containerHeight - height;
     if(topLength.isAuto() && bottomLength.isAuto()) {
-        auto staticTop = layer()->staticTop() - borderTop();
+        auto staticTop = layer()->staticTop() - container->borderTop();
         for(auto parent = parentBox(); parent && parent != container; parent = parent->parentBox()) {
             if(auto box = to<BoxFrame>(parent)) {
                 staticTop += box->y();
@@ -1255,30 +1257,28 @@ void BoxFrame::computePositionedHeightReplaced(float& y, float& height, float& m
     } else if(topLength.isAuto()) {
         marginTop = marginTopLength.calc(containerHeight);
         marginBottom = marginBottomLength.calc(containerHeight);
-
         bottomLengthValue = bottomLength.calc(containerHeight);
+
         topLengthValue = availableSpace - (bottomLengthValue + marginTop + marginBottom);
     } else if(bottomLength.isAuto()) {
         marginTop = marginTopLength.calc(containerHeight);
         marginBottom = marginBottomLength.calc(containerHeight);
-
         topLengthValue = topLength.calc(containerHeight);
     } else if(marginTopLength.isAuto()) {
+        marginBottom = marginBottomLength.calc(containerHeight);
         topLengthValue = topLength.calc(containerHeight);
         bottomLengthValue = bottomLength.calc(containerHeight);
 
-        marginBottom = marginBottomLength.calc(containerHeight);
         marginTop = availableSpace - (topLengthValue + bottomLengthValue + marginBottom);
     } else if(marginBottomLength.isAuto()) {
+        marginTop = marginTopLength.calc(containerHeight);
         topLengthValue = topLength.calc(containerHeight);
         bottomLengthValue = bottomLength.calc(containerHeight);
 
-        marginTop = marginTopLength.calc(containerHeight);
         marginBottom = availableSpace - (topLengthValue + bottomLengthValue + marginTop);
     } else {
         marginTop = marginTopLength.calc(containerHeight);
         marginBottom = marginBottomLength.calc(containerHeight);
-
         topLengthValue = topLength.calc(containerHeight);
     }
 
@@ -1296,13 +1296,13 @@ void BoxFrame::computePositionedHeight(float& y, float& height, float& marginTop
     auto containerHeight = containingBlockHeightForPositioned(container);
     auto contentHeight = height - borderHeight() + paddingHeight();
 
-    Length marginTopLength = style()->marginTop();
-    Length marginBottomLength = style()->marginBottom();
+    auto marginTopLength = style()->marginTop();
+    auto marginBottomLength = style()->marginBottom();
 
-    Length topLength = style()->top();
-    Length bottomLength = style()->bottom();
+    auto topLength = style()->top();
+    auto bottomLength = style()->bottom();
     if(topLength.isAuto() && bottomLength.isAuto()) {
-        auto staticTop = layer()->staticTop() - borderTop();
+        auto staticTop = layer()->staticTop() - container->borderTop();
         for(auto parent = parentBox(); parent && parent != container; parent = parent->parentBox()) {
             if(auto box = to<BoxFrame>(parent)) {
                 staticTop += box->y();
