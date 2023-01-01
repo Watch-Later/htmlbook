@@ -630,6 +630,8 @@ public:
 
     void inheritFrom(const BoxStyle& parentStyle);
 
+    ~BoxStyle();
+
 private:
     BoxStyle(Node* node, PseudoType pseudoType, Display display);
     Node* m_node;

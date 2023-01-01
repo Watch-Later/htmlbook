@@ -1,5 +1,4 @@
 #include "blockbox.h"
-#include "resource.h"
 
 namespace htmlbook {
 

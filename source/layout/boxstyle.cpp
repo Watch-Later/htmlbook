@@ -47,6 +47,8 @@ Heap* BoxStyle::heap() const
     return m_node->heap();
 }
 
+BoxStyle::~BoxStyle() = default;
+
 BoxStyle::BoxStyle(Node* node, PseudoType pseudoType, Display display)
     : m_node(node), m_properties(node->heap()), m_pseudoType(pseudoType), m_display(display)
 {

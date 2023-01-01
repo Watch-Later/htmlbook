@@ -251,6 +251,7 @@ using CSSValueList = std::pmr::vector<RefPtr<CSSValue>>;
 
 class CSSInitialValue final : public CSSValue {
 public:
+    static RefPtr<CSSInitialValue> create();
     static RefPtr<CSSInitialValue> create(Heap* heap);
 
     Type type() const final { return Type::Initial; }
@@ -266,6 +267,7 @@ struct is_a<CSSInitialValue> {
 
 class CSSInheritValue final : public CSSValue {
 public:
+    static RefPtr<CSSInheritValue> create();
     static RefPtr<CSSInheritValue> create(Heap* heap);
 
     Type type() const final { return Type::Inherit; }
@@ -281,6 +283,7 @@ struct is_a<CSSInheritValue> {
 
 class CSSIdentValue final : public CSSValue {
 public:
+    static RefPtr<CSSIdentValue> create(CSSValueID value);
     static RefPtr<CSSIdentValue> create(Heap* heap, CSSValueID value);
 
     CSSValueID value() const { return m_value; }

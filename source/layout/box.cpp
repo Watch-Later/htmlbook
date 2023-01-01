@@ -1,5 +1,4 @@
 #include "box.h"
-#include "resource.h"
 #include "document.h"
 #include "flexiblebox.h"
 #include "listitembox.h"

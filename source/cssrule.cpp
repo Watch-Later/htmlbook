@@ -6,14 +6,44 @@
 
 namespace htmlbook {
 
+RefPtr<CSSInitialValue> CSSInitialValue::create()
+{
+    static char buffer[64];
+    static Heap heap(buffer, sizeof(buffer));
+    static auto item = create(&heap);
+    return item;
+}
+
 RefPtr<CSSInitialValue> CSSInitialValue::create(Heap* heap)
 {
     return adoptPtr(new (heap) CSSInitialValue);
 }
 
+RefPtr<CSSInheritValue> CSSInheritValue::create()
+{
+    static char buffer[64];
+    static Heap heap(buffer, sizeof(buffer));
+    static auto item = create(&heap);
+    return item;
+}
+
 RefPtr<CSSInheritValue> CSSInheritValue::create(Heap* heap)
 {
     return adoptPtr(new (heap) CSSInheritValue);
+}
+
+RefPtr<CSSIdentValue> CSSIdentValue::create(CSSValueID value)
+{
+    static Heap heap(1024 * 24);
+    static std::pmr::map<CSSValueID, RefPtr<CSSIdentValue>> table(&heap);
+    auto it = table.find(value);
+    if(it == table.end()) {
+        auto item = create(&heap, value);
+        table.emplace(value, item);
+        return item;
+    }
+
+    return it->second;
 }
 
 RefPtr<CSSIdentValue> CSSIdentValue::create(Heap* heap, CSSValueID value)
