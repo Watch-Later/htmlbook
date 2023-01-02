@@ -1101,9 +1101,7 @@ int BoxStyle::orphans() const
 bool BoxStyle::hasTransform() const
 {
     auto value = get(CSSPropertyID::Transform);
-    if(!is<CSSListValue>(value))
-        return false;
-    return !to<CSSListValue>(*value).empty();
+    return value && value->id() != CSSValueID::None;
 }
 
 const HeapString& BoxStyle::getQuote(bool open, size_t depth) const

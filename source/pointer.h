@@ -289,14 +289,14 @@ template<typename T, typename U>
 constexpr RefPtr<T> to(const RefPtr<U>& value) {
     if(!is<T>(value))
         return nullptr;
-    return static_cast<T*>(value.get());
+    return static_cast<T&>(*value);
 }
 
 template<typename T, typename U>
 constexpr RefPtr<T> to(RefPtr<U>& value) {
     if(!is<T>(value))
         return nullptr;
-    return static_cast<T*>(value.get());
+    return static_cast<T&>(*value);
 }
 
 } // namespace htmlbook

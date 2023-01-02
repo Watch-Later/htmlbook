@@ -33,8 +33,6 @@ void Box::computePreferredWidths(float& minWidth, float& maxWidth) const
 
 void Box::buildBox(BoxLayer* layer)
 {
-    m_containingBox = containingBox(*this);
-    m_containingBlock = containingBlock(*this);
     for(auto box = firstBox(); box; box = box->nextBox()) {
         box->buildBox(layer);
     }
@@ -185,13 +183,13 @@ BlockFlowBox* Box::createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle)
     return newBlock;
 }
 
-Box* Box::containingBox(const Box& box)
+Box* Box::containingBox() const
 {
-    auto parent = box.parentBox();
-    if(!is<TextBox>(box)) {
-        if(box.position() == Position::Fixed)
-            return box.containingBlockFixed();
-        if(box.position() == Position::Absolute) {
+    auto parent = parentBox();
+    if(!is<TextBox>(*this)) {
+        if(position() == Position::Fixed)
+            return containingBlockFixed();
+        if(position() == Position::Absolute) {
             while(parent && parent->position() == Position::Static) {
                 if(parent->isRootBox() || (parent->hasTransform() && is<BlockBox>(*parent)))
                     break;
@@ -203,17 +201,17 @@ Box* Box::containingBox(const Box& box)
     return parent;
 }
 
-BlockBox* Box::containingBlock(const Box& box)
+BlockBox* Box::containingBlock() const
 {
-    if(!is<TextBox>(box)) {
-        if(box.position() == Position::Fixed)
-            return box.containingBlockFixed();
-        if(box.position() == Position::Absolute) {
-            return box.containingBlockAbsolute();
+    if(!is<TextBox>(*this)) {
+        if(position() == Position::Fixed)
+            return containingBlockFixed();
+        if(position() == Position::Absolute) {
+            return containingBlockAbsolute();
         }
     }
 
-    auto parent = box.parentBox();
+    auto parent = parentBox();
     while(parent && ((parent->isInline() && !parent->isReplaced()) || !is<BlockBox>(*parent)))
         parent = parent->parentBox();
     return to<BlockBox>(parent);
@@ -694,7 +692,7 @@ float BoxFrame::computePercentageReplacedHeight(const Length& height) const
     }
 
     if(isPositioned()) {
-        auto availableHeight = containingBlockHeightForPositioned(containingBoxModel());
+        auto availableHeight = containingBlockHeightForPositioned(to<BoxModel>(cb));
         return computeContentBoxHeight(height.calc(availableHeight));
     }
 
