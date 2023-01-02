@@ -55,8 +55,6 @@ inline bool operator>(const GlobalString& a, const HeapString& b) { return a.val
 inline bool operator<(const HeapString& a, const GlobalString& b) { return a < b.value(); }
 inline bool operator>(const HeapString& a, const GlobalString& b) { return a > b.value(); }
 
-using GlobalStringList = std::vector<GlobalString>;
-
 extern const GlobalString nullGlo;
 extern const GlobalString emptyGlo;
 extern const GlobalString starGlo;

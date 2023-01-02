@@ -61,6 +61,20 @@ void BlockBox::addBox(Box* box)
     BoxFrame::addBox(box);
 }
 
+void BlockBox::addPositonedBox(BoxFrame* box)
+{
+    if(!m_positionedBoxes)
+        m_positionedBoxes = std::make_unique<PositionedBoxList>(heap());
+    m_positionedBoxes->insert(box);
+}
+
+void BlockBox::removePositonedBox(BoxFrame* box)
+{
+    if(m_positionedBoxes) {
+        m_positionedBoxes->erase(box);
+    }
+}
+
 BlockFlowBox::~BlockFlowBox() = default;
 
 BlockFlowBox::BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style)
@@ -72,7 +86,56 @@ BlockFlowBox::BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void BlockFlowBox::setFirstLineStyle(RefPtr<BoxStyle> firstLineStyle)
 {
-   m_firstLineStyle = std::move(firstLineStyle);
+    m_firstLineStyle = std::move(firstLineStyle);
+}
+
+bool BlockFlowBox::containsFloats(Box* box) const
+{
+    if(!m_floatingBoxes)
+        return false;
+    auto it = m_floatingBoxes->begin();
+    while(it != m_floatingBoxes->end()) {
+        if(it->box == box)
+            return false;
+        ++it;
+    }
+
+    return false;
+}
+
+void BlockFlowBox::insertFloatingBox(BoxFrame* box)
+{
+    assert(box->isFloating());
+    if(!m_floatingBoxes)
+        m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
+    auto it = m_floatingBoxes->begin();
+    while(it != m_floatingBoxes->end()) {
+        if(it->box == box)
+            return;
+        ++it;
+    }
+
+    FloatingBox floatingBox;
+    floatingBox.type = box->style()->floating();
+    floatingBox.box = box;
+    floatingBox.isHidden = false;
+    floatingBox.isIntruding = false;
+    m_floatingBoxes->push_back(floatingBox);
+}
+
+void BlockFlowBox::removeFloatingBox(BoxFrame* box)
+{
+    if(!m_floatingBoxes)
+        return;
+    auto it = m_floatingBoxes->begin();
+    while(it != m_floatingBoxes->end()) {
+        if(it->box == box)
+            break;
+        ++it;
+    }
+
+    assert(it != m_floatingBoxes->end());
+    m_floatingBoxes->erase(it);
 }
 
 } // namespace htmlbook

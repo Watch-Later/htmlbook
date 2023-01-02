@@ -3,10 +3,8 @@
 
 #include <string_view>
 #include <memory_resource>
-#include <vector>
 #include <ostream>
 #include <cstring>
-#include <iostream>
 
 namespace htmlbook {
 
@@ -71,8 +69,6 @@ inline bool operator>(const HeapString& a, const std::string_view& b) { return a
 
 inline bool operator<(const std::string_view& a, const HeapString& b) { return a < b.value(); }
 inline bool operator>(const std::string_view& a, const HeapString& b) { return a > b.value(); }
-
-using HeapStringList = std::vector<HeapString>;
 
 } // namespace htmlbook
 
