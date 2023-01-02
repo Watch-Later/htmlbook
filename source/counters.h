@@ -11,9 +11,7 @@ class Box;
 
 class Counters {
 public:
-    explicit Counters(Document* document)
-        : m_document(document)
-    {}
+    explicit Counters(Document* document);
 
     void push() { m_counters.push_back(nullptr); }
     void pop() { m_counters.pop_back(); }

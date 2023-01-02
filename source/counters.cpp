@@ -6,6 +6,11 @@
 
 namespace htmlbook {
 
+Counters::Counters(Document* document)
+    : m_document(document), m_counters(document->heap())
+{
+}
+
 void Counters::update(const Box* box)
 {
     update(box, CSSPropertyID::CounterReset);

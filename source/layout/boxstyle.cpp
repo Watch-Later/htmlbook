@@ -76,6 +76,39 @@ RefPtr<FontFace> BoxStyle::fontFace() const
     return m_fontFace;
 }
 
+Display BoxStyle::display() const
+{
+    if(m_floating == Float::None && (m_position == Position::Static || m_position == Position::Relative))
+        return m_display;
+    switch(m_display) {
+    case Display::Inline:
+    case Display::InlineBlock:
+        return Display::Block;
+    case Display::InlineTable:
+        return Display::Table;
+    case Display::InlineFlex:
+        return Display::Flex;
+    case Display::TableCaption:
+    case Display::TableCell:
+    case Display::TableColumn:
+    case Display::TableColumnGroup:
+    case Display::TableFooterGroup:
+    case Display::TableHeaderGroup:
+    case Display::TableRow:
+    case Display::TableRowGroup:
+        return Display::Block;
+    default:
+        return m_display;
+    }
+}
+
+Float BoxStyle::floating() const
+{
+    if(m_position == Position::Static || m_position == Position::Relative)
+        return m_floating;
+    return Float::None;
+}
+
 Length BoxStyle::left() const
 {
     auto value = get(CSSPropertyID::Left);

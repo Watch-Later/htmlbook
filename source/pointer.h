@@ -250,12 +250,12 @@ constexpr bool is(const U* value) {
 }
 
 template<typename T, typename U>
-constexpr bool is(const RefPtr<U>& value) {
+constexpr bool is(RefPtr<U>& value) {
     return value && is_a<T>::check(*value);
 }
 
 template<typename T, typename U>
-constexpr bool is(RefPtr<U>& value) {
+constexpr bool is(const RefPtr<U>& value) {
     return value && is_a<T>::check(*value);
 }
 

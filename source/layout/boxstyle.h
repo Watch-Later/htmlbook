@@ -455,9 +455,9 @@ public:
     FontStyle fontStyle() const { return m_fontStyle; }
     FontVariant fontVariant() const { return m_fontVariant; }
 
-    Display display() const { return m_display; }
+    Display display() const;
+    Float floating() const;
     Position position() const { return m_position; }
-    Float floating() const { return m_floating; }
     Clear clear() const { return m_clear; }
     Overflow overflowX() const { return m_overflowX; }
     Overflow overflowY() const { return m_overflowY; }
