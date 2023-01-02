@@ -19,7 +19,7 @@ public:
 
     void addBox(Box* box) override;
 
-    void addPositonedBox(BoxFrame* box);
+    void insertPositonedBox(BoxFrame* box);
     void removePositonedBox(BoxFrame* box);
 
     const PositionedBoxList* positionedBoxes() const { return m_positionedBoxes.get(); }

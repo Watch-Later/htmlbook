@@ -77,11 +77,10 @@ public:
     static Box* createAnonymous(const RefPtr<BoxStyle>& parentStyle, Display display);
     static BlockFlowBox* createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle);
 
-    BlockBox* containingBlockFixed() const;
-    BlockBox* containingBlockAbsolute() const;
-
     Box* containingBox() const;
     BlockBox* containingBlock() const;
+    BlockBox* containingBlockFixed() const;
+    BlockBox* containingBlockAbsolute() const;
 
     bool isRootBox() const { return !m_parentBox; }
     bool isAnonymous() const { return m_anonymous; }

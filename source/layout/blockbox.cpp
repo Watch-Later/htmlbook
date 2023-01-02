@@ -61,7 +61,7 @@ void BlockBox::addBox(Box* box)
     BoxFrame::addBox(box);
 }
 
-void BlockBox::addPositonedBox(BoxFrame* box)
+void BlockBox::insertPositonedBox(BoxFrame* box)
 {
     if(!m_positionedBoxes)
         m_positionedBoxes = std::make_unique<PositionedBoxList>(heap());
