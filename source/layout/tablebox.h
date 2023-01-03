@@ -15,6 +15,8 @@ public:
 
     bool isOfType(Type type) const final { return type == Type::Table || BlockBox::isOfType(type); }
 
+    bool avoidsFloats() const final { return true; }
+
     TableSectionBox* header() const { return m_header; }
     TableSectionBox* footer() const { return m_footer; }
     const std::vector<TableCaptionBox*>& captions() const { return m_captions; }

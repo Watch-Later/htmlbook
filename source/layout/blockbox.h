@@ -13,6 +13,11 @@ public:
 
     bool isOfType(Type type) const override { return type == Type::Block || BoxFrame::isOfType(type); }
 
+    virtual void computeInlinePreferredWidths(float& minWidth, float& maxWidth) const;
+    virtual void computeBlockPreferredWidths(float& minWidth, float& maxWidth) const;
+
+    void computePreferredWidths(float& minWidth, float& maxWidth) const override;
+
     BoxList* children() const final { return &m_children; }
     Box* continuation() const { return m_continuation; }
     void setContinuation(Box* continuation) { m_continuation = continuation; }
@@ -89,8 +94,8 @@ public:
     const RefPtr<BoxStyle>& firstLineStyle() const { return m_firstLineStyle; }
     void setFirstLineStyle(RefPtr<BoxStyle> firstLineStyle);
 
+    bool containsFloat(Box* box) const;
     bool containsFloats() const { return m_floatingBoxes && !m_floatingBoxes->empty(); }
-    bool containsFloats(Box* box) const;
 
     void insertFloatingBox(BoxFrame* box);
     void removeFloatingBox(BoxFrame* box);

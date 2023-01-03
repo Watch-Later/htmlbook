@@ -40,6 +40,7 @@ public:
     virtual bool isBoxModel() const { return false; }
     virtual bool isBoxFrame() const { return false; }
     virtual bool isOfType(Type type) const { return false; }
+    virtual bool avoidsFloats() const { return false; }
 
     virtual void computePreferredWidths(float& minWidth, float& maxWidth) const;
 
@@ -90,6 +91,7 @@ public:
     bool isPositioned() const { return m_positioned; }
     bool isFloatingOrPositioned() const { return m_floating || m_positioned; }
     bool isChildrenInline() const { return m_childrenInline; }
+    bool isOverflowHidden() const { return m_overflowHidden; }
     bool hasTransform() const { return m_hasTransform; }
 
     void setAnonymous(bool value) { m_anonymous = value; }
@@ -98,6 +100,7 @@ public:
     void setFloating(bool value) { m_floating = value; }
     void setPositioned(bool value) { m_positioned = value; }
     void setChildrenInline(bool value) { m_childrenInline = value; }
+    void setOverflowHidden(bool value) { m_overflowHidden = value; }
     void setHasTransform(bool value) { m_hasTransform = value; }
 
     Heap* heap() const { return m_style->heap(); }
@@ -117,6 +120,7 @@ private:
     bool m_floating{false};
     bool m_positioned{false};
     bool m_childrenInline{true};
+    bool m_overflowHidden{false};
     bool m_hasTransform{false};
 };
 
@@ -238,6 +242,8 @@ public:
     BoxFrame(Node* node, const RefPtr<BoxStyle>& style);
 
     bool isBoxFrame() const final { return true; }
+
+    bool avoidsFloats() const override;
 
     LineBox* line() const { return m_line.get(); }
     void setLine(std::unique_ptr<LineBox> line) { m_line = std::move(line); }

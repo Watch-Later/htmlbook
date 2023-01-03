@@ -485,6 +485,12 @@ BoxFrame::BoxFrame(Node* node, const RefPtr<BoxStyle>& style)
     : BoxModel(node, style)
 {
     setHasTransform(style->hasTransform());
+    setOverflowHidden(!style->isOverflowVisible());
+}
+
+bool BoxFrame::avoidsFloats() const
+{
+    return isReplaced() || isOverflowHidden() || is<FlexibleBox>(parentBox());
 }
 
 float BoxFrame::minPreferredWidth() const

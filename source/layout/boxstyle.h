@@ -58,7 +58,8 @@ enum class Overflow : uint8_t {
     Visible,
     Hidden,
     Scroll,
-    Overlay
+    Overlay,
+    Clip
 };
 
 enum class LineStyle : uint8_t {
@@ -575,6 +576,9 @@ public:
     bool isLeftToRightDirection() const { return m_direction == TextDirection::Ltr; }
     bool isColumnFlexDirection() const { return flexDirection() == FlexDirection::Column || flexDirection() == FlexDirection::ColumnReverse; }
     bool isReverseFlexDirection() const { return flexDirection() == FlexDirection::RowReverse || flexDirection() == FlexDirection::ColumnReverse; }
+    bool isOverflowVisible() const { return m_overflowX == Overflow::Visible && m_overflowY == Overflow::Visible; }
+    bool isClearLeft() const { return m_clear == Clear::Left || m_clear == Clear::Both; }
+    bool isClearRight() const { return m_clear == Clear::Right || m_clear == Clear::Both; }
     bool hasTransform() const;
 
     const HeapString& getQuote(bool open, size_t depth) const;

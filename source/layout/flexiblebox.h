@@ -5,11 +5,15 @@
 
 namespace htmlbook {
 
-class FlexibleBox : public BlockBox {
+class FlexibleBox final : public BlockBox {
 public:
     FlexibleBox(Node* node, const RefPtr<BoxStyle>& style);
 
     bool isOfType(Type type) const final { return type == Type::Flexible || BlockBox::isOfType(type); }
+
+    bool avoidsFloats() const final { return true; }
+
+    void computeBlockPreferredWidths(float& minWidth, float& maxWidth) const final;
 };
 
 template<>

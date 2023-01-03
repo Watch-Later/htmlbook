@@ -1670,11 +1670,13 @@ Overflow BoxStyle::convertOverflow(const CSSValue& value)
         return Overflow::Scroll;
     case CSSValueID::Overlay:
         return Overflow::Overlay;
+    case CSSValueID::Clip:
+        return Overflow::Clip;
     default:
         assert(false);
     }
 
-    return Overflow::Auto;
+    return Overflow::Visible;
 }
 
 Visibility BoxStyle::convertVisibility(const CSSValue& value)
