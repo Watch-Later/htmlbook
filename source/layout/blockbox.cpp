@@ -95,7 +95,7 @@ bool BlockFlowBox::containsFloats(Box* box) const
         return false;
     auto it = m_floatingBoxes->begin();
     while(it != m_floatingBoxes->end()) {
-        if(it->box == box)
+        if(box == it->box())
             return false;
         ++it;
     }
@@ -110,16 +110,14 @@ void BlockFlowBox::insertFloatingBox(BoxFrame* box)
         m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
     auto it = m_floatingBoxes->begin();
     while(it != m_floatingBoxes->end()) {
-        if(it->box == box)
+        if(box == it->box())
             return;
         ++it;
     }
 
-    FloatingBox floatingBox;
-    floatingBox.type = box->style()->floating();
-    floatingBox.box = box;
-    floatingBox.isHidden = false;
-    floatingBox.isIntruding = false;
+    FloatingBox floatingBox(box);
+    floatingBox.setIsIntruding(false);
+    floatingBox.setIsHidden(false);
     m_floatingBoxes->push_back(floatingBox);
 }
 
@@ -129,7 +127,7 @@ void BlockFlowBox::removeFloatingBox(BoxFrame* box)
         return;
     auto it = m_floatingBoxes->begin();
     while(it != m_floatingBoxes->end()) {
-        if(it->box == box)
+        if(box == it->box())
             break;
         ++it;
     }

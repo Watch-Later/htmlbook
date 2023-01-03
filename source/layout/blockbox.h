@@ -35,18 +35,45 @@ struct is_a<BlockBox> {
     static bool check(const Box& box) { return box.isOfType(Box::Type::Block); }
 };
 
-struct FloatingBox {
-    BoxFrame* box{nullptr};
-    Float type{Float::None};
+class FloatingBox {
+public:
+    explicit FloatingBox(BoxFrame* box)
+        : m_box(box), m_type(box->style()->floating())
+    {}
 
-    bool isHidden{false};
-    bool isIntruding{false};
-    bool isPlaced{false};
+    BoxFrame* box() const { return m_box; }
+    Float type() const { return m_type; }
 
-    float x{0};
-    float y{0};
-    float width{0};
-    float height{0};
+    void setIsIntruding(bool value) { m_isIntruding = value; }
+    void setIsHidden(bool value) { m_isHidden = value; }
+    void setIsPlaced(bool value) { m_isPlaced = value; }
+
+    bool isIntruding() const { return m_isIntruding; }
+    bool isHidden() const { return m_isHidden; }
+    bool isPlaced() const { return m_isPlaced; }
+
+    void setX(float x) { m_x = x; }
+    void setY(float y) { m_y = y; }
+    void setWidth(float width) { m_width = width; }
+    void setHeight(float height) { m_height = height; }
+
+    float x() const { return m_x; }
+    float y() const { return m_y; }
+    float width() const { return m_width; }
+    float height() const { return m_height; }
+
+private:
+    BoxFrame* m_box;
+    Float m_type;
+
+    bool m_isIntruding{false};
+    bool m_isHidden{false};
+    bool m_isPlaced{false};
+
+    float m_x{0};
+    float m_y{0};
+    float m_width{0};
+    float m_height{0};
 };
 
 using FloatingBoxList = std::pmr::list<FloatingBox>;
