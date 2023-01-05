@@ -71,7 +71,7 @@ void BlockBox::computeBlockPreferredWidths(float& minWidth, float& maxWidth) con
         minWidth = std::max(width, minWidth);
         if(nowrap && !is<TableBox>(*this))
             maxWidth = std::max(width, maxWidth);
-        width = childMinWidth + marginWidth;
+        width = childMaxWidth + marginWidth;
 
         if(child->isFloating()) {
             if(childStyle->floating() == Float::Left) {
@@ -204,9 +204,152 @@ BlockFlowBox::BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style)
     setChildrenInline(true);
 }
 
+void BlockFlowBox::computeInlinePreferredWidths(float& minWidth, float& maxWidth) const
+{
+    minWidth = 0;
+    maxWidth = 0;
+}
+
+void BlockFlowBox::layoutPositionedBoxes()
+{
+    if(!m_positionedBoxes)
+        return;
+    for(auto box : *m_positionedBoxes) {
+        box->layout();
+    }
+}
+
+void BlockFlowBox::layoutInlineChildren()
+{
+}
+
+void BlockFlowBox::layoutBlockChildren()
+{
+}
+
+void BlockFlowBox::layout()
+{
+    updateWidth();
+    buildIntrudingFloats();
+    if(!is<TableCellBox>(*this)) {
+        m_maxPositiveMarginTop = std::max(0.f, m_marginTop);
+        m_maxNegativeMarginTop = std::max(0.f, -m_marginTop);
+        m_maxPositiveMarginBottom = std::max(0.f, m_marginBottom);
+        m_maxNegativeMarginBottom = std::max(0.f, -m_marginBottom);
+    }
+
+    setHeight(0);
+    if(isChildrenInline())
+        layoutInlineChildren();
+    else
+        layoutBlockChildren();
+
+    updateHeight();
+    buildOverhangingFloats();
+    layoutPositionedBoxes();
+}
+
 void BlockFlowBox::setFirstLineStyle(RefPtr<BoxStyle> firstLineStyle)
 {
     m_firstLineStyle = std::move(firstLineStyle);
+}
+
+void BlockFlowBox::buildIntrudingFloats()
+{
+    if(m_floatingBoxes)
+        m_floatingBoxes->clear();
+    if(isFloatingOrPositioned() || isRootBox() || avoidsFloats() || is<TableCellBox>(*this))
+        return;
+
+    auto parentBlock = to<BlockFlowBox>(parentBox());
+    if(parentBlock == nullptr)
+        return;
+
+    auto parentHasFloats = false;
+    auto xOffset = parentBlock->borderLeft() + parentBlock->paddingLeft();
+    auto yOffset = y();
+
+    auto prev = prevBox();
+    while(prev && (prev->isFloatingOrPositioned() || prev->avoidsFloats() || !is<BlockBox>(*prev))) {
+        if(prev->isFloating())
+            parentHasFloats = true;
+        prev = prev->prevBox();
+    }
+
+    if(parentHasFloats) 
+        addIntrudingFloats(parentBlock, xOffset, yOffset);
+
+    auto prevBlock = to<BlockFlowBox>(prev);
+    if(prevBlock == nullptr) {
+        prevBlock = parentBlock;
+    } else {
+        xOffset = 0;
+        yOffset -= prevBlock->y();
+    }
+
+    if(prevBlock->containsFloats() && prevBlock->floatBottom() > yOffset) {
+        addIntrudingFloats(prevBlock, xOffset, yOffset);
+    }
+}
+
+void BlockFlowBox::buildOverhangingFloats()
+{
+    if(isChildrenInline())
+        return;
+    for(auto child = m_children.firstBox(); child; child = child->nextBox()) {
+        if(!child->isFloatingOrPositioned() && is<BlockFlowBox>(child)) {
+            auto block = to<BlockFlowBox>(child);
+            if(block->floatBottom() + block->y() > height()) {
+                addOverhangingFloats(block);
+            }
+        }
+    }
+}
+
+void BlockFlowBox::addIntrudingFloats(BlockFlowBox* prevBlock, float xOffset, float yOffset)
+{
+    if(!prevBlock->containsFloats())
+        return;
+    for(auto& item : *prevBlock->floatingBoxes()) {
+        if(item.bottom() > yOffset && !containsFloat(item.box())) {
+            FloatingBox floatingBox(item.box());
+            floatingBox.setIsIntruding(true);
+            floatingBox.setIsHidden(true);
+            floatingBox.setIsPlaced(true);
+            if(prevBlock == parentBox())
+                floatingBox.setX(item.x() - xOffset);
+            else
+                floatingBox.setX(item.x() - xOffset - prevBlock->marginLeft());
+            floatingBox.setY(item.y() - yOffset);
+            floatingBox.setWidth(item.width());
+            floatingBox.setHeight(item.height());
+            if(m_floatingBoxes == nullptr)
+                m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
+            m_floatingBoxes->push_back(floatingBox);
+        }
+    }
+}
+
+void BlockFlowBox::addOverhangingFloats(BlockFlowBox* childBlock)
+{
+    if(childBlock->isOverflowHidden() || !childBlock->containsFloats())
+        return;
+    for(auto& item : *childBlock->floatingBoxes()) {
+        auto floatBottom = item.bottom() + childBlock->x();
+        if(floatBottom > height() && !containsFloat(item.box())) {
+            FloatingBox floatingBox(item.box());
+            floatingBox.setIsIntruding(true);
+            floatingBox.setIsHidden(true);
+            floatingBox.setIsPlaced(true);
+            floatingBox.setX(item.x() + childBlock->x());
+            floatingBox.setY(item.y() + childBlock->y());
+            floatingBox.setWidth(item.width());
+            floatingBox.setHeight(item.height());
+            if(m_floatingBoxes == nullptr)
+                m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
+            m_floatingBoxes->push_back(floatingBox);
+        }
+    }
 }
 
 bool BlockFlowBox::containsFloat(Box* box) const
@@ -216,7 +359,7 @@ bool BlockFlowBox::containsFloat(Box* box) const
     auto it = m_floatingBoxes->begin();
     while(it != m_floatingBoxes->end()) {
         if(box == it->box())
-            return false;
+            return true;
         ++it;
     }
 
@@ -238,6 +381,7 @@ void BlockFlowBox::insertFloatingBox(BoxFrame* box)
     FloatingBox floatingBox(box);
     floatingBox.setIsIntruding(false);
     floatingBox.setIsHidden(false);
+    floatingBox.setIsPlaced(false);
     m_floatingBoxes->push_back(floatingBox);
 }
 
@@ -254,6 +398,64 @@ void BlockFlowBox::removeFloatingBox(BoxFrame* box)
 
     assert(it != m_floatingBoxes->end());
     m_floatingBoxes->erase(it);
+}
+
+float BlockFlowBox::leftFloatBottom() const
+{
+    if(!m_floatingBoxes)
+        return 0;
+    float bottom = 0;
+    for(auto& floatingBox : *m_floatingBoxes) {
+        if(floatingBox.isPlaced() && floatingBox.type() == Float::Left) {
+            bottom = std::max(bottom, floatingBox.bottom());
+        }
+    }
+
+    return bottom;
+}
+
+float BlockFlowBox::rightFloatBottom() const
+{
+    if(!m_floatingBoxes)
+        return 0;
+    float bottom = 0;
+    for(auto& floatingBox : *m_floatingBoxes) {
+        if(floatingBox.isPlaced() && floatingBox.type() == Float::Right) {
+            bottom = std::max(bottom, floatingBox.bottom());
+        }
+    }
+
+    return bottom;
+}
+
+float BlockFlowBox::floatBottom() const
+{
+    if(!m_floatingBoxes)
+        return 0;
+    float bottom = 0;
+    for(auto& floatingBox : *m_floatingBoxes) {
+        if(floatingBox.isPlaced()) {
+            bottom = std::max(bottom, floatingBox.bottom());
+        }
+    }
+
+    return bottom;
+}
+
+float BlockFlowBox::nextFloatBottom(float y) const
+{
+    if(!m_floatingBoxes)
+        return 0;
+    std::optional<float> bottom;
+    for(auto& floatingBox : *m_floatingBoxes) {
+        assert(floatingBox.isPlaced());
+        auto floatBottom = floatingBox.bottom();
+        if(floatBottom > y) {
+            bottom = !bottom ? floatBottom : std::min(*bottom, floatBottom);
+        }
+    }
+
+    return bottom.value_or(0.f);
 }
 
 } // namespace htmlbook

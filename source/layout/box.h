@@ -49,6 +49,7 @@ public:
 
     virtual void addBox(Box* box);
     virtual void buildBox(BoxLayer* layer);
+    virtual void layout();
 
     LineBox* addLine(std::unique_ptr<LineBox> line);
     std::unique_ptr<LineBox> removeLine(LineBox* line);
@@ -242,8 +243,9 @@ public:
     BoxFrame(Node* node, const RefPtr<BoxStyle>& style);
 
     bool isBoxFrame() const final { return true; }
-
     bool avoidsFloats() const override;
+
+    void layout() override;
 
     LineBox* line() const { return m_line.get(); }
     void setLine(std::unique_ptr<LineBox> line) { m_line = std::move(line); }
@@ -336,6 +338,10 @@ public:
 
     virtual void computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const;
     virtual void computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
+
+    virtual bool isSelfCollapsingBlock() const { return false; }
+    virtual float collapsedMarginTop() const { return m_marginTop; }
+    virtual float collapsedMarginBottom() const { return m_marginBottom; }
 
 private:
     std::unique_ptr<LineBox> m_line;

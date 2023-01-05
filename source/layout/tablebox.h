@@ -17,6 +17,8 @@ public:
 
     bool avoidsFloats() const final { return true; }
 
+    void computeBlockPreferredWidths(float& minWidth, float& maxWidth) const final;
+
     TableSectionBox* header() const { return m_header; }
     TableSectionBox* footer() const { return m_footer; }
     const std::vector<TableCaptionBox*>& captions() const { return m_captions; }

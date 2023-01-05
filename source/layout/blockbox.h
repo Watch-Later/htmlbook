@@ -67,6 +67,9 @@ public:
     float width() const { return m_width; }
     float height() const { return m_height; }
 
+    float right() const { return m_x + m_width; }
+    float bottom() const { return m_y + m_height; }
+
 private:
     BoxFrame* m_box;
     Float m_type;
@@ -90,10 +93,21 @@ public:
 
     bool isOfType(Type type) const override { return type == Type::BlockFlow || BlockBox::isOfType(type); }
 
+    void computeInlinePreferredWidths(float& minWidth, float& maxWidth) const override;
+
+    void layoutPositionedBoxes();
+    void layoutInlineChildren();
+    void layoutBlockChildren();
+    void layout() override;
+
     LineBoxList* lines() const final { return &m_lines; }
     const RefPtr<BoxStyle>& firstLineStyle() const { return m_firstLineStyle; }
     void setFirstLineStyle(RefPtr<BoxStyle> firstLineStyle);
 
+    void buildIntrudingFloats();
+    void buildOverhangingFloats();
+    void addIntrudingFloats(BlockFlowBox* prevBlock, float xOffset, float yOffset);
+    void addOverhangingFloats(BlockFlowBox* childBlock);
     bool containsFloat(Box* box) const;
     bool containsFloats() const { return m_floatingBoxes && !m_floatingBoxes->empty(); }
 
@@ -102,10 +116,31 @@ public:
 
     const FloatingBoxList* floatingBoxes() const { return m_floatingBoxes.get(); }
 
+    float leftFloatBottom() const;
+    float rightFloatBottom() const;
+    float floatBottom() const;
+    float nextFloatBottom(float y) const;
+
+    float maxPositiveMarginTop() const { return m_maxPositiveMarginTop; }
+    float maxNegativeMarginTop() const { return m_maxNegativeMarginTop; }
+    float maxPositiveMarginBottom() const { return m_maxPositiveMarginBottom; }
+    float maxNegativeMarginBottom() const { return m_maxNegativeMarginBottom; }
+
+    void setMaxTopMargins(float pos, float neg) { m_maxPositiveMarginTop = pos; m_maxNegativeMarginTop = neg; }
+    void setMaxBottomMargins(float pos, float neg) { m_maxPositiveMarginBottom = pos; m_maxNegativeMarginBottom = neg; }
+
+    float collapsedMarginTop() const final { return m_maxPositiveMarginTop - m_maxNegativeMarginTop; }
+    float collapsedMarginBottom() const final { return m_maxPositiveMarginBottom - m_maxNegativeMarginBottom; }
+
 private:
     mutable LineBoxList m_lines;
     RefPtr<BoxStyle> m_firstLineStyle;
     std::unique_ptr<FloatingBoxList> m_floatingBoxes;
+
+    float m_maxPositiveMarginTop{0};
+    float m_maxNegativeMarginTop{0};
+    float m_maxPositiveMarginBottom{0};
+    float m_maxNegativeMarginBottom{0};
 };
 
 template<>

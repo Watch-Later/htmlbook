@@ -38,6 +38,11 @@ void Box::buildBox(BoxLayer* layer)
     }
 }
 
+void Box::layout()
+{
+    assert(false);
+}
+
 void Box::addBox(Box* box)
 {
     appendChild(box);
@@ -491,6 +496,13 @@ BoxFrame::BoxFrame(Node* node, const RefPtr<BoxStyle>& style)
 bool BoxFrame::avoidsFloats() const
 {
     return isReplaced() || isOverflowHidden() || is<FlexibleBox>(parentBox());
+}
+
+void BoxFrame::layout()
+{
+    for(auto box = firstBox(); box; box = box->nextBox()) {
+        box->layout();
+    }
 }
 
 float BoxFrame::minPreferredWidth() const

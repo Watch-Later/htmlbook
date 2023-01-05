@@ -8,6 +8,12 @@ TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
     setChildrenInline(false);
 }
 
+void TableBox::computeBlockPreferredWidths(float& minWidth, float& maxWidth) const
+{
+    minWidth = 0;
+    maxWidth = 0;
+}
+
 void TableBox::buildBox(BoxLayer* layer)
 {
     for(auto child = m_children.firstBox(); child; child = child->nextBox()) {
