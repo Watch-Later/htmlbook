@@ -18,6 +18,16 @@ Box::Box(Node* node, const RefPtr<BoxStyle>& style)
 
 Box::~Box()
 {
+    auto box = m_firstBox;
+    while(box) {
+        auto nextBox = box->nextBox();
+        box->setParentBox(nullptr);
+        box->setPrevBox(nullptr);
+        box->setNextBox(nullptr);
+        delete box;
+        box = nextBox;
+    }
+
     if(m_parentBox)
         m_parentBox->removeChild(this);
     if(m_node) {
@@ -48,60 +58,77 @@ void Box::addBox(Box* box)
     appendChild(box);
 }
 
-LineBox* Box::addLine(std::unique_ptr<LineBox> line)
-{
-    auto lines = this->lines();
-    assert(lines != nullptr);
-    lines->push_back(std::move(line));
-    return &*lines->back();
-}
-
-std::unique_ptr<LineBox> Box::removeLine(LineBox* line)
-{
-    auto lines = this->lines();
-    assert(lines != nullptr);
-    for(auto it = lines->begin(); it != lines->end(); ++it) {
-        if(line == &**it) {
-            auto value = std::move(*it);
-            lines->erase(it);
-            return value;
-        }
-    }
-
-    return nullptr;
-}
-
 void Box::insertChild(Box* box, Box* nextBox)
 {
-    auto children = this->children();
-    assert(children != nullptr);
-    children->insert(this, box, nextBox);
+    if(nextBox == nullptr) {
+        appendChild(box);
+        return;
+    }
+
+    assert(nextBox->parentBox() == this);
+    assert(box->parentBox() == nullptr);
+    assert(box->prevBox() == nullptr);
+    assert(box->nextBox() == nullptr);
+
+    auto prevBox = nextBox->prevBox();
+    nextBox->setPrevBox(box);
+    assert(m_lastBox != prevBox);
+    if(prevBox == nullptr) {
+        assert(m_firstBox == nextBox);
+        m_firstBox = box;
+    } else {
+        assert(m_firstBox != nextBox);
+        prevBox->setNextBox(box);
+    }
+
+    box->setParentBox(this);
+    box->setPrevBox(prevBox);
+    box->setNextBox(nextBox);
 }
 
 void Box::appendChild(Box* box)
 {
-    auto children = this->children();
-    assert(children != nullptr);
-    children->append(this, box);
+    assert(box->parentBox() == nullptr);
+    assert(box->prevBox() == nullptr);
+    assert(box->nextBox() == nullptr);
+    box->setParentBox(this);
+    if(m_firstBox == nullptr) {
+        m_firstBox = m_lastBox = box;
+        return;
+    }
+
+    box->setPrevBox(m_lastBox);
+    m_lastBox->setNextBox(box);
+    m_lastBox = box;
 }
 
 void Box::removeChild(Box* box)
 {
-    auto children = this->children();
-    assert(children != nullptr);
-    children->remove(this, box);
+    assert(box->parentBox() == this);
+    auto nextBox = box->nextBox();
+    auto prevBox = box->prevBox();
+    if(nextBox)
+        nextBox->setPrevBox(prevBox);
+    if(prevBox)
+        prevBox->setNextBox(nextBox);
+
+    if(m_firstBox == box)
+        m_firstBox = nextBox;
+    if(m_lastBox == box)
+        m_lastBox = prevBox;
+
+    box->setParentBox(nullptr);
+    box->setPrevBox(nullptr);
+    box->setNextBox(nullptr);
 }
 
 void Box::moveChildrenTo(Box* to, Box* begin, Box* end)
 {
-    auto fromChildren = children();
-    auto toChildren = to->children();
-    assert(fromChildren && toChildren);
     auto child = begin;
     while(child && child != end) {
         auto nextChild = child->nextBox();
-        fromChildren->remove(this, child);
-        toChildren->append(to, child);
+        removeChild(child);
+        to->appendChild(child);
         child = nextChild;
     }
 }
@@ -113,21 +140,7 @@ void Box::moveChildrenTo(Box* to, Box* begin)
 
 void Box::moveChildrenTo(Box* to)
 {
-    moveChildrenTo(to, firstBox(), nullptr);
-}
-
-Box* Box::firstBox() const
-{
-    if(auto children = this->children())
-        return children->firstBox();
-    return nullptr;
-}
-
-Box* Box::lastBox() const
-{
-    if(auto children = this->children())
-        return children->lastBox();
-    return nullptr;
+    moveChildrenTo(to, m_firstBox, nullptr);
 }
 
 Box* Box::create(Node* node, const RefPtr<BoxStyle>& style)
@@ -246,83 +259,6 @@ BlockBox* Box::containingBlockAbsolute() const
     return to<BlockBox>(parent);
 }
 
-BoxList::~BoxList()
-{
-    auto box = m_firstBox;
-    while(box) {
-        auto nextBox = box->nextBox();
-        box->setParentBox(nullptr);
-        box->setPrevBox(nullptr);
-        box->setNextBox(nullptr);
-        delete box;
-        box = nextBox;
-    }
-}
-
-void BoxList::insert(Box* parent, Box* box, Box* nextBox)
-{
-    if(nextBox == nullptr) {
-        append(parent, box);
-        return;
-    }
-
-    assert(nextBox->parentBox() == parent);
-    assert(box->parentBox() == nullptr);
-    assert(box->prevBox() == nullptr);
-    assert(box->nextBox() == nullptr);
-
-    auto prevBox = nextBox->prevBox();
-    nextBox->setPrevBox(box);
-    assert(m_lastBox != prevBox);
-    if(prevBox == nullptr) {
-        assert(m_firstBox == nextBox);
-        m_firstBox = box;
-    } else {
-        assert(m_firstBox != nextBox);
-        prevBox->setNextBox(box);
-    }
-
-    box->setParentBox(parent);
-    box->setPrevBox(prevBox);
-    box->setNextBox(nextBox);
-}
-
-void BoxList::append(Box* parent, Box* box)
-{
-    assert(box->parentBox() == nullptr);
-    assert(box->prevBox() == nullptr);
-    assert(box->nextBox() == nullptr);
-    box->setParentBox(parent);
-    if(m_firstBox == nullptr) {
-        m_firstBox = m_lastBox = box;
-        return;
-    }
-
-    box->setPrevBox(m_lastBox);
-    m_lastBox->setNextBox(box);
-    m_lastBox = box;
-}
-
-void BoxList::remove(Box* parent, Box* box)
-{
-    assert(box->parentBox() == parent);
-    auto nextBox = box->nextBox();
-    auto prevBox = box->prevBox();
-    if(nextBox)
-        nextBox->setPrevBox(prevBox);
-    if(prevBox)
-        prevBox->setNextBox(nextBox);
-
-    if(m_firstBox == box)
-        m_firstBox = nextBox;
-    if(m_lastBox == box)
-        m_lastBox = prevBox;
-
-    box->setParentBox(nullptr);
-    box->setPrevBox(nullptr);
-    box->setNextBox(nullptr);
-}
-
 std::unique_ptr<BoxLayer> BoxLayer::create(BoxModel* box, BoxLayer* parent)
 {
     return std::unique_ptr<BoxLayer>(new (box->heap()) BoxLayer(box, parent));
@@ -385,23 +321,21 @@ void BoxModel::buildBox(BoxLayer* layer)
 
 void BoxModel::addBox(Box* box)
 {
-    auto children = this->children();
-    assert(children != nullptr);
     if(!is<TableCellBox>(box) && !is<TableRowBox>(box)
         && !is<TableCaptionBox>(box) && !is<TableColumnBox>(box)
         && !is<TableSectionBox>(box)) {
-        children->append(this, box);
+        appendChild(box);
         return;
     }
 
-    auto lastChild = children->lastBox();
+    auto lastChild = lastBox();
     if(lastChild && lastChild->isAnonymous() && is<TableBox>(lastChild)) {
         lastChild->addBox(box);
         return;
     }
 
     auto newTable = createAnonymous(style(), Display::Table);
-    children->append(this, newTable);
+    appendChild(newTable);
     newTable->addBox(box);
 }
 
@@ -587,12 +521,12 @@ float BoxFrame::containingBlockWidthForPositioned(const BoxModel* containingBox)
     if(auto box = to<BoxFrame>(containingBox))
         return box->width() - box->borderLeft() - box->borderRight();
 
-    auto lines = to<InlineBox>(*containingBox).lines();
-    if(lines->empty())
+    auto& lines = to<InlineBox>(*containingBox).lines();
+    if(lines.empty())
         return 0;
 
-    auto& firstLine = to<FlowLineBox>(*lines->front());
-    auto& lastLine = to<FlowLineBox>(*lines->back());
+    auto& firstLine = to<FlowLineBox>(*lines.front());
+    auto& lastLine = to<FlowLineBox>(*lines.back());
 
     float fromLeft = 0;
     float fromRight = 0;
@@ -612,12 +546,12 @@ float BoxFrame::containingBlockHeightForPositioned(const BoxModel* containingBox
     if(auto box = to<BoxFrame>(containingBox))
         return box->height() - box->borderTop() - box->borderBottom();
 
-    auto lines = to<InlineBox>(*containingBox).lines();
-    if(lines->empty())
+    auto& lines = to<InlineBox>(*containingBox).lines();
+    if(lines.empty())
         return 0;
 
-    auto& firstLine = to<FlowLineBox>(*lines->front());
-    auto& lastLine = to<FlowLineBox>(*lines->back());
+    auto& firstLine = to<FlowLineBox>(*lines.front());
+    auto& lastLine = to<FlowLineBox>(*lines.back());
     auto lineHeight = lastLine.y() + lastLine.height() - firstLine.y();
     return lineHeight - containingBox->borderTop() - containingBox->borderBottom();
 }
@@ -899,10 +833,10 @@ float BoxFrame::constrainHeightByMinMax(float height) const
 static float computePositionedLeftOffset(float left, float marginLeft, const BoxModel* container, TextDirection containerDirection)
 {
     if(containerDirection == TextDirection::Rtl && is<InlineBox>(*container)) {
-        auto lines = container->lines();
-        if(lines->size() > 1) {
-            auto& firstLine = to<FlowLineBox>(*lines->front());
-            auto& lastLine = to<FlowLineBox>(*lines->back());
+        auto& lines = to<InlineBox>(*container).lines();
+        if(lines.size() > 1) {
+            auto& firstLine = to<FlowLineBox>(*lines.front());
+            auto& lastLine = to<FlowLineBox>(*lines.back());
             return left + marginLeft + lastLine.borderLeft() + (lastLine.x() - firstLine.x());
         }
     }
@@ -1430,6 +1364,46 @@ void BoxFrame::computeHeight(float& y, float& height, float& marginTop, float& m
     }
 
     computeVerticalMargins(marginTop, marginBottom);
+}
+
+float BoxFrame::maxMarginTop(MarginSign sign) const
+{
+    if(auto block = to<BlockFlowBox>(this)) {
+        if(sign == MarginSign::Positive)
+            return block->maxPositiveMarginTop();
+        return block->maxNegativeMarginTop();
+    }
+
+    if(sign == MarginSign::Positive)
+        return std::max(0.f, m_marginTop);
+    return -std::min(0.f, m_marginTop);
+}
+
+float BoxFrame::maxMarginBottom(MarginSign sign) const
+{
+    if(auto block = to<BlockFlowBox>(this)) {
+        if(sign == MarginSign::Positive)
+            return block->maxPositiveMarginBottom();
+        return block->maxNegativeMarginBottom();
+    }
+
+    if(sign == MarginSign::Positive)
+        return std::max(0.f, m_marginBottom);
+    return -std::min(0.f, m_marginBottom);
+}
+
+float BoxFrame::collapsedMarginTop() const
+{
+    if(auto block = to<BlockFlowBox>(this))
+        return block->maxPositiveMarginTop() - block->maxNegativeMarginTop();
+    return m_marginTop;
+}
+
+float BoxFrame::collapsedMarginBottom() const
+{
+    if(auto block = to<BlockFlowBox>(this))
+        return block->maxPositiveMarginBottom() - block->maxNegativeMarginBottom();
+    return m_marginBottom;
 }
 
 } // namespace htmlbook

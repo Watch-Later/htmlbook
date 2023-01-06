@@ -31,19 +31,17 @@ void InlineBox::addBox(Box* box)
         postBlock = createAnonymousBlock(block->style());
         block = block->containingBlock();
 
-        auto children = block->children();
-        assert(children->lastBox() == preBlock);
-        children->append(block, newBlock);
-        children->append(block, postBlock);
+        assert(block->lastBox() == preBlock);
+        block->appendChild(newBlock);
+        block->appendChild(postBlock);
     } else {
         preBlock = createAnonymousBlock(block->style());
         postBlock = createAnonymousBlock(block->style());
         block->moveChildrenTo(preBlock);
 
-        auto children = block->children();
-        children->append(block, preBlock);
-        children->append(block, newBlock);
-        children->append(block, postBlock);
+        block->appendChild(preBlock);
+        block->appendChild(newBlock);
+        block->appendChild(postBlock);
     }
 
     auto clone = new (heap()) InlineBox(nullptr, style());

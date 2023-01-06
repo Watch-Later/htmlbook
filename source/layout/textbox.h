@@ -11,13 +11,16 @@ public:
 
     bool isOfType(Type type) const override { return type == Type::Text || Box::isOfType(type); }
 
-    LineBoxList* lines() const final { return &m_lines; }
     const HeapString& text() const { return m_text; }
     void setText(const HeapString& text) { m_text = text; }
 
+    void addLine(std::unique_ptr<TextLineBox> line);
+    void removeLine(LineBox* line);
+    const TextLineBoxList& lines() const { return m_lines; }
+
 private:
     HeapString m_text;
-    mutable LineBoxList m_lines;
+    TextLineBoxList m_lines;
 };
 
 template<>

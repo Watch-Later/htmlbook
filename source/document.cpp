@@ -154,8 +154,6 @@ void ContainerNode::reparentChildren(ContainerNode* newParent)
 
 void ContainerNode::buildBox(Counters& counters, Box* parent)
 {
-    if(parent->children() == nullptr)
-        return;
     auto child = m_firstChild;
     while(child) {
         child->buildBox(counters, parent);

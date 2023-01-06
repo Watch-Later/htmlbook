@@ -31,7 +31,7 @@ void BlockBox::computeBlockPreferredWidths(float& minWidth, float& maxWidth) con
     float floatRightWidth = 0;
 
     auto nowrap = style()->whiteSpace() == WhiteSpace::Nowrap;
-    for(auto child = m_children.firstBox(); child; child = child->nextBox()) {
+    for(auto child = firstBox(); child; child = child->nextBox()) {
         if(child->isPositioned())
             continue;
         auto childStyle = child->style();
@@ -138,49 +138,6 @@ void BlockBox::computePreferredWidths(float& minWidth, float& maxWidth) const
     maxWidth += borderWidth() + paddingWidth();
 }
 
-void BlockBox::addBox(Box* box)
-{
-    if(m_continuation) {
-        m_continuation->addBox(box);
-        return;
-    }
-
-    if(isChildrenInline() && !box->isInline() && !box->isFloatingOrPositioned()) {
-        if(!m_children.empty()) {
-            auto newBlock = createAnonymousBlock(style());
-            moveChildrenTo(newBlock);
-            m_children.append(this, newBlock);
-        }
-
-        setChildrenInline(false);
-    } else if(!isChildrenInline() && (box->isInline() || box->isFloatingOrPositioned())) {
-        auto lastChild = m_children.lastBox();
-        if(lastChild && lastChild->isAnonymous() && is<BlockBox>(lastChild)) {
-            lastChild->addBox(box);
-            return;
-        }
-
-        if(box->isInline()) {
-            auto newBlock = createAnonymousBlock(style());
-            m_children.append(this, newBlock);
-
-            auto children = newBlock->children();
-            auto child = newBlock->prevBox();
-            while(child && child->isFloatingOrPositioned()) {
-                auto prevBox = child->prevBox();
-                m_children.remove(this, child);
-                children->insert(newBlock, child, children->firstBox());
-                child = prevBox;
-            }
-
-            newBlock->addBox(box);
-            return;
-        }
-    }
-
-    BoxFrame::addBox(box);
-}
-
 void BlockBox::insertPositonedBox(BoxFrame* box)
 {
     if(!m_positionedBoxes)
@@ -195,11 +152,51 @@ void BlockBox::removePositonedBox(BoxFrame* box)
     }
 }
 
+void BlockBox::addBox(Box* box)
+{
+    if(isChildrenInline() && !box->isInline() && !box->isFloatingOrPositioned()) {
+        for(auto child = firstBox(); child; child = child->nextBox()) {
+            if(child->isFloatingOrPositioned())
+                continue;
+            auto newBlock = createAnonymousBlock(style());
+            moveChildrenTo(newBlock);
+            appendChild(newBlock);
+            break;
+        }
+
+        setChildrenInline(false);
+    } else if(!isChildrenInline() && (box->isInline() || box->isFloatingOrPositioned())) {
+        auto lastChild = lastBox();
+        if(lastChild && lastChild->isAnonymous() && is<BlockBox>(lastChild)) {
+            lastChild->addBox(box);
+            return;
+        }
+
+        if(box->isInline()) {
+            auto newBlock = createAnonymousBlock(style());
+            appendChild(newBlock);
+
+            auto child = newBlock->prevBox();
+            while(child && child->isFloatingOrPositioned()) {
+                auto prevBox = child->prevBox();
+                removeChild(child);
+                newBlock->insertChild(child, newBlock->firstBox());
+                child = prevBox;
+            }
+
+            newBlock->addBox(box);
+            return;
+        }
+    }
+
+    BoxFrame::addBox(box);
+}
+
 BlockFlowBox::~BlockFlowBox() = default;
 
 BlockFlowBox::BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
-   , m_lines(style->heap())
+    , m_lines(style->heap())
 {
     setChildrenInline(true);
 }
@@ -210,6 +207,65 @@ void BlockFlowBox::computeInlinePreferredWidths(float& minWidth, float& maxWidth
     maxWidth = 0;
 }
 
+class MarginInfo {
+public:
+    MarginInfo(BlockFlowBox* block, float top, float bottom)
+        : m_block(block), m_top(top), m_bottom(bottom)
+    {}
+
+    BlockFlowBox* block() const { return m_block; }
+    float top() const { return m_top; }
+    float bottom() const { return m_bottom; }
+
+private:
+    BlockFlowBox* m_block;
+    float m_top;
+    float m_bottom;
+};
+
+void BlockFlowBox::adjustPositionedBox(BoxFrame* box, const MarginInfo& info)
+{
+}
+
+void BlockFlowBox::adjustFloatingBox(const MarginInfo& info)
+{
+}
+
+void BlockFlowBox::handleBottomOfBlock(float top, float bottom, MarginInfo& info)
+{
+}
+
+void BlockFlowBox::layoutBlockChild(BoxFrame* child, MarginInfo& info)
+{
+}
+
+void BlockFlowBox::layoutBlockChildren()
+{
+    auto top = borderTop() + paddingTop();
+    auto bottom = borderBottom() + paddingBottom();
+    setHeight(top);
+
+    MarginInfo info(this, top, bottom);
+    for(auto box = firstBox(); box; box = box->nextBox()) {
+        auto child = to<BoxFrame>(box);
+        if(child->isPositioned()) {
+            child->containingBlock()->insertPositonedBox(child);
+            adjustPositionedBox(child, info);
+        } else if(box->isFloating()) {
+            insertFloatingBox(child);
+            adjustFloatingBox(info);
+        } else {
+            layoutBlockChild(child, info);
+        }
+    }
+
+    handleBottomOfBlock(top, bottom, info);
+}
+
+void BlockFlowBox::layoutInlineChildren()
+{
+}
+
 void BlockFlowBox::layoutPositionedBoxes()
 {
     if(!m_positionedBoxes)
@@ -217,14 +273,6 @@ void BlockFlowBox::layoutPositionedBoxes()
     for(auto box : *m_positionedBoxes) {
         box->layout();
     }
-}
-
-void BlockFlowBox::layoutInlineChildren()
-{
-}
-
-void BlockFlowBox::layoutBlockChildren()
-{
 }
 
 void BlockFlowBox::layout()
@@ -238,7 +286,6 @@ void BlockFlowBox::layout()
         m_maxNegativeMarginBottom = std::max(0.f, -m_marginBottom);
     }
 
-    setHeight(0);
     if(isChildrenInline())
         layoutInlineChildren();
     else
@@ -296,7 +343,7 @@ void BlockFlowBox::buildOverhangingFloats()
 {
     if(isChildrenInline())
         return;
-    for(auto child = m_children.firstBox(); child; child = child->nextBox()) {
+    for(auto child = firstBox(); child; child = child->nextBox()) {
         if(!child->isFloatingOrPositioned() && is<BlockFlowBox>(child)) {
             auto block = to<BlockFlowBox>(child);
             if(block->floatBottom() + block->y() > height()) {
@@ -352,6 +399,38 @@ void BlockFlowBox::addOverhangingFloats(BlockFlowBox* childBlock)
     }
 }
 
+void BlockFlowBox::positionNewFloats()
+{
+    if(!containsFloats())
+        return;
+    auto it = std::prev(m_floatingBoxes->end());
+    if(it->isPlaced())
+        return;
+
+    auto y = height();
+    auto begin = m_floatingBoxes->begin();
+    for(; it != begin; --it) {
+        if(it->isPlaced()) {
+            y = std::max(y, it->y());
+            ++it;
+            break;
+        }
+    }
+
+    auto end = m_floatingBoxes->end();
+    for(; it != end; ++it) {
+        auto box = it->box();
+        if(this != box->containingBlock())
+            continue;
+        if(box->style()->isClearLeft())
+            y = std::max(y, leftFloatBottom());
+        if(box->style()->isClearRight())
+            y = std::max(y, rightFloatBottom());
+
+        it->setIsPlaced(true);
+    }
+}
+
 bool BlockFlowBox::containsFloat(Box* box) const
 {
     if(!m_floatingBoxes)
@@ -364,40 +443,6 @@ bool BlockFlowBox::containsFloat(Box* box) const
     }
 
     return false;
-}
-
-void BlockFlowBox::insertFloatingBox(BoxFrame* box)
-{
-    assert(box->isFloating());
-    if(!m_floatingBoxes)
-        m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
-    auto it = m_floatingBoxes->begin();
-    while(it != m_floatingBoxes->end()) {
-        if(box == it->box())
-            return;
-        ++it;
-    }
-
-    FloatingBox floatingBox(box);
-    floatingBox.setIsIntruding(false);
-    floatingBox.setIsHidden(false);
-    floatingBox.setIsPlaced(false);
-    m_floatingBoxes->push_back(floatingBox);
-}
-
-void BlockFlowBox::removeFloatingBox(BoxFrame* box)
-{
-    if(!m_floatingBoxes)
-        return;
-    auto it = m_floatingBoxes->begin();
-    while(it != m_floatingBoxes->end()) {
-        if(box == it->box())
-            break;
-        ++it;
-    }
-
-    assert(it != m_floatingBoxes->end());
-    m_floatingBoxes->erase(it);
 }
 
 float BlockFlowBox::leftFloatBottom() const
@@ -456,6 +501,50 @@ float BlockFlowBox::nextFloatBottom(float y) const
     }
 
     return bottom.value_or(0.f);
+}
+
+void BlockFlowBox::insertFloatingBox(BoxFrame* box)
+{
+    assert(box->isFloating());
+    if(!m_floatingBoxes)
+        m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
+    auto it = m_floatingBoxes->begin();
+    while(it != m_floatingBoxes->end()) {
+        if(box == it->box())
+            return;
+        ++it;
+    }
+
+    FloatingBox floatingBox(box);
+    floatingBox.setIsIntruding(false);
+    floatingBox.setIsHidden(false);
+    floatingBox.setIsPlaced(false);
+    m_floatingBoxes->push_back(floatingBox);
+}
+
+void BlockFlowBox::removeFloatingBox(BoxFrame* box)
+{
+    if(!m_floatingBoxes)
+        return;
+    auto it = m_floatingBoxes->begin();
+    while(it != m_floatingBoxes->end()) {
+        if(box == it->box())
+            break;
+        ++it;
+    }
+
+    assert(it != m_floatingBoxes->end());
+    m_floatingBoxes->erase(it);
+}
+
+void BlockFlowBox::addBox(Box* box)
+{
+    if(m_continuation) {
+        m_continuation->addBox(box);
+        return;
+    }
+
+    BlockBox::addBox(box);
 }
 
 } // namespace htmlbook

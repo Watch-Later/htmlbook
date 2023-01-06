@@ -7,7 +7,6 @@
 namespace htmlbook {
 
 class Node;
-class BoxList;
 class BoxLayer;
 class BlockBox;
 class BlockFlowBox;
@@ -44,15 +43,9 @@ public:
 
     virtual void computePreferredWidths(float& minWidth, float& maxWidth) const;
 
-    virtual BoxList* children() const { return nullptr; }
-    virtual LineBoxList* lines() const { return nullptr; }
-
     virtual void addBox(Box* box);
     virtual void buildBox(BoxLayer* layer);
     virtual void layout();
-
-    LineBox* addLine(std::unique_ptr<LineBox> line);
-    std::unique_ptr<LineBox> removeLine(LineBox* line);
 
     void insertChild(Box* box, Box* nextBox);
     void appendChild(Box* box);
@@ -62,8 +55,8 @@ public:
     void moveChildrenTo(Box* to, Box* begin);
     void moveChildrenTo(Box* to);
 
-    Box* firstBox() const;
-    Box* lastBox() const;
+    Box* firstBox() const { return m_firstBox; }
+    Box* lastBox() const { return m_lastBox; }
 
     Node* node() const { return m_node; }
     const RefPtr<BoxStyle>& style() const { return m_style; }
@@ -115,6 +108,8 @@ private:
     Box* m_parentBox{nullptr};
     Box* m_prevBox{nullptr};
     Box* m_nextBox{nullptr};
+    Box* m_firstBox{nullptr};
+    Box* m_lastBox{nullptr};
     bool m_anonymous{false};
     bool m_replaced{false};
     bool m_inline{true};
@@ -123,24 +118,6 @@ private:
     bool m_childrenInline{true};
     bool m_overflowHidden{false};
     bool m_hasTransform{false};
-};
-
-class BoxList {
-public:
-    BoxList() = default;
-    ~BoxList();
-
-    Box* firstBox() const { return m_firstBox; }
-    Box* lastBox() const { return m_lastBox; }
-
-    void insert(Box* parent, Box* box, Box* nextBox);
-    void append(Box* parent, Box* box);
-    void remove(Box* parent, Box* box);
-    bool empty() const { return !m_firstBox; }
-
-private:
-    Box* m_firstBox{nullptr};
-    Box* m_lastBox{nullptr};
 };
 
 class BoxModel;
@@ -247,8 +224,8 @@ public:
 
     void layout() override;
 
-    LineBox* line() const { return m_line.get(); }
-    void setLine(std::unique_ptr<LineBox> line) { m_line = std::move(line); }
+    ReplacedLineBox* line() const { return m_line.get(); }
+    void setLine(std::unique_ptr<ReplacedLineBox> line) { m_line = std::move(line); }
 
     float x() const { return m_x; }
     float y() const { return m_y; }
@@ -340,11 +317,15 @@ public:
     virtual void computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
 
     virtual bool isSelfCollapsingBlock() const { return false; }
-    virtual float collapsedMarginTop() const { return m_marginTop; }
-    virtual float collapsedMarginBottom() const { return m_marginBottom; }
+
+    enum class MarginSign {Positive, Negative};
+    float maxMarginTop(MarginSign sign) const;
+    float maxMarginBottom(MarginSign sign) const;
+    float collapsedMarginTop() const;
+    float collapsedMarginBottom() const;
 
 private:
-    std::unique_ptr<LineBox> m_line;
+    std::unique_ptr<ReplacedLineBox> m_line;
 
     float m_x{0};
     float m_y{0};

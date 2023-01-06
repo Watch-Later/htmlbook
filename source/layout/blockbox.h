@@ -18,20 +18,13 @@ public:
 
     void computePreferredWidths(float& minWidth, float& maxWidth) const override;
 
-    BoxList* children() const final { return &m_children; }
-    Box* continuation() const { return m_continuation; }
-    void setContinuation(Box* continuation) { m_continuation = continuation; }
-
-    void addBox(Box* box) override;
-
+    const PositionedBoxList* positionedBoxes() const { return m_positionedBoxes.get(); }
     void insertPositonedBox(BoxFrame* box);
     void removePositonedBox(BoxFrame* box);
 
-    const PositionedBoxList* positionedBoxes() const { return m_positionedBoxes.get(); }
+    void addBox(Box* box) override;
 
 protected:
-    mutable BoxList m_children;
-    Box* m_continuation{nullptr};
     std::unique_ptr<PositionedBoxList> m_positionedBoxes;
 };
 
@@ -86,6 +79,8 @@ private:
 
 using FloatingBoxList = std::pmr::list<FloatingBox>;
 
+class MarginInfo;
+
 class BlockFlowBox : public BlockBox {
 public:
     ~BlockFlowBox() override;
@@ -95,12 +90,19 @@ public:
 
     void computeInlinePreferredWidths(float& minWidth, float& maxWidth) const override;
 
-    void layoutPositionedBoxes();
-    void layoutInlineChildren();
+    void adjustPositionedBox(BoxFrame* child, const MarginInfo& info);
+    void adjustFloatingBox(const MarginInfo& info);
+    void handleBottomOfBlock(float top, float bottom, MarginInfo& info);
+    void layoutBlockChild(BoxFrame* child, MarginInfo& info);
+
     void layoutBlockChildren();
+    void layoutInlineChildren();
+    void layoutPositionedBoxes();
     void layout() override;
 
-    LineBoxList* lines() const final { return &m_lines; }
+    Box* continuation() const { return m_continuation; }
+    void setContinuation(Box* continuation) { m_continuation = continuation; }
+
     const RefPtr<BoxStyle>& firstLineStyle() const { return m_firstLineStyle; }
     void setFirstLineStyle(RefPtr<BoxStyle> firstLineStyle);
 
@@ -108,13 +110,9 @@ public:
     void buildOverhangingFloats();
     void addIntrudingFloats(BlockFlowBox* prevBlock, float xOffset, float yOffset);
     void addOverhangingFloats(BlockFlowBox* childBlock);
+    void positionNewFloats();
     bool containsFloat(Box* box) const;
     bool containsFloats() const { return m_floatingBoxes && !m_floatingBoxes->empty(); }
-
-    void insertFloatingBox(BoxFrame* box);
-    void removeFloatingBox(BoxFrame* box);
-
-    const FloatingBoxList* floatingBoxes() const { return m_floatingBoxes.get(); }
 
     float leftFloatBottom() const;
     float rightFloatBottom() const;
@@ -129,11 +127,19 @@ public:
     void setMaxTopMargins(float pos, float neg) { m_maxPositiveMarginTop = pos; m_maxNegativeMarginTop = neg; }
     void setMaxBottomMargins(float pos, float neg) { m_maxPositiveMarginBottom = pos; m_maxNegativeMarginBottom = neg; }
 
-    float collapsedMarginTop() const final { return m_maxPositiveMarginTop - m_maxNegativeMarginTop; }
-    float collapsedMarginBottom() const final { return m_maxPositiveMarginBottom - m_maxNegativeMarginBottom; }
+    const FloatingBoxList* floatingBoxes() const { return m_floatingBoxes.get(); }
+    void insertFloatingBox(BoxFrame* box);
+    void removeFloatingBox(BoxFrame* box);
+
+    void addBox(Box* box) override;
+
+    void addLine(std::unique_ptr<RootLineBox> line);
+    void removeLine(LineBox* line);
+    const RootLineBoxList& lines() const { return m_lines; }
 
 private:
-    mutable LineBoxList m_lines;
+    Box* m_continuation{nullptr};
+    RootLineBoxList m_lines;
     RefPtr<BoxStyle> m_firstLineStyle;
     std::unique_ptr<FloatingBoxList> m_floatingBoxes;
 

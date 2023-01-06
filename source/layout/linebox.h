@@ -77,6 +77,8 @@ struct is_a<TextLineBox> {
     static bool check(const LineBox& line) { return line.isTextLineBox(); }
 };
 
+using TextLineBoxList = std::pmr::vector<std::unique_ptr<TextLineBox>>;
+
 class BoxFrame;
 
 class ReplacedLineBox final : public LineBox {
@@ -90,6 +92,8 @@ template<>
 struct is_a<ReplacedLineBox> {
     static bool check(const LineBox& line) { return line.isReplacedLineBox(); }
 };
+
+using ReplacedLineBoxList = std::pmr::vector<std::unique_ptr<ReplacedLineBox>>;
 
 class BoxModel;
 
@@ -120,6 +124,8 @@ struct is_a<FlowLineBox> {
     static bool check(const LineBox& line) { return line.isFlowLineBox(); }
 };
 
+using FlowLineBoxList = std::pmr::vector<std::unique_ptr<FlowLineBox>>;
+
 class BlockFlowBox;
 
 class RootLineBox final : public FlowLineBox {
@@ -133,6 +139,8 @@ template<>
 struct is_a<RootLineBox> {
     static bool check(const LineBox& line) { return line.isRootLineBox(); }
 };
+
+using RootLineBoxList = std::pmr::vector<std::unique_ptr<RootLineBox>>;
 
 } // htmlbook
 

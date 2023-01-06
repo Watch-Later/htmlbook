@@ -47,12 +47,7 @@ public:
 
     bool isOfType(Type type) const final { return type == Type::TableSection || Box::isOfType(type); }
 
-    BoxList* children() const final { return &m_children; }
-
     void addBox(Box* box) final;
-
-private:
-    mutable BoxList m_children;
 };
 
 template<>
@@ -66,12 +61,7 @@ public:
 
     bool isOfType(Type type) const final { return type == Type::TableRow || Box::isOfType(type); }
 
-    BoxList* children() const final { return &m_children; }
-
     void addBox(Box* box) final;
-
-private:
-    mutable BoxList m_children;
 };
 
 template<>
@@ -125,12 +115,7 @@ public:
 
     bool isOfType(Type type) const final { return type == Type::TableColumnGroup || TableColumnBox::isOfType(type); }
 
-    BoxList* children() const final { return &m_children; }
-
     void addBox(Box* box) final;
-
-private:
-    mutable BoxList m_children;
 };
 
 template<>

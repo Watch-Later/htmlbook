@@ -11,17 +11,18 @@ public:
 
     bool isOfType(Type type) const override { return type == Type::Inline || BoxModel::isOfType(type); }
 
-    BoxList* children() const final { return &m_children; }
-    LineBoxList* lines() const final { return &m_lines; }
     Box* continuation() const { return m_continuation; }
     void setContinuation(Box* continuation) { m_continuation = continuation; }
 
     void addBox(Box* box) override;
 
+    void addLine(std::unique_ptr<FlowLineBox> line);
+    void removeLine(LineBox* line);
+    const FlowLineBoxList& lines() const { return m_lines; }
+
 private:
-    mutable BoxList m_children;
-    mutable LineBoxList m_lines;
     Box* m_continuation{nullptr};
+    FlowLineBoxList m_lines;
 };
 
 template<>

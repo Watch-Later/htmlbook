@@ -16,7 +16,7 @@ void TableBox::computeBlockPreferredWidths(float& minWidth, float& maxWidth) con
 
 void TableBox::buildBox(BoxLayer* layer)
 {
-    for(auto child = m_children.firstBox(); child; child = child->nextBox()) {
+    for(auto child = firstBox(); child; child = child->nextBox()) {
         if(auto section = to<TableSectionBox>(child)) {
             switch(child->display()) {
             case Display::TableHeaderGroup:
@@ -53,18 +53,18 @@ void TableBox::addBox(Box* box)
 {
     if(is<TableCaptionBox>(box) || is<TableColumnBox>(box)
         || is<TableSectionBox>(box)) {
-        m_children.append(this, box);
+        appendChild(box);
         return;
     }
 
-    auto lastChild = m_children.lastBox();
+    auto lastChild = lastBox();
     if(lastChild && lastChild->isAnonymous() && is<TableSectionBox>(lastChild)) {
         lastChild->addBox(box);
         return;
     }
 
     auto newSection = createAnonymous(style(), Display::TableRowGroup);
-    m_children.append(this, newSection);
+    appendChild(newSection);
     newSection->addBox(box);
 }
 
@@ -76,18 +76,18 @@ TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
 void TableSectionBox::addBox(Box* box)
 {
     if(is<TableRowBox>(box)) {
-        m_children.append(this, box);
+        appendChild(box);
         return;
     }
 
-    auto lastChild = m_children.lastBox();
+    auto lastChild = lastBox();
     if(lastChild && lastChild->isAnonymous() && is<TableRowBox>(lastChild)) {
         lastChild->addBox(box);
         return;
     }
 
     auto newRow = createAnonymous(style(), Display::TableRow);
-    m_children.append(this, newRow);
+    appendChild(newRow);
     newRow->addBox(box);
 }
 
@@ -99,18 +99,18 @@ TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
 void TableRowBox::addBox(Box* box)
 {
     if(is<TableCellBox>(box)) {
-        m_children.append(this, box);
+        appendChild(box);
         return;
     }
 
-    auto lastChild = m_children.lastBox();
+    auto lastChild = lastBox();
     if(lastChild && lastChild->isAnonymous() && is<TableCellBox>(lastChild)) {
         lastChild->addBox(box);
         return;
     }
 
     auto newCell = createAnonymous(style(), Display::TableCell);
-    m_children.append(this, newCell);
+    appendChild(newCell);
     newCell->addBox(box);
 }
 
@@ -131,7 +131,7 @@ TableColumnGroupBox::TableColumnGroupBox(Node* node, const RefPtr<BoxStyle>& sty
 
 void TableColumnGroupBox::addBox(Box* box)
 {
-    m_children.append(this, box);
+    appendChild(box);
 }
 
 TableCaptionBox::TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style)
