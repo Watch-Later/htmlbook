@@ -77,6 +77,7 @@ public:
     BlockBox* containingBlockFixed() const;
     BlockBox* containingBlockAbsolute() const;
 
+    bool isBody() const;
     bool isRootBox() const { return !m_parentBox; }
     bool isAnonymous() const { return m_anonymous; }
     bool isReplaced() const { return m_replaced; }

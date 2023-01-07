@@ -90,10 +90,11 @@ public:
 
     void computeInlinePreferredWidths(float& minWidth, float& maxWidth) const override;
 
-    void adjustPositionedBox(BoxFrame* child, const MarginInfo& info);
-    void adjustFloatingBox(const MarginInfo& info);
-    void handleBottomOfBlock(float top, float bottom, MarginInfo& info);
-    void layoutBlockChild(BoxFrame* child, MarginInfo& info);
+    void adjustPositionedBox(BoxFrame* child, const MarginInfo& marginInfo);
+    void adjustFloatingBox(const MarginInfo& marginInfo);
+    void handleBottomOfBlock(float top, float bottom, MarginInfo& marginInfo);
+    void setCollapsedBottomMargin(const MarginInfo& marginInfo);
+    void layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo);
 
     void layoutBlockChildren();
     void layoutInlineChildren();
@@ -119,6 +120,12 @@ public:
     float floatBottom() const;
     float nextFloatBottom(float y) const;
 
+    float leftOffsetForContent() const { return borderLeft() + paddingLeft(); }
+    float rightOffsetForContent() const { return leftOffsetForContent() + availableWidth(); }
+
+    float leftOffsetForFloat(float y, float fixedOffset, bool applyTextIndent, float* heightRemaining) const;
+    float rightOffsetForFloat(float y, float fixedOffset, bool applyTextIndent, float* heightRemaining) const;
+
     float maxPositiveMarginTop() const { return m_maxPositiveMarginTop; }
     float maxNegativeMarginTop() const { return m_maxNegativeMarginTop; }
     float maxPositiveMarginBottom() const { return m_maxPositiveMarginBottom; }
@@ -138,10 +145,10 @@ public:
     const RootLineBoxList& lines() const { return m_lines; }
 
 private:
-    Box* m_continuation{nullptr};
     RootLineBoxList m_lines;
     RefPtr<BoxStyle> m_firstLineStyle;
     std::unique_ptr<FloatingBoxList> m_floatingBoxes;
+    Box* m_continuation{nullptr};
 
     float m_maxPositiveMarginTop{0};
     float m_maxNegativeMarginTop{0};

@@ -259,6 +259,11 @@ BlockBox* Box::containingBlockAbsolute() const
     return to<BlockBox>(parent);
 }
 
+bool Box::isBody() const
+{
+    return m_node && m_node->tagName() == bodyTag;
+}
+
 std::unique_ptr<BoxLayer> BoxLayer::create(BoxModel* box, BoxLayer* parent)
 {
     return std::unique_ptr<BoxLayer>(new (box->heap()) BoxLayer(box, parent));
@@ -350,7 +355,10 @@ void BoxModel::computeBorder(float& top, float& bottom, float& left, float& righ
 void BoxModel::computePadding(float& top, float& bottom, float& left, float& right) const
 {
     auto compute = [this](const auto& padding) {
-        return padding.calcMin(containingBlockWidthForContent());
+        float containerWidth = 0;
+        if(padding.isPercent())
+            containerWidth = containingBlockWidthForContent();
+        return padding.calcMin(containerWidth);
     };
 
     top = compute(style()->paddingTop());
