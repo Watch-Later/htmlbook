@@ -221,21 +221,12 @@ public:
     bool atTopOfBlock() const { return m_atTopOfBlock; }
     bool atBottomOfBlock() const { return m_atBottomOfBlock; }
 
-    bool quirkContainer() const { return m_quirkContainer; }
-    bool marginTopQuirk() const { return m_marginTopQuirk; }
-    bool marginBottomQuirk() const { return m_marginBottomQuirk; }
-    bool determinedMarginTopQuirk() const { return m_determinedMarginTopQuirk; }
-
     float positiveMargin() const { return m_positiveMargin; }
     float negativeMargin() const { return m_negativeMargin; }
     float margin() const { return m_positiveMargin - m_negativeMargin; }
 
     void setAtTopOfBlock(bool value) { m_atTopOfBlock = value; }
     void setAtBottomOfBlock(bool value) { m_atBottomOfBlock = value; }
-
-    void setMarginTopQuirk(bool value) { m_marginTopQuirk = value; }
-    void setMarginBottomQuirk(bool value) { m_marginBottomQuirk = value; }
-    void setDeterminedMarginTopQuirk(bool value) { m_determinedMarginTopQuirk = value; }
 
     void setPositiveMargin(float value) { m_positiveMargin = value; }
     void setNegativeMargin(float value) { m_negativeMargin = value; }
@@ -253,11 +244,6 @@ private:
     bool m_atTopOfBlock;
     bool m_atBottomOfBlock;
 
-    bool m_quirkContainer;
-    bool m_marginTopQuirk;
-    bool m_marginBottomQuirk;
-    bool m_determinedMarginTopQuirk;
-
     float m_positiveMargin;
     float m_negativeMargin;
 };
@@ -265,15 +251,10 @@ private:
 inline MarginInfo::MarginInfo(const BlockFlowBox& block, float top, float bottom)
     : m_atTopOfBlock(false)
     , m_atBottomOfBlock(true)
-    , m_marginTopQuirk(false)
-    , m_marginBottomQuirk(false)
-    , m_determinedMarginTopQuirk(false)
 {
-    m_canCollapseWithChildren = !block.isReplaced() && !block.isInline() && !block.isPositioned() && !block.isOverflowHidden() && !is<TableCellBox>(block);
+    m_canCollapseWithChildren = !block.isReplaced() && !block.isInline() && !block.isPositioned() && !block.isPositioned() && !block.isOverflowHidden() && !is<TableCellBox>(block);
     m_canCollapseMarginTopWithChildren = m_canCollapseWithChildren && top == 0;
     m_canCollapseMarginBottomWithChildren = m_canCollapseWithChildren && bottom == 0;
-
-    m_quirkContainer = is<TableCellBox>(block) || block.isBody();
 
     m_positiveMargin = m_canCollapseMarginTopWithChildren ? block.maxPositiveMarginTop() : 0.f;
     m_negativeMargin = m_canCollapseMarginTopWithChildren ? block.maxNegativeMarginTop() : 0.f;
