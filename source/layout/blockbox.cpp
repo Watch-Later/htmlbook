@@ -638,54 +638,105 @@ float BlockFlowBox::nextFloatBottom(float y) const
     return bottom.value_or(0.f);
 }
 
-float BlockFlowBox::leftOffsetForFloat(float y, float leftOffset, bool applyTextIndent, float* heightRemaining) const
+float BlockFlowBox::leftOffsetForFloat(float y, float offset, bool indent, float* heightRemaining) const
 {
     if(heightRemaining) *heightRemaining = 1;
     if(m_floatingBoxes) {
         for(auto& item : *m_floatingBoxes) {
             if(item.type() != Float::Left || !item.isPlaced())
                 continue;
-            if(item.y() <= y && item.bottom() > y && item.right() > leftOffset) {
+            if(item.y() <= y && item.bottom() > y && item.right() > offset) {
                 if(heightRemaining) *heightRemaining = item.bottom() - y;
-                leftOffset = item.right();
+                offset = item.right();
             }
         }
     }
 
-    if(applyTextIndent && style()->isLeftToRightDirection()) {
+    if(indent && style()->isLeftToRightDirection()) {
         float availableWidth = 0;
         auto textIndentLength = style()->textIndent();
         if(textIndentLength.isPercent())
             availableWidth = containingBlock()->availableWidth();
-        leftOffset += textIndentLength.calcMin(availableWidth);
+        offset += textIndentLength.calcMin(availableWidth);
     }
 
-    return leftOffset;
+    return offset;
 }
 
-float BlockFlowBox::rightOffsetForFloat(float y, float rightOffset, bool applyTextIndent, float* heightRemaining) const
+float BlockFlowBox::rightOffsetForFloat(float y, float offset, bool indent, float* heightRemaining) const
 {
     if(heightRemaining) *heightRemaining = 1;
     if(m_floatingBoxes) {
         for(auto& item : *m_floatingBoxes) {
             if(item.type() != Float::Right || !item.isPlaced())
                 continue;
-            if(item.y() <= y && item.bottom() > y && item.x() < rightOffset) {
+            if(item.y() <= y && item.bottom() > y && item.x() < offset) {
                 if(heightRemaining) *heightRemaining = item.bottom() - y;
-                rightOffset = item.x();
+                offset = item.x();
             }
         }
     }
 
-    if(applyTextIndent && !style()->isLeftToRightDirection()) {
+    if(indent && !style()->isLeftToRightDirection()) {
         float availableWidth = 0;
         auto textIndentLength = style()->textIndent();
         if(textIndentLength.isPercent())
             availableWidth = containingBlock()->availableWidth();
-        rightOffset -= textIndentLength.calcMin(availableWidth);
+        offset -= textIndentLength.calcMin(availableWidth);
     }
 
-    return rightOffset;
+    return offset;
+}
+
+float BlockFlowBox::getClearDelta(BoxFrame* child, float y) const
+{
+    if(!containsFloats())
+        return 0;
+
+    float delta = 0;
+    switch(child->style()->clear()) {
+    case Clear::Left:
+        delta = std::max(0.f, leftFloatBottom() - y);
+        break;
+    case Clear::Right:
+        delta = std::max(0.f, rightFloatBottom() - y);
+        break;
+    case Clear::Both:
+        delta = std::max(0.f, floatBottom() - y);
+        break;
+    case Clear::None:
+        break;
+    }
+
+    if(!delta && child->avoidsFloats()) {
+        auto top = y;
+        while(true) {
+            auto availableWidth = availableWidthForLine(top, false);
+            if(availableWidth == availableWidthForContent())
+                return top - y;
+
+            auto oldX = child->x();
+            auto oldY = child->y();
+            auto oldWidth = child->width();
+            auto oldMarginLeft = child->marginLeft();
+            auto oldMarginRight = child->marginRight();
+
+            child->setY(top);
+            child->updateWidth();
+            auto newWidth = child->width();
+
+            child->setX(oldX);
+            child->setY(oldY);
+            child->setWidth(oldWidth);
+            child->setMarginLeft(oldMarginLeft);
+            child->setMarginRight(oldMarginRight);
+            if(newWidth <= availableWidth)
+                return top - y;
+            top = nextFloatBottom(top);
+        }
+    }
+
+    return delta;
 }
 
 void BlockFlowBox::insertFloatingBox(BoxFrame* box)

@@ -275,6 +275,7 @@ public:
 
     void updateWidth();
     void updateHeight();
+    void updateVerticalMargins();
 
     float computeBorderBoxWidth(float width) const;
     float computeBorderBoxHeight(float height) const;

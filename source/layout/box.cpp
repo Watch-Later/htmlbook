@@ -574,6 +574,11 @@ void BoxFrame::updateHeight()
     computeHeight(m_y, m_height, m_marginTop, m_marginBottom);
 }
 
+void BoxFrame::updateVerticalMargins()
+{
+    computeVerticalMargins(m_marginTop, m_marginBottom);
+}
+
 float BoxFrame::computeBorderBoxWidth(float width) const
 {
     if(style()->boxSizing() == BoxSizing::ContentBox)

@@ -24,6 +24,12 @@ public:
 
     void addBox(Box* box) override;
 
+    float leftOffsetForContent() const { return borderLeft() + paddingLeft(); }
+    float rightOffsetForContent() const { return leftOffsetForContent() + availableWidth(); }
+    float startOffsetForContent() const { return style()->isLeftToRightDirection() ? leftOffsetForContent() : width() - rightOffsetForContent(); }
+    float endOffsetForContent() const { return style()->isLeftToRightDirection() ? width() - rightOffsetForContent() : leftOffsetForContent(); }
+    float availableWidthForContent() const { return std::max(0.f, rightOffsetForContent() - leftOffsetForContent()); }
+
 protected:
     std::unique_ptr<PositionedBoxList> m_positionedBoxes;
 };
@@ -121,13 +127,16 @@ public:
     float floatBottom() const;
     float nextFloatBottom(float y) const;
 
-    float leftOffsetForContent() const { return borderLeft() + paddingLeft(); }
-    float rightOffsetForContent() const { return leftOffsetForContent() + availableWidth(); }
-    float startOffsetForContent() const { return style()->isLeftToRightDirection() ? leftOffsetForContent() : width() - rightOffsetForContent(); }
-    float endOffsetForContent() const { return style()->isLeftToRightDirection() ? width() - rightOffsetForContent() : leftOffsetForContent(); }
+    float leftOffsetForFloat(float y, float offset, bool indent, float* heightRemaining = nullptr) const;
+    float rightOffsetForFloat(float y, float offset, bool indent, float* heightRemaining = nullptr) const;
 
-    float leftOffsetForFloat(float y, float leftOffset, bool applyTextIndent, float* heightRemaining) const;
-    float rightOffsetForFloat(float y, float rightOffset, bool applyTextIndent, float* heightRemaining) const;
+    float leftOffsetForLine(float y, bool indent) const { return leftOffsetForFloat(y, leftOffsetForContent(), indent); }
+    float rightOffsetForLine(float y, bool indent) const { return rightOffsetForFloat(y, rightOffsetForContent(), indent); }
+    float startOffsetForLine(float y, bool indent) const { return style()->isLeftToRightDirection() ? leftOffsetForLine(y, indent) : width() - rightOffsetForLine(y, indent); }
+    float endOffsetForLine(float y, bool indent) const { return style()->isLeftToRightDirection() ? width() - rightOffsetForLine(y, indent) : leftOffsetForLine(y, indent); }
+    float availableWidthForLine(float y, bool indent) const { return std::max(0.f, rightOffsetForLine(y, indent) - leftOffsetForLine(y, indent)); }
+
+    float getClearDelta(BoxFrame* child, float y) const;
 
     float maxPositiveMarginTop() const { return m_maxPositiveMarginTop; }
     float maxNegativeMarginTop() const { return m_maxNegativeMarginTop; }
