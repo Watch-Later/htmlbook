@@ -319,9 +319,8 @@ public:
 
     virtual bool isSelfCollapsingBlock() const { return false; }
 
-    enum class MarginSign {Positive, Negative};
-    float maxMarginTop(MarginSign sign) const;
-    float maxMarginBottom(MarginSign sign) const;
+    float maxMarginTop(bool positive) const;
+    float maxMarginBottom(bool positive) const;
     float collapsedMarginTop() const;
     float collapsedMarginBottom() const;
 

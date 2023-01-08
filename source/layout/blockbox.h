@@ -94,6 +94,7 @@ public:
     void adjustFloatingBox(const MarginInfo& marginInfo);
     void handleBottomOfBlock(float top, float bottom, MarginInfo& marginInfo);
     void setCollapsedBottomMargin(const MarginInfo& marginInfo);
+    float collapseMargins(BoxFrame* child, MarginInfo& marginInfo);
     void layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo);
 
     void layoutBlockChildren();
@@ -122,17 +123,16 @@ public:
 
     float leftOffsetForContent() const { return borderLeft() + paddingLeft(); }
     float rightOffsetForContent() const { return leftOffsetForContent() + availableWidth(); }
+    float startOffsetForContent() const { return style()->isLeftToRightDirection() ? leftOffsetForContent() : width() - rightOffsetForContent(); }
+    float endOffsetForContent() const { return style()->isLeftToRightDirection() ? width() - rightOffsetForContent() : leftOffsetForContent(); }
 
-    float leftOffsetForFloat(float y, float fixedOffset, bool applyTextIndent, float* heightRemaining) const;
-    float rightOffsetForFloat(float y, float fixedOffset, bool applyTextIndent, float* heightRemaining) const;
+    float leftOffsetForFloat(float y, float leftOffset, bool applyTextIndent, float* heightRemaining) const;
+    float rightOffsetForFloat(float y, float rightOffset, bool applyTextIndent, float* heightRemaining) const;
 
     float maxPositiveMarginTop() const { return m_maxPositiveMarginTop; }
     float maxNegativeMarginTop() const { return m_maxNegativeMarginTop; }
     float maxPositiveMarginBottom() const { return m_maxPositiveMarginBottom; }
     float maxNegativeMarginBottom() const { return m_maxNegativeMarginBottom; }
-
-    void setMaxTopMargins(float pos, float neg) { m_maxPositiveMarginTop = pos; m_maxNegativeMarginTop = neg; }
-    void setMaxBottomMargins(float pos, float neg) { m_maxPositiveMarginBottom = pos; m_maxNegativeMarginBottom = neg; }
 
     const FloatingBoxList* floatingBoxes() const { return m_floatingBoxes.get(); }
     void insertFloatingBox(BoxFrame* box);
@@ -145,10 +145,10 @@ public:
     const RootLineBoxList& lines() const { return m_lines; }
 
 private:
-    RootLineBoxList m_lines;
-    RefPtr<BoxStyle> m_firstLineStyle;
-    std::unique_ptr<FloatingBoxList> m_floatingBoxes;
     Box* m_continuation{nullptr};
+    std::unique_ptr<FloatingBoxList> m_floatingBoxes;
+    RefPtr<BoxStyle> m_firstLineStyle;
+    RootLineBoxList m_lines;
 
     float m_maxPositiveMarginTop{0};
     float m_maxNegativeMarginTop{0};

@@ -1374,30 +1374,18 @@ void BoxFrame::computeHeight(float& y, float& height, float& marginTop, float& m
     computeVerticalMargins(marginTop, marginBottom);
 }
 
-float BoxFrame::maxMarginTop(MarginSign sign) const
+float BoxFrame::maxMarginTop(bool positive) const
 {
-    if(auto block = to<BlockFlowBox>(this)) {
-        if(sign == MarginSign::Positive)
-            return block->maxPositiveMarginTop();
-        return block->maxNegativeMarginTop();
-    }
-
-    if(sign == MarginSign::Positive)
-        return std::max(0.f, m_marginTop);
-    return -std::min(0.f, m_marginTop);
+    if(auto block = to<BlockFlowBox>(this))
+        return positive ? block->maxPositiveMarginTop() : block->maxNegativeMarginTop();
+    return positive ? std::max(0.f, m_marginTop) : -std::min(0.f, m_marginTop);
 }
 
-float BoxFrame::maxMarginBottom(MarginSign sign) const
+float BoxFrame::maxMarginBottom(bool positive) const
 {
-    if(auto block = to<BlockFlowBox>(this)) {
-        if(sign == MarginSign::Positive)
-            return block->maxPositiveMarginBottom();
-        return block->maxNegativeMarginBottom();
-    }
-
-    if(sign == MarginSign::Positive)
-        return std::max(0.f, m_marginBottom);
-    return -std::min(0.f, m_marginBottom);
+    if(auto block = to<BlockFlowBox>(this))
+        return positive ? block->maxPositiveMarginBottom() : block->maxNegativeMarginBottom();
+    return positive ? std::max(0.f, m_marginBottom) : -std::min(0.f, m_marginBottom);
 }
 
 float BoxFrame::collapsedMarginTop() const

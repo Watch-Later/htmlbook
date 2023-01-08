@@ -234,25 +234,23 @@ public:
     void setPositiveMarginIfLarger(float value) { if(value > m_positiveMargin) { m_positiveMargin = value; } }
     void setNegativeMarginIfLarger(float value) { if(value > m_negativeMargin) { m_negativeMargin = value; } }
 
-    void clearMargins() { m_positiveMargin = 0; m_negativeMargin = 0; }
-
 private:
+    bool m_atTopOfBlock;
+    bool m_atBottomOfBlock;
+
     bool m_canCollapseWithChildren;
     bool m_canCollapseMarginTopWithChildren;
     bool m_canCollapseMarginBottomWithChildren;
-
-    bool m_atTopOfBlock;
-    bool m_atBottomOfBlock;
 
     float m_positiveMargin;
     float m_negativeMargin;
 };
 
 inline MarginInfo::MarginInfo(const BlockFlowBox& block, float top, float bottom)
-    : m_atTopOfBlock(false)
-    , m_atBottomOfBlock(true)
+    : m_atTopOfBlock(true)
+    , m_atBottomOfBlock(false)
 {
-    m_canCollapseWithChildren = !block.isReplaced() && !block.isInline() && !block.isPositioned() && !block.isPositioned() && !block.isOverflowHidden() && !is<TableCellBox>(block);
+    m_canCollapseWithChildren = !block.isRootBox() && !block.isReplaced() && !block.isInline() && !block.isFloating() && !block.isPositioned() && !block.isOverflowHidden() && !is<TableCellBox>(block);
     m_canCollapseMarginTopWithChildren = m_canCollapseWithChildren && top == 0;
     m_canCollapseMarginBottomWithChildren = m_canCollapseWithChildren && bottom == 0;
 
@@ -260,13 +258,22 @@ inline MarginInfo::MarginInfo(const BlockFlowBox& block, float top, float bottom
     m_negativeMargin = m_canCollapseMarginTopWithChildren ? block.maxNegativeMarginTop() : 0.f;
 }
 
-void BlockFlowBox::adjustPositionedBox(BoxFrame* box, const MarginInfo& marginInfo)
+void BlockFlowBox::adjustPositionedBox(BoxFrame* child, const MarginInfo& marginInfo)
 {
+    auto staticTop = height();
+    if(!marginInfo.canCollapseWithMarginTop())
+        staticTop -= marginInfo.margin();
+
+    auto childLayer = child->layer();
+    childLayer->setStaticLeft(startOffsetForContent());
+    childLayer->setStaticTop(staticTop);
 }
 
 void BlockFlowBox::adjustFloatingBox(const MarginInfo& marginInfo)
 {
-    auto marginOffset = marginInfo.canCollapseWithMarginTop() ? 0.f : marginInfo.margin();
+    float marginOffset = 0;
+    if(!marginInfo.canCollapseWithMarginTop())
+        marginOffset = marginInfo.margin();
     setHeight(height() + marginOffset);
     positionNewFloats();
     setHeight(height() - marginOffset);
@@ -288,6 +295,46 @@ void BlockFlowBox::setCollapsedBottomMargin(const MarginInfo& marginInfo)
         m_maxPositiveMarginBottom = std::max(m_maxPositiveMarginBottom, marginInfo.positiveMargin());
         m_maxNegativeMarginBottom = std::max(m_maxNegativeMarginBottom, marginInfo.negativeMargin());
     }
+}
+
+float BlockFlowBox::collapseMargins(BoxFrame* child, MarginInfo& marginInfo)
+{
+    auto posTop = child->maxMarginTop(true);
+    auto negTop = child->maxMarginTop(false);
+    if(child->isSelfCollapsingBlock()) {
+        posTop = std::max(posTop, child->maxMarginBottom(true));
+        negTop = std::max(negTop, child->maxMarginBottom(false));
+    }
+
+    if(marginInfo.canCollapseWithMarginTop()) {
+        m_maxPositiveMarginTop = std::max(posTop, m_maxPositiveMarginTop);
+        m_maxNegativeMarginTop = std::max(negTop, m_maxNegativeMarginTop);
+    }
+
+    auto top = height();
+    if(child->isSelfCollapsingBlock()) {
+        auto collapsedPosTop = std::max(marginInfo.positiveMargin(), child->maxMarginTop(true));
+        auto collapsedNegTop = std::max(marginInfo.negativeMargin(), child->maxMarginTop(false));
+        if(!marginInfo.canCollapseWithMarginTop()) {
+            top = height() + collapsedPosTop - collapsedNegTop;
+        }
+
+        marginInfo.setPositiveMargin(collapsedPosTop);
+        marginInfo.setNegativeMargin(collapsedNegTop);
+
+        marginInfo.setPositiveMarginIfLarger(child->maxMarginBottom(true));
+        marginInfo.setNegativeMarginIfLarger(child->maxMarginBottom(false));
+    } else {
+        if(!marginInfo.atTopOfBlock() || !marginInfo.canCollapseMarginTopWithChildren()) {
+            setHeight(height() + std::max(posTop, marginInfo.positiveMargin()) - std::max(negTop, marginInfo.negativeMargin()));
+            top = height();
+        }
+
+        marginInfo.setPositiveMargin(child->maxMarginBottom(true));
+        marginInfo.setNegativeMargin(child->maxMarginBottom(false));
+    }
+
+    return top;
 }
 
 void BlockFlowBox::layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo)
@@ -524,11 +571,10 @@ bool BlockFlowBox::containsFloat(Box* box) const
 {
     if(!m_floatingBoxes)
         return false;
-    auto it = m_floatingBoxes->begin();
-    while(it != m_floatingBoxes->end()) {
-        if(box == it->box())
+    for(auto& floatingBox : *m_floatingBoxes) {
+        if(box == floatingBox.box()) {
             return true;
-        ++it;
+        }
     }
 
     return false;
@@ -592,11 +638,10 @@ float BlockFlowBox::nextFloatBottom(float y) const
     return bottom.value_or(0.f);
 }
 
-float BlockFlowBox::leftOffsetForFloat(float y, float fixedOffset, bool applyTextIndent, float* heightRemaining) const
+float BlockFlowBox::leftOffsetForFloat(float y, float leftOffset, bool applyTextIndent, float* heightRemaining) const
 {
-    auto leftOffset = fixedOffset;
+    if(heightRemaining) *heightRemaining = 1;
     if(m_floatingBoxes) {
-        if(heightRemaining) *heightRemaining = 1;
         for(auto& item : *m_floatingBoxes) {
             if(item.type() != Float::Left || !item.isPlaced())
                 continue;
@@ -618,11 +663,10 @@ float BlockFlowBox::leftOffsetForFloat(float y, float fixedOffset, bool applyTex
     return leftOffset;
 }
 
-float BlockFlowBox::rightOffsetForFloat(float y, float fixedOffset, bool applyTextIndent, float* heightRemaining) const
+float BlockFlowBox::rightOffsetForFloat(float y, float rightOffset, bool applyTextIndent, float* heightRemaining) const
 {
-    auto rightOffset = fixedOffset;
+    if(heightRemaining) *heightRemaining = 1;
     if(m_floatingBoxes) {
-        if(heightRemaining) *heightRemaining = 1;
         for(auto& item : *m_floatingBoxes) {
             if(item.type() != Float::Right || !item.isPlaced())
                 continue;
