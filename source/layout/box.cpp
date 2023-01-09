@@ -346,10 +346,45 @@ void BoxModel::addBox(Box* box)
 
 void BoxModel::computeBorder(float& top, float& bottom, float& left, float& right) const
 {
-    top = style()->borderTopWidth();
-    bottom = style()->borderBottomWidth();
-    left = style()->borderLeftWidth();
-    right = style()->borderRightWidth();
+    switch(style()->borderTopStyle()) {
+    case LineStyle::None:
+    case LineStyle::Hidden:
+        top = 0.f;
+        break;
+    default:
+        top = style()->borderTopWidth();
+        break;
+    }
+
+    switch(style()->borderBottomStyle()) {
+    case LineStyle::None:
+    case LineStyle::Hidden:
+        bottom = 0.f;
+        break;
+    default:
+        bottom = style()->borderBottomWidth();
+        break;
+    }
+
+    switch(style()->borderLeftStyle()) {
+    case LineStyle::None:
+    case LineStyle::Hidden:
+        left = 0.f;
+        break;
+    default:
+        left = style()->borderLeftWidth();
+        break;
+    }
+
+    switch(style()->borderRightStyle()) {
+    case LineStyle::None:
+    case LineStyle::Hidden:
+        right = 0.f;
+        break;
+    default:
+        right = style()->borderRightWidth();
+        break;
+    }
 }
 
 void BoxModel::computePadding(float& top, float& bottom, float& left, float& right) const
