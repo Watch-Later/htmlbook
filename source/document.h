@@ -233,8 +233,8 @@ public:
     RefPtr<BoxStyle> rootStyle() const;
     const CSSStyleSheet& styleSheet() const { return m_styleSheet; }
 
-    float viewportWidth() const;
-    float viewportHeight() const;
+    virtual float viewportWidth() const = 0;
+    virtual float viewportHeight() const = 0;
 
     void buildBox(Counters& counters, Box* parent) override;
     void build();

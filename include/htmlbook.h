@@ -249,6 +249,18 @@ public:
     const std::string& modificationDate() const;
 
     /**
+     * @brief viewportWidth
+     * @return
+     */
+    float viewportWidth() const;
+
+    /**
+     * @brief viewportHeight
+     * @return
+     */
+    float viewportHeight() const;
+
+    /**
      * @brief loadUrl
      * @param url
      * @param userStyle

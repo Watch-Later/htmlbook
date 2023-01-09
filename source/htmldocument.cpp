@@ -462,4 +462,14 @@ Box* HTMLDocument::createBox(const RefPtr<BoxStyle>& style)
     return new (heap()) BlockBox(this, style);
 }
 
+float HTMLDocument::viewportWidth() const
+{
+    return m_book->viewportWidth();
+}
+
+float HTMLDocument::viewportHeight() const
+{
+    return m_book->viewportHeight();
+}
+
 } // namespace htmlbook

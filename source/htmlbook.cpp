@@ -20,6 +20,16 @@ Book::Book(const PageSize& size, PageOrientation orientation, const PageMargins&
 {
 }
 
+float Book::viewportWidth() const
+{
+    return m_pageSize.width();
+}
+
+float Book::viewportHeight() const
+{
+    return m_pageSize.height();
+}
+
 Book::~Book() = default;
 
 void Book::loadUrl(const std::string_view& url, const std::string_view& userStyle)

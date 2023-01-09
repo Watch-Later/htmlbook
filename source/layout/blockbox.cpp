@@ -211,15 +211,15 @@ class MarginInfo {
 public:
     MarginInfo(const BlockFlowBox& block, float top, float bottom);
 
+    bool atTopOfBlock() const { return m_atTopOfBlock; }
+    bool atBottomOfBlock() const { return m_atBottomOfBlock; }
+
     bool canCollapseWithChildren() const { return m_canCollapseWithChildren; }
     bool canCollapseMarginTopWithChildren() const { return m_canCollapseMarginTopWithChildren; }
     bool canCollapseMarginBottomWithChildren() const { return m_canCollapseMarginBottomWithChildren; }
 
     bool canCollapseWithMarginTop() const { return m_atTopOfBlock && m_canCollapseMarginTopWithChildren; }
     bool canCollapseWithMarginBottom() const { return m_atBottomOfBlock && m_canCollapseMarginBottomWithChildren; }
-
-    bool atTopOfBlock() const { return m_atTopOfBlock; }
-    bool atBottomOfBlock() const { return m_atBottomOfBlock; }
 
     float positiveMargin() const { return m_positiveMargin; }
     float negativeMargin() const { return m_negativeMargin; }
@@ -262,7 +262,7 @@ void BlockFlowBox::adjustPositionedBox(BoxFrame* child, const MarginInfo& margin
 {
     auto staticTop = height();
     if(!marginInfo.canCollapseWithMarginTop())
-        staticTop -= marginInfo.margin();
+        staticTop += marginInfo.margin();
 
     auto childLayer = child->layer();
     childLayer->setStaticLeft(startOffsetForContent());
@@ -339,6 +339,61 @@ float BlockFlowBox::collapseMargins(BoxFrame* child, MarginInfo& marginInfo)
 
 void BlockFlowBox::layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo)
 {
+    auto posTop = m_maxPositiveMarginTop;
+    auto negTop = m_maxNegativeMarginTop;
+
+    child->updateVerticalMargins();
+
+    auto estimatedTop = height();
+    if(!marginInfo.canCollapseWithMarginTop())
+        estimatedTop += std::max(marginInfo.margin(), child->marginTop());
+    child->setY(estimatedTop + getClearDelta(child, estimatedTop));
+
+    child->layout();
+
+    auto yOffset = collapseMargins(child, marginInfo);
+    auto clearDelta = getClearDelta(child, yOffset);
+    if(clearDelta && child->isSelfCollapsingBlock()) {
+        marginInfo.setPositiveMargin(std::max(child->maxMarginTop(true), child->maxMarginBottom(true)));
+        marginInfo.setNegativeMargin(std::max(child->maxMarginTop(false), child->maxMarginBottom(false)));
+
+        setHeight(child->y() - std::max(0.f, marginInfo.margin()));
+    } else {
+        setHeight(clearDelta + height());
+    }
+
+    if(clearDelta && marginInfo.atTopOfBlock()) {
+        m_maxPositiveMarginTop = posTop;
+        m_maxNegativeMarginTop = negTop;
+        marginInfo.setAtTopOfBlock(false);
+    }
+
+    child->setY(yOffset + clearDelta);
+    if(marginInfo.atTopOfBlock() && !child->isSelfCollapsingBlock())
+        marginInfo.setAtTopOfBlock(false);
+
+    float startOffset = 0;
+    if(child->avoidsFloats() && containsFloats())
+        startOffset = startOffsetForLine(child->y(), false);
+
+    auto childStyle = child->style();
+    auto leftOffset = borderLeft() + paddingLeft();
+    auto xOffset = leftOffset + child->marginLeft();
+    if(style()->textAlign() == TextAlign::Center || childStyle->marginLeft().isAuto())
+        xOffset = std::max(xOffset, startOffset + child->marginLeft());
+    else if(startOffset > leftOffset)
+        xOffset = std::max(xOffset, startOffset);
+
+    if(style()->direction() == TextDirection::Rtl) {
+        auto totalAvailableWidth = borderWidth() + paddingWidth() + availableWidth();
+        xOffset = totalAvailableWidth - xOffset - child->width();
+    }
+
+    child->setX(xOffset);
+    setHeight(height() + child->height());
+    if(auto childBlock = to<BlockFlowBox>(child)) {
+        addOverhangingFloats(childBlock);
+    }
 }
 
 void BlockFlowBox::layoutBlockChildren()

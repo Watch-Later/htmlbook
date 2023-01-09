@@ -456,16 +456,6 @@ RefPtr<BoxStyle> Document::rootStyle() const
     return style();
 }
 
-float Document::viewportWidth() const
-{
-    return 0.0;
-}
-
-float Document::viewportHeight() const
-{
-    return 0.0;
-}
-
 void Document::buildBox(Counters& counters, Box* parent)
 {
     assert(parent == nullptr);

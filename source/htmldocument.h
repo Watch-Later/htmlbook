@@ -142,6 +142,9 @@ public:
 
     Box* createBox(const RefPtr<BoxStyle>& style) final;
 
+    float viewportWidth() const final;
+    float viewportHeight() const final;
+
 private:
     HTMLDocument(Book* book);
     Book* m_book;
