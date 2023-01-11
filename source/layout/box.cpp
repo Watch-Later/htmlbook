@@ -201,7 +201,7 @@ BlockFlowBox* Box::createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle)
     return newBlock;
 }
 
-Box* Box::containingBox() const
+BoxModel* Box::containingBox() const
 {
     auto parent = parentBox();
     if(!is<TextBox>(*this)) {
@@ -216,7 +216,7 @@ Box* Box::containingBox() const
         }
     }
 
-    return parent;
+    return to<BoxModel>(parent);
 }
 
 BlockBox* Box::containingBlock() const
@@ -515,10 +515,6 @@ float BoxFrame::intrinsicHeight() const
     return 0;
 }
 
-
-
-
-
 float BoxFrame::availableHeightUsing(const Length& height) const
 {
     if(height.isFixed())
@@ -667,7 +663,7 @@ float BoxFrame::computeReplacedHeightUsing(const Length& height) const
 
 float BoxFrame::computePercentageReplacedWidth(const Length& width) const
 {
-    auto containerWidth = isPositioned() ? containingBlockWidthForPositioned(containingBoxModel()) : containingBlockWidthForContent();
+    auto containerWidth = isPositioned() ? containingBlockWidthForPositioned(containingBox()) : containingBlockWidthForContent();
     if(containerWidth > 0)
         return computeContentBoxWidth(width.calcMin(containerWidth));
     return intrinsicWidth();
@@ -691,7 +687,7 @@ float BoxFrame::computePercentageReplacedHeight(const Length& height) const
     }
 
     if(isPositioned()) {
-        auto availableHeight = containingBlockHeightForPositioned(to<BoxModel>(cb));
+        auto availableHeight = containingBlockHeightForPositioned(cb);
         return computeContentBoxHeight(height.calc(availableHeight));
     }
 
@@ -972,7 +968,7 @@ void BoxFrame::computePositionedWidthUsing(const Length& widthLength, const BoxM
 
 void BoxFrame::computePositionedWidthReplaced(float& x, float& width, float& marginLeft, float& marginRight) const
 {
-    auto container = containingBoxModel();
+    auto container = containingBox();
     auto containerWidth = containingBlockWidthForPositioned(container);
     auto containerDirection = container->style()->direction();
 
@@ -1079,7 +1075,7 @@ void BoxFrame::computePositionedWidth(float& x, float& width, float& marginLeft,
         return;
     }
 
-    auto container = containingBoxModel();
+    auto container = containingBox();
     auto containerWidth = containingBlockWidthForPositioned(container);
     auto containerDirection = container->style()->direction();
 
@@ -1216,7 +1212,7 @@ void BoxFrame::computePositionedHeightUsing(const Length& heightLength, const Bo
 
 void BoxFrame::computePositionedHeightReplaced(float& y, float& height, float& marginTop, float& marginBottom) const
 {
-    auto container = containingBoxModel();
+    auto container = containingBox();
     auto containerHeight = containingBlockHeightForPositioned(container);
 
     auto marginTopLength = style()->marginTop();
@@ -1293,7 +1289,7 @@ void BoxFrame::computePositionedHeight(float& y, float& height, float& marginTop
         return;
     }
 
-    auto container = containingBoxModel();
+    auto container = containingBox();
     auto containerHeight = containingBlockHeightForPositioned(container);
     auto contentHeight = height - borderHeight() + paddingHeight();
 

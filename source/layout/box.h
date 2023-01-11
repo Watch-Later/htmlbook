@@ -72,7 +72,7 @@ public:
     static Box* createAnonymous(const RefPtr<BoxStyle>& parentStyle, Display display);
     static BlockFlowBox* createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle);
 
-    Box* containingBox() const;
+    BoxModel* containingBox() const;
     BlockBox* containingBlock() const;
     BlockBox* containingBlockFixed() const;
     BlockBox* containingBlockAbsolute() const;
@@ -267,7 +267,6 @@ public:
     float availableHeight() const { return availableHeightUsing(style()->height()); }
     float availableHeightUsing(const Length& height) const;
 
-    BoxModel* containingBoxModel() const { return to<BoxModel>(containingBox()); }
     float containingBlockWidthForPositioned(const BoxModel* containingBox) const;
     float containingBlockHeightForPositioned(const BoxModel* containingBox) const;
 
