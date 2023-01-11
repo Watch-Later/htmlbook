@@ -161,7 +161,8 @@ public:
     virtual void computeBorder(float& top, float& bottom, float& left, float& right) const;
     virtual void computePadding(float& top, float& bottom, float& left, float& right) const;
 
-    virtual float containingBlockWidthForContent() const;
+    float containingBlockWidthForContent() const;
+    float containingBlockHeightForContent() const;
 
     float borderTop() const;
     float borderBottom() const;
@@ -262,16 +263,16 @@ public:
     float intrinsicWidth() const;
     float intrinsicHeight() const;
 
-    virtual float availableWidth() const;
-    virtual float availableHeight() const;
+    float availableWidth() const { return contentWidth(); }
+    float availableHeight() const { return availableHeightUsing(style()->height()); }
     float availableHeightUsing(const Length& height) const;
-
-    float containingBlockWidthForContent() const override;
-    float containingBlockHeightForContent() const;
 
     BoxModel* containingBoxModel() const { return to<BoxModel>(containingBox()); }
     float containingBlockWidthForPositioned(const BoxModel* containingBox) const;
     float containingBlockHeightForPositioned(const BoxModel* containingBox) const;
+
+    bool shrinkToAvoidFloats() const;
+    float shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const;
 
     void updateWidth();
     void updateHeight();
@@ -291,14 +292,14 @@ public:
     float computeReplacedWidth() const;
     float computeReplacedHeight() const;
 
-    void computeHorizontalMargins(float& marginLeft, float& marginRight, float containerWidth, float childWidth) const;
+    void computeHorizontalMargins(float& marginLeft, float& marginRight, float childWidth, const BlockBox* container, float containerWidth) const;
     void computeVerticalMargins(float& marginTop, float& marginBottom) const;
 
-    float computeWidthUsing(const Length& width, float availableWidth) const;
+    float computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth) const;
     std::optional<float> computeHeightUsing(const Length& height) const;
     std::optional<float> computePercentageHeight(const Length& height) const;
 
-    float constrainWidthByMinMax(float width, float availableWidth) const;
+    float constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const;
     float constrainHeightByMinMax(float height) const;
 
     void computePositionedWidthUsing(const Length& widthLength, const BoxModel* container, TextDirection containerDirection, float containerWidth,

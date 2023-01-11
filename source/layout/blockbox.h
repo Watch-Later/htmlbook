@@ -101,7 +101,6 @@ public:
     void adjustPositionedBox(BoxFrame* child, const MarginInfo& marginInfo);
     void adjustFloatingBox(const MarginInfo& marginInfo);
     void handleBottomOfBlock(float top, float bottom, MarginInfo& marginInfo);
-    void setCollapsedBottomMargin(const MarginInfo& marginInfo);
     float collapseMargins(BoxFrame* child, MarginInfo& marginInfo);
     void layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo);
 

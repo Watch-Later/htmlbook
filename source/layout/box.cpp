@@ -407,6 +407,11 @@ float BoxModel::containingBlockWidthForContent() const
     return containingBlock()->availableWidth();
 }
 
+float BoxModel::containingBlockHeightForContent() const
+{
+    return containingBlock()->availableHeight();
+}
+
 float BoxModel::borderTop() const
 {
     if(m_borderTop < 0)
@@ -510,15 +515,9 @@ float BoxFrame::intrinsicHeight() const
     return 0;
 }
 
-float BoxFrame::availableWidth() const
-{
-    return contentWidth();
-}
 
-float BoxFrame::availableHeight() const
-{
-    return availableHeightUsing(style()->height());
-}
+
+
 
 float BoxFrame::availableHeightUsing(const Length& height) const
 {
@@ -547,16 +546,6 @@ float BoxFrame::availableHeightUsing(const Length& height) const
     }
 
     return containingBlockHeightForContent();
-}
-
-float BoxFrame::containingBlockWidthForContent() const
-{
-    return containingBlock()->availableWidth();
-}
-
-float BoxFrame::containingBlockHeightForContent() const
-{
-    return containingBlock()->availableHeight();
 }
 
 float BoxFrame::containingBlockWidthForPositioned(const BoxModel* containingBox) const
@@ -597,6 +586,16 @@ float BoxFrame::containingBlockHeightForPositioned(const BoxModel* containingBox
     auto& lastLine = *lines.back();
     auto lineHeight = lastLine.y() + lastLine.height() - firstLine.y();
     return lineHeight - containingBox->borderTop() - containingBox->borderBottom();
+}
+
+bool BoxFrame::shrinkToAvoidFloats() const
+{
+    return false;
+}
+
+float BoxFrame::shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const
+{
+    return 0;
 }
 
 void BoxFrame::updateWidth()
@@ -713,7 +712,7 @@ float BoxFrame::computeReplacedWidth() const
 {
     auto width = computeReplacedWidthUsing(style()->width());
     auto minWidth = computeReplacedWidthUsing(style()->minWidth());
-    auto maxWidth = style()->maxWidth().isNone() ? width : computeReplacedHeightUsing(style()->maxWidth());
+    auto maxWidth = style()->maxWidth().isNone() ? width : computeReplacedWidthUsing(style()->maxWidth());
     return std::max(minWidth, std::min(width, maxWidth));
 }
 
@@ -725,7 +724,7 @@ float BoxFrame::computeReplacedHeight() const
     return std::max(minHeight, std::min(height, maxHeight));
 }
 
-void BoxFrame::computeHorizontalMargins(float& marginLeft, float& marginRight, float containerWidth, float childWidth) const
+void BoxFrame::computeHorizontalMargins(float& marginLeft, float& marginRight, float childWidth, const BlockBox* container, float containerWidth) const
 {
     auto marginLeftLength = style()->marginLeft();
     auto marginRightLength = style()->marginRight();
@@ -735,24 +734,25 @@ void BoxFrame::computeHorizontalMargins(float& marginLeft, float& marginRight, f
         return;
     }
 
-    auto containingBlockTextAlign = containingBlock()->style()->textAlign();
-    auto containingBlockDirection = containingBlock()->style()->direction();
+    auto containerStyle = container->style();
+    auto containerTextAlign = containerStyle->textAlign();
+    auto containerDirection = containerStyle->direction();
     if(marginLeftLength.isAuto() && marginRightLength.isAuto() && childWidth < containerWidth
-        || (!marginLeftLength.isAuto() && !marginRightLength.isAuto() && containingBlockTextAlign == TextAlign::Center)) {
+        || (!marginLeftLength.isAuto() && !marginRightLength.isAuto() && containerTextAlign == TextAlign::Center)) {
         marginLeft = std::max(0.f, (containerWidth - childWidth) / 2.f);
         marginRight = containerWidth - childWidth - marginLeft;
         return;
     }
 
     if(marginRightLength.isAuto() && childWidth < containerWidth
-        || (!marginLeftLength.isAuto() && containingBlockDirection == TextDirection::Rtl && containingBlockTextAlign == TextAlign::Left)) {
+        || (!marginLeftLength.isAuto() && containerDirection == TextDirection::Rtl && containerTextAlign == TextAlign::Left)) {
         marginLeft = marginLeftLength.calc(containerWidth);
         marginRight = containerWidth - childWidth - marginLeft;
         return;
     }
 
     if(marginLeftLength.isAuto() && childWidth < containerWidth
-        || (!marginRightLength.isAuto() && containingBlockDirection == TextDirection::Ltr && containingBlockTextAlign == TextAlign::Right)) {
+        || (!marginRightLength.isAuto() && containerDirection == TextDirection::Ltr && containerTextAlign == TextAlign::Right)) {
         marginRight = marginRightLength.calc(containerWidth);
         marginLeft = containerWidth - childWidth - marginRight;
         return;
@@ -775,13 +775,13 @@ void BoxFrame::computeVerticalMargins(float& marginTop, float& marginBottom) con
     marginBottom = style()->marginBottom().calcMin(containerWidth);
 }
 
-float BoxFrame::computeWidthUsing(const Length& width, float availableWidth) const
+float BoxFrame::computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth) const
 {
     if(!width.isAuto())
-        return computeBorderBoxWidth(width.calc(availableWidth));
-    auto marginLeft = style()->marginLeft().calcMin(availableWidth);
-    auto marginRight = style()->marginRight().calcMin(availableWidth);
-    auto computedWidth = availableWidth - marginLeft - marginRight;
+        return computeBorderBoxWidth(width.calc(containerWidth));
+    auto marginLeft = style()->marginLeft().calcMin(containerWidth);
+    auto marginRight = style()->marginRight().calcMin(containerWidth);
+    auto computedWidth = containerWidth - marginLeft - marginRight;
     auto adjustswidthtofitcontent = [this]() -> bool {
         if(isFloating() || (isReplaced() && isInline() && is<BlockBox>(*this)))
             return true;
@@ -794,6 +794,10 @@ float BoxFrame::computeWidthUsing(const Length& width, float availableWidth) con
             return true;
         return !(style()->alignSelf() == AlignSelf::Stretch || (style()->alignSelf() == AlignSelf::Auto && parentStyle->alignItems() == AlignItems::Stretch));
     };
+
+    auto containerBlockFlow = to<BlockFlowBox>(container);
+    if(containerBlockFlow && containerBlockFlow->containsFloats() && shrinkToAvoidFloats())
+        computedWidth = std::min(computedWidth, shrinkWidthToAvoidFloats(marginLeft, marginRight, containerBlockFlow));
 
     if(adjustswidthtofitcontent()) {
         computedWidth = std::max(computedWidth, minPreferredWidth());
@@ -862,11 +866,11 @@ std::optional<float> BoxFrame::computePercentageHeight(const Length& height) con
     return std::max(0.f, computedHeight);
 }
 
-float BoxFrame::constrainWidthByMinMax(float width, float availableWidth) const
+float BoxFrame::constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const
 {
     if(!style()->maxWidth().isNone())
-        width = std::min(width, computeWidthUsing(style()->maxWidth(), availableWidth));
-    return std::max(width, computeWidthUsing(style()->minWidth(), availableWidth));
+        width = std::min(width, computeWidthUsing(style()->maxWidth(), container, containerWidth));
+    return std::max(width, computeWidthUsing(style()->minWidth(), container, containerWidth));
 }
 
 float BoxFrame::constrainHeightByMinMax(float height) const
@@ -1363,7 +1367,8 @@ void BoxFrame::computeWidth(float& x, float& width, float& marginLeft, float& ma
     if(computeAsReplaced)
         width = computeReplacedWidth() + borderWidth() + paddingWidth();
 
-    auto containerWidth = std::max(0.f, containingBlockWidthForContent());
+    auto container = containingBlock();
+    auto containerWidth = std::max(0.f, container->availableWidth());
     if(isInline() && !(isReplaced() && is<BlockBox>(*this))) {
         if(computeAsReplaced)
             width = std::max(width, minPreferredWidth());
@@ -1373,13 +1378,13 @@ void BoxFrame::computeWidth(float& x, float& width, float& marginLeft, float& ma
     }
 
     if(!computeAsReplaced) {
-        width = computeWidthUsing(style()->width(), containerWidth);
-        width = constrainWidthByMinMax(width, containerWidth);
+        width = computeWidthUsing(style()->width(), container, containerWidth);
+        width = constrainWidthByMinMax(width, container, containerWidth);
     }
 
-    computeHorizontalMargins(marginLeft, marginRight, containerWidth, width);
+    computeHorizontalMargins(marginLeft, marginRight, width, container, containerWidth);
     if(containerWidth && !(containerWidth == (width + marginLeft + marginRight)) && !isInline() && !isFloating() && !is<FlexibleBox>(*this)) {
-        if(style()->isLeftToRightDirection() == containingBlock()->style()->isLeftToRightDirection()) {
+        if(style()->isLeftToRightDirection() == container->style()->isLeftToRightDirection()) {
             marginRight = containerWidth - width - marginLeft;
         } else {
             marginLeft = containerWidth - width - marginRight;

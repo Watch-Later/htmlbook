@@ -286,11 +286,6 @@ void BlockFlowBox::handleBottomOfBlock(float top, float bottom, MarginInfo& marg
         setHeight(height() + marginInfo.margin());
     setHeight(bottom + height());
     setHeight(std::max(top + bottom, height()));
-    setCollapsedBottomMargin(marginInfo);
-}
-
-void BlockFlowBox::setCollapsedBottomMargin(const MarginInfo& marginInfo)
-{
     if(marginInfo.canCollapseWithMarginBottom() && !marginInfo.canCollapseWithMarginTop()) {
         m_maxPositiveMarginBottom = std::max(m_maxPositiveMarginBottom, marginInfo.positiveMargin());
         m_maxNegativeMarginBottom = std::max(m_maxNegativeMarginBottom, marginInfo.negativeMargin());
