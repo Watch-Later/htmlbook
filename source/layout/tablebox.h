@@ -75,6 +75,8 @@ public:
 
     bool isOfType(Type type) const final { return type == Type::TableCell || BlockFlowBox::isOfType(type); }
 
+    bool isSelfCollapsingBlock() const final { return false; }
+
     int colSpan() const { return m_colSpan; }
     int rowSpan() const { return m_rowSpan; }
 
@@ -128,6 +130,8 @@ public:
     TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style);
 
     bool isOfType(Type type) const final { return type == Type::TableCaption || BlockFlowBox::isOfType(type); }
+
+    bool isSelfCollapsingBlock() const final { return false; }
 
     CaptionSide captionSide() const { return m_captionSide; }
 

@@ -568,8 +568,8 @@ float BoxFrame::containingBlockWidthForPositioned(const BoxModel* containingBox)
     if(lines.empty())
         return 0;
 
-    auto& firstLine = to<FlowLineBox>(*lines.front());
-    auto& lastLine = to<FlowLineBox>(*lines.back());
+    auto& firstLine = *lines.front();
+    auto& lastLine = *lines.back();
 
     float fromLeft = 0;
     float fromRight = 0;
@@ -593,8 +593,8 @@ float BoxFrame::containingBlockHeightForPositioned(const BoxModel* containingBox
     if(lines.empty())
         return 0;
 
-    auto& firstLine = to<FlowLineBox>(*lines.front());
-    auto& lastLine = to<FlowLineBox>(*lines.back());
+    auto& firstLine = *lines.front();
+    auto& lastLine = *lines.back();
     auto lineHeight = lastLine.y() + lastLine.height() - firstLine.y();
     return lineHeight - containingBox->borderTop() - containingBox->borderBottom();
 }
@@ -883,8 +883,8 @@ static float computePositionedLeftOffset(float left, float marginLeft, const Box
     if(containerDirection == TextDirection::Rtl && is<InlineBox>(*container)) {
         auto& lines = to<InlineBox>(*container).lines();
         if(lines.size() > 1) {
-            auto& firstLine = to<FlowLineBox>(*lines.front());
-            auto& lastLine = to<FlowLineBox>(*lines.back());
+            auto& firstLine = *lines.front();
+            auto& lastLine = *lines.back();
             return left + marginLeft + lastLine.borderLeft() + (lastLine.x() - firstLine.x());
         }
     }

@@ -94,6 +94,8 @@ public:
 
     bool isOfType(Type type) const override { return type == Type::BlockFlow || BlockBox::isOfType(type); }
 
+    bool isSelfCollapsingBlock() const override { return false; }
+
     void computeInlinePreferredWidths(float& minWidth, float& maxWidth) const override;
 
     void adjustPositionedBox(BoxFrame* child, const MarginInfo& marginInfo);

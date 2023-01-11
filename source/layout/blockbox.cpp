@@ -357,7 +357,7 @@ void BlockFlowBox::layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo)
         marginInfo.setPositiveMargin(std::max(child->maxMarginTop(true), child->maxMarginBottom(true)));
         marginInfo.setNegativeMargin(std::max(child->maxMarginTop(false), child->maxMarginBottom(false)));
 
-        setHeight(child->y() - std::max(0.f, marginInfo.margin()));
+        setHeight(child->y() + child->maxMarginTop(false));
     } else {
         setHeight(clearDelta + height());
     }
@@ -501,8 +501,9 @@ void BlockFlowBox::buildOverhangingFloats()
     if(isChildrenInline())
         return;
     for(auto child = firstBox(); child; child = child->nextBox()) {
-        if(!child->isFloatingOrPositioned() && is<BlockFlowBox>(child)) {
-            auto block = to<BlockFlowBox>(child);
+        if(child->isFloatingOrPositioned())
+            continue;
+        if(auto block = to<BlockFlowBox>(child)) {
             if(block->floatBottom() + block->y() > height()) {
                 addOverhangingFloats(block);
             }

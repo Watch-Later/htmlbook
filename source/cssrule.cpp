@@ -798,13 +798,13 @@ bool CSSRuleData::matchTagSelector(const Element* element, const CSSSimpleSelect
 
 bool CSSRuleData::matchIdSelector(const Element* element, const CSSSimpleSelector& selector)
 {
-    return element->id() == selector.name();
+    return element->id() == selector.value();
 }
 
 bool CSSRuleData::matchClassSelector(const Element* element, const CSSSimpleSelector& selector)
 {
     for(auto& name : element->classNames()) {
-        if(name == selector.name()) {
+        if(name == selector.value()) {
             return true;
         }
     }
