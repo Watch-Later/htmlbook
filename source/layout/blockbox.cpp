@@ -535,7 +535,7 @@ void BlockFlowBox::addOverhangingFloats(BlockFlowBox* childBlock)
     if(childBlock->isOverflowHidden() || !childBlock->containsFloats())
         return;
     for(auto& item : *childBlock->floatingBoxes()) {
-        auto floatBottom = item.bottom() + childBlock->x();
+        auto floatBottom = item.bottom() + childBlock->y();
         if(floatBottom > height() && !containsFloat(item.box())) {
             FloatingBox floatingBox(item.box());
             floatingBox.setIsIntruding(true);
@@ -576,9 +576,10 @@ void BlockFlowBox::positionNewFloats()
         auto child = floatingBox.box();
         if(this != child->containingBlock())
             continue;
-        if(child->style()->isClearLeft())
+        auto childStyle = child->style();
+        if(childStyle->isClearLeft())
             floatTop = std::max(floatTop, leftFloatBottom());
-        if(child->style()->isClearRight())
+        if(childStyle->isClearRight())
             floatTop = std::max(floatTop, rightFloatBottom());
 
         auto leftOffset = leftOffsetForContent();
@@ -586,7 +587,7 @@ void BlockFlowBox::positionNewFloats()
         auto floatWidth = std::min(rightOffset - leftOffset, floatingBox.width());
 
         float floatLeft = 0;
-        if(child->style()->floating() == Float::Left) {
+        if(childStyle->floating() == Float::Left) {
             float heightRemainingLeft = 1;
             float heightRemainingRight = 1;
             floatLeft = leftOffsetForFloat(floatTop, leftOffset, false, &heightRemainingLeft);
