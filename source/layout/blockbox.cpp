@@ -134,8 +134,8 @@ void BlockBox::computePreferredWidths(float& minWidth, float& maxWidth) const
         maxWidth = std::min(maxWidth, computeContentBoxWidth(styleMaxWidth.value()));
     }
 
-    minWidth += borderWidth() + paddingWidth();
-    maxWidth += borderWidth() + paddingWidth();
+    minWidth += borderPaddingWidth();
+    maxWidth += borderPaddingWidth();
 }
 
 void BlockBox::insertPositonedBox(BoxFrame* box)
@@ -380,7 +380,7 @@ void BlockFlowBox::layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo)
         xOffset = std::max(xOffset, startOffset);
 
     if(style()->direction() == TextDirection::Rtl) {
-        auto totalAvailableWidth = borderWidth() + paddingWidth() + availableWidth();
+        auto totalAvailableWidth = borderPaddingWidth() + availableWidth();
         xOffset = totalAvailableWidth - xOffset - child->width();
     }
 
@@ -523,7 +523,7 @@ void BlockFlowBox::addIntrudingFloats(BlockFlowBox* prevBlock, float xOffset, fl
             floatingBox.setY(item.y() - yOffset);
             floatingBox.setWidth(item.width());
             floatingBox.setHeight(item.height());
-            if(m_floatingBoxes == nullptr)
+            if(!m_floatingBoxes)
                 m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
             m_floatingBoxes->push_back(floatingBox);
         }
@@ -545,7 +545,7 @@ void BlockFlowBox::addOverhangingFloats(BlockFlowBox* childBlock)
             floatingBox.setY(item.y() + childBlock->y());
             floatingBox.setWidth(item.width());
             floatingBox.setHeight(item.height());
-            if(m_floatingBoxes == nullptr)
+            if(!m_floatingBoxes)
                 m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
             m_floatingBoxes->push_back(floatingBox);
         }
@@ -809,7 +809,7 @@ void BlockFlowBox::insertFloatingBox(BoxFrame* box)
     floatingBox.setIsIntruding(false);
     floatingBox.setIsHidden(false);
     floatingBox.setIsPlaced(false);
-    floatingBox.setWidth(box->width() + box->marginLeft() + box->marginTop());
+    floatingBox.setWidth(box->width() + box->marginLeft() + box->marginRight());
     m_floatingBoxes->push_back(floatingBox);
 }
 

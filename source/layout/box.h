@@ -180,6 +180,9 @@ public:
     float paddingWidth() const { return paddingLeft() + paddingRight(); }
     float paddingHeight() const { return paddingTop() + paddingBottom(); }
 
+    float borderPaddingWidth() const { return borderWidth() + paddingWidth(); }
+    float borderPaddingHeight() const { return borderHeight() + paddingHeight(); }
+
     float marginTop() const { return m_marginTop; }
     float marginBottom() const { return m_marginBottom; }
     float marginLeft() const { return m_marginLeft; }
