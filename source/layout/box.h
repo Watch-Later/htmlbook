@@ -274,11 +274,17 @@ public:
     float containingBlockHeightForPositioned(const BoxModel* containingBox) const;
 
     bool shrinkToAvoidFloats() const;
-    float shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const;
+    float shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container, float y) const;
 
     void updateWidth();
     void updateHeight();
     void updateVerticalMargins();
+
+    float computedWidth(float y) const;
+    float computedHeight(float height) const;
+
+    float computedWidth() const { return computedWidth(m_y); }
+    float computedHeight() const { return computedHeight(m_height); }
 
     float computeBorderBoxWidth(float width) const;
     float computeBorderBoxHeight(float height) const;
@@ -297,11 +303,11 @@ public:
     void computeHorizontalMargins(float& marginLeft, float& marginRight, float childWidth, const BlockBox* container, float containerWidth) const;
     void computeVerticalMargins(float& marginTop, float& marginBottom) const;
 
-    float computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth) const;
+    float computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth, float y) const;
     std::optional<float> computeHeightUsing(const Length& height) const;
     std::optional<float> computePercentageHeight(const Length& height) const;
 
-    float constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const;
+    float constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth, float y) const;
     float constrainHeightByMinMax(float height) const;
 
     void computePositionedWidthUsing(const Length& widthLength, const BoxModel* container, TextDirection containerDirection, float containerWidth,
@@ -318,7 +324,7 @@ public:
     void computePositionedHeightReplaced(float& y, float& height, float& marginTop, float& marginBottom) const;
     void computePositionedHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
 
-    virtual void computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const;
+    virtual void computeWidth(float& x, float& width, float& marginLeft, float& marginRight, float y) const;
     virtual void computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
 
     virtual bool isSelfCollapsingBlock() const { return false; }
