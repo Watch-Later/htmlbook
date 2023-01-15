@@ -280,11 +280,11 @@ public:
     void updateHeight();
     void updateVerticalMargins();
 
-    float computedWidth(float y) const;
-    float computedHeight(float height) const;
+    float computeWidth(float y) const;
+    float computeHeight(float height) const;
 
-    float computedWidth() const { return computedWidth(m_y); }
-    float computedHeight() const { return computedHeight(m_height); }
+    float computeWidth() const { return computeWidth(m_y); }
+    float computeHeight() const { return computeHeight(m_height); }
 
     float computeBorderBoxWidth(float width) const;
     float computeBorderBoxHeight(float height) const;

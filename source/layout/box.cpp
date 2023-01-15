@@ -531,12 +531,8 @@ float BoxFrame::availableHeightUsing(const Length& height) const
         return computeContentBoxHeight(height.calc(availableHeight));
     }
 
-    if(isPositioned() && is<BlockBox>(*this) && style()->height().isAuto() && !(style()->top().isAuto() || style()->bottom().isAuto())) {
-        auto& block = to<BlockBox>(*this);
-        auto computedHeight = block.computedHeight();
-        return computeContentBoxHeight(computedHeight - block.borderPaddingHeight());
-    }
-
+    if(isPositioned() && is<BlockBox>(*this) && style()->height().isAuto() && !(style()->top().isAuto() || style()->bottom().isAuto()))
+        return computeContentBoxHeight(computeHeight() - borderPaddingHeight());
     return containingBlockHeightForContent();
 }
 
@@ -628,14 +624,14 @@ void BoxFrame::updateVerticalMargins()
     computeVerticalMargins(m_marginTop, m_marginBottom);
 }
 
-float BoxFrame::computedWidth(float y) const
+float BoxFrame::computeWidth(float y) const
 {
     float x = 0, width = 0, marginLeft = 0, marginRight = 0;
     computeWidth(x, width, marginLeft, marginRight, y);
     return width;
 }
 
-float BoxFrame::computedHeight(float height) const
+float BoxFrame::computeHeight(float height) const
 {
     float y = 0, marginTop = 0, marginBottom = 0;
     computeHeight(y, height, marginTop, marginBottom);
@@ -709,8 +705,7 @@ float BoxFrame::computePercentageReplacedHeight(const Length& height) const
         cb = cb->containingBlock();
     if(cb->isPositioned() && cb->style()->height().isAuto() && !(cb->style()->top().isAuto() || cb->style()->bottom().isAuto())) {
         auto& block = to<BlockBox>(*cb);
-        auto computedHeight = block.computedHeight();
-        auto availableHeight = block.computeContentBoxHeight(computedHeight - block.borderPaddingHeight());
+        auto availableHeight = block.computeContentBoxHeight(block.computeHeight() - block.borderPaddingHeight());
         return computeContentBoxHeight(height.calc(availableHeight));
     }
 
@@ -863,8 +858,7 @@ std::optional<float> BoxFrame::computePercentageHeight(const Length& height) con
     if(containerStyleHeight.isFixed()) {
         availableHeight = container->computeContentBoxHeight(containerStyleHeight.value());
     } else if(container->isPositioned() && (!containerStyleHeight.isAuto() || (!containerStyleTop.isAuto() && !containerStyleBottom.isAuto()))) {
-        auto computedHeight = container->computedHeight();
-        availableHeight = computedHeight - container->borderPaddingHeight();
+        availableHeight = container->computeHeight() - container->borderPaddingHeight();
     } else if(containerStyleHeight.isPercent()) {
         auto computedHeight = container->computePercentageHeight(containerStyleHeight);
         if(!computedHeight)
