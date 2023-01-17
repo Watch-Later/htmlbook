@@ -41,8 +41,6 @@ public:
     virtual bool isOfType(Type type) const { return false; }
     virtual bool avoidsFloats() const { return false; }
 
-    virtual void computePreferredWidths(float& minWidth, float& maxWidth) const;
-
     virtual void addBox(Box* box);
     virtual void buildBox(BoxLayer* layer);
     virtual void layout();
@@ -158,8 +156,11 @@ public:
     void buildBox(BoxLayer* layer) override;
 
     virtual bool requiresLayer() const { return false; }
-    virtual void computeBorder(float& top, float& bottom, float& left, float& right) const;
-    virtual void computePadding(float& top, float& bottom, float& left, float& right) const;
+    virtual void computeBorders(float& top, float& bottom, float& left, float& right) const;
+    virtual void computePaddings(float& top, float& bottom, float& left, float& right) const;
+
+    void updateBorders() const;
+    void updatePaddings() const;
 
     float containingBlockWidthForContent() const;
     float containingBlockHeightForContent() const;
@@ -243,13 +244,16 @@ public:
     void setHeight(float height) { m_height = height; }
 
     void setLocation(float x, float y) { m_x = x; m_y = y; }
-    void move(float dx, float dy) { m_x += dx; m_y += dy; }
+    void setSize(float width, float height) { m_width = width; m_height = height; }
 
     float clientWidth() const { return m_width - borderLeft() - borderRight(); }
     float clientHeight() const { return m_height - borderTop() - borderBottom(); }
 
     float contentWidth() const { return clientWidth() - paddingLeft() - paddingRight(); }
     float contentHeight() const { return clientHeight() - paddingTop() - paddingBottom(); }
+
+    virtual void computePreferredWidths(float& minWidth, float& maxWidth) const;
+    void updatePreferredWidths() const;
 
     float minPreferredWidth() const;
     float maxPreferredWidth() const;
@@ -286,10 +290,10 @@ public:
     float computeWidth() const { return computeWidth(m_y); }
     float computeHeight() const { return computeHeight(m_height); }
 
-    float computeBorderBoxWidth(float width) const;
-    float computeBorderBoxHeight(float height) const;
-    float computeContentBoxWidth(float width) const;
-    float computeContentBoxHeight(float height) const;
+    float adjustBorderBoxWidth(float width) const;
+    float adjustBorderBoxHeight(float height) const;
+    float adjustContentBoxWidth(float width) const;
+    float adjustContentBoxHeight(float height) const;
 
     float computeReplacedWidthUsing(const Length& width) const;
     float computeReplacedHeightUsing(const Length& height) const;

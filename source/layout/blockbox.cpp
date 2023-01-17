@@ -115,7 +115,7 @@ void BlockBox::computePreferredWidths(float& minWidth, float& maxWidth) const
 
     auto styleWidth = style()->width();
     if(styleWidth.isFixed() && !is<TableCellBox>(*this)) {
-        minWidth = maxWidth = computeContentBoxWidth(styleWidth.value());
+        minWidth = maxWidth = adjustContentBoxWidth(styleWidth.value());
     } else if(isChildrenInline()) {
         computeInlinePreferredWidths(minWidth, maxWidth);
     } else {
@@ -124,14 +124,14 @@ void BlockBox::computePreferredWidths(float& minWidth, float& maxWidth) const
 
     auto styleMinWidth = style()->minWidth();
     if(styleMinWidth.isFixed() && styleMinWidth.value() > 0) {
-        minWidth = std::max(minWidth, computeContentBoxWidth(styleMinWidth.value()));
-        maxWidth = std::max(maxWidth, computeContentBoxWidth(styleMinWidth.value()));
+        minWidth = std::max(minWidth, adjustContentBoxWidth(styleMinWidth.value()));
+        maxWidth = std::max(maxWidth, adjustContentBoxWidth(styleMinWidth.value()));
     }
 
     auto styleMaxWidth = style()->maxWidth();
     if(styleMaxWidth.isFixed()) {
-        minWidth = std::min(minWidth, computeContentBoxWidth(styleMaxWidth.value()));
-        maxWidth = std::min(maxWidth, computeContentBoxWidth(styleMaxWidth.value()));
+        minWidth = std::min(minWidth, adjustContentBoxWidth(styleMaxWidth.value()));
+        maxWidth = std::min(maxWidth, adjustContentBoxWidth(styleMaxWidth.value()));
     }
 
     minWidth += borderPaddingWidth();
@@ -149,6 +149,15 @@ void BlockBox::removePositonedBox(BoxFrame* box)
 {
     if(m_positionedBoxes) {
         m_positionedBoxes->erase(box);
+    }
+}
+
+void BlockBox::layoutPositionedBoxes()
+{
+    if(m_positionedBoxes) {
+        for(auto box : *m_positionedBoxes) {
+            box->layout();
+        }
     }
 }
 
@@ -416,15 +425,6 @@ void BlockFlowBox::layoutBlockChildren()
 
 void BlockFlowBox::layoutInlineChildren()
 {
-}
-
-void BlockFlowBox::layoutPositionedBoxes()
-{
-    if(!m_positionedBoxes)
-        return;
-    for(auto box : *m_positionedBoxes) {
-        box->layout();
-    }
 }
 
 void BlockFlowBox::layout()

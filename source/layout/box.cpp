@@ -35,12 +35,6 @@ Box::~Box()
     }
 }
 
-void Box::computePreferredWidths(float& minWidth, float& maxWidth) const
-{
-    minWidth = 0;
-    maxWidth = 0;
-}
-
 void Box::buildBox(BoxLayer* layer)
 {
     for(auto box = firstBox(); box; box = box->nextBox()) {
@@ -344,7 +338,7 @@ void BoxModel::addBox(Box* box)
     newTable->addBox(box);
 }
 
-void BoxModel::computeBorder(float& top, float& bottom, float& left, float& right) const
+void BoxModel::computeBorders(float& top, float& bottom, float& left, float& right) const
 {
     switch(style()->borderTopStyle()) {
     case LineStyle::None:
@@ -387,7 +381,7 @@ void BoxModel::computeBorder(float& top, float& bottom, float& left, float& righ
     }
 }
 
-void BoxModel::computePadding(float& top, float& bottom, float& left, float& right) const
+void BoxModel::computePaddings(float& top, float& bottom, float& left, float& right) const
 {
     auto compute = [this](const auto& padding) {
         float containerWidth = 0;
@@ -400,6 +394,16 @@ void BoxModel::computePadding(float& top, float& bottom, float& left, float& rig
     bottom = compute(style()->paddingBottom());
     left = compute(style()->paddingLeft());
     right = compute(style()->paddingRight());
+}
+
+void BoxModel::updateBorders() const
+{
+    computeBorders(m_borderTop, m_borderBottom, m_borderLeft, m_borderRight);
+}
+
+void BoxModel::updatePaddings() const
+{
+    computePaddings(m_paddingTop, m_paddingBottom, m_paddingLeft, m_paddingRight);
 }
 
 float BoxModel::containingBlockWidthForContent() const
@@ -415,56 +419,56 @@ float BoxModel::containingBlockHeightForContent() const
 float BoxModel::borderTop() const
 {
     if(m_borderTop < 0)
-        computeBorder(m_borderTop, m_borderBottom, m_borderLeft, m_borderRight);
+        updateBorders();
     return m_borderTop;
 }
 
 float BoxModel::borderBottom() const
 {
     if(m_borderBottom < 0)
-        computeBorder(m_borderTop, m_borderBottom, m_borderLeft, m_borderRight);
+        updateBorders();
     return m_borderBottom;
 }
 
 float BoxModel::borderLeft() const
 {
     if(m_borderLeft < 0)
-        computeBorder(m_borderTop, m_borderBottom, m_borderLeft, m_borderRight);
+        updateBorders();
     return m_borderLeft;
 }
 
 float BoxModel::borderRight() const
 {
     if(m_borderRight < 0)
-        computeBorder(m_borderTop, m_borderBottom, m_borderLeft, m_borderRight);
+        updateBorders();
     return m_borderRight;
 }
 
 float BoxModel::paddingTop() const
 {
     if(m_paddingTop < 0)
-        computePadding(m_paddingTop, m_paddingBottom, m_paddingLeft, m_paddingRight);
+        updatePaddings();
     return m_paddingTop;
 }
 
 float BoxModel::paddingBottom() const
 {
     if(m_paddingBottom < 0)
-        computePadding(m_paddingTop, m_paddingBottom, m_paddingLeft, m_paddingRight);
+        updatePaddings();
     return m_paddingBottom;
 }
 
 float BoxModel::paddingLeft() const
 {
     if(m_paddingLeft < 0)
-        computePadding(m_paddingTop, m_paddingBottom, m_paddingLeft, m_paddingRight);
+        updatePaddings();
     return m_paddingLeft;
 }
 
 float BoxModel::paddingRight() const
 {
     if(m_paddingRight < 0)
-        computePadding(m_paddingTop, m_paddingBottom, m_paddingLeft, m_paddingRight);
+        updatePaddings();
     return m_paddingRight;
 }
 
@@ -487,17 +491,28 @@ void BoxFrame::layout()
     }
 }
 
+void BoxFrame::computePreferredWidths(float& minWidth, float& maxWidth) const
+{
+    minWidth = 0;
+    maxWidth = 0;
+}
+
+void BoxFrame::updatePreferredWidths() const
+{
+    computePreferredWidths(m_minPreferredWidth, m_maxPreferredWidth);
+}
+
 float BoxFrame::minPreferredWidth() const
 {
     if(m_minPreferredWidth < 0)
-        computePreferredWidths(m_minPreferredWidth, m_maxPreferredWidth);
+        updatePreferredWidths();
     return m_minPreferredWidth;
 }
 
 float BoxFrame::maxPreferredWidth() const
 {
     if(m_maxPreferredWidth < 0)
-        computePreferredWidths(m_minPreferredWidth, m_maxPreferredWidth);
+        updatePreferredWidths();
     return m_maxPreferredWidth;
 }
 
@@ -518,7 +533,7 @@ float BoxFrame::intrinsicHeight() const
 float BoxFrame::availableHeightUsing(const Length& height) const
 {
     if(height.isFixed())
-        computeContentBoxHeight(height.value());
+        adjustContentBoxHeight(height.value());
 
     if(isRootBox())
         return style()->viewportHeight();
@@ -528,11 +543,11 @@ float BoxFrame::availableHeightUsing(const Length& height) const
 
     if(height.isPercent()) {
         auto availableHeight = containingBlockHeightForContent();
-        return computeContentBoxHeight(height.calc(availableHeight));
+        return adjustContentBoxHeight(height.calc(availableHeight));
     }
 
     if(isPositioned() && is<BlockBox>(*this) && style()->height().isAuto() && !(style()->top().isAuto() || style()->bottom().isAuto()))
-        return computeContentBoxHeight(computeHeight() - borderPaddingHeight());
+        return adjustContentBoxHeight(computeHeight() - borderPaddingHeight());
     return containingBlockHeightForContent();
 }
 
@@ -638,28 +653,28 @@ float BoxFrame::computeHeight(float height) const
     return height;
 }
 
-float BoxFrame::computeBorderBoxWidth(float width) const
+float BoxFrame::adjustBorderBoxWidth(float width) const
 {
     if(style()->boxSizing() == BoxSizing::ContentBox)
         return width + borderPaddingWidth();
     return std::max(width, borderPaddingWidth());
 }
 
-float BoxFrame::computeBorderBoxHeight(float height) const
+float BoxFrame::adjustBorderBoxHeight(float height) const
 {
     if(style()->boxSizing() == BoxSizing::ContentBox)
         return height + borderPaddingHeight();
     return std::max(height, borderPaddingHeight());
 }
 
-float BoxFrame::computeContentBoxWidth(float width) const
+float BoxFrame::adjustContentBoxWidth(float width) const
 {
     if(style()->boxSizing() == BoxSizing::BorderBox)
         width -= borderPaddingWidth();
     return std::max(0.f, width);
 }
 
-float BoxFrame::computeContentBoxHeight(float height) const
+float BoxFrame::adjustContentBoxHeight(float height) const
 {
     if(style()->boxSizing() == BoxSizing::BorderBox)
         height -= borderPaddingHeight();
@@ -670,7 +685,7 @@ float BoxFrame::computeReplacedWidthUsing(const Length& width) const
 {
     switch(width.type()) {
     case Length::Type::Fixed:
-        return computeContentBoxWidth(width.value());
+        return adjustContentBoxWidth(width.value());
     case Length::Type::Percent:
         computePercentageReplacedWidth(width);
     default:
@@ -682,7 +697,7 @@ float BoxFrame::computeReplacedHeightUsing(const Length& height) const
 {
     switch(height.type()) {
     case Length::Type::Fixed:
-        return computeContentBoxHeight(height.value());
+        return adjustContentBoxHeight(height.value());
     case Length::Type::Percent:
         return computePercentageReplacedHeight(height);
     default:
@@ -694,7 +709,7 @@ float BoxFrame::computePercentageReplacedWidth(const Length& width) const
 {
     auto containerWidth = isPositioned() ? containingBlockWidthForPositioned(containingBox()) : containingBlockWidthForContent();
     if(containerWidth > 0)
-        return computeContentBoxWidth(width.calcMin(containerWidth));
+        return adjustContentBoxWidth(width.calcMin(containerWidth));
     return intrinsicWidth();
 }
 
@@ -705,13 +720,13 @@ float BoxFrame::computePercentageReplacedHeight(const Length& height) const
         cb = cb->containingBlock();
     if(cb->isPositioned() && cb->style()->height().isAuto() && !(cb->style()->top().isAuto() || cb->style()->bottom().isAuto())) {
         auto& block = to<BlockBox>(*cb);
-        auto availableHeight = block.computeContentBoxHeight(block.computeHeight() - block.borderPaddingHeight());
-        return computeContentBoxHeight(height.calc(availableHeight));
+        auto availableHeight = block.adjustContentBoxHeight(block.computeHeight() - block.borderPaddingHeight());
+        return adjustContentBoxHeight(height.calc(availableHeight));
     }
 
     if(isPositioned()) {
         auto availableHeight = containingBlockHeightForPositioned(cb);
-        return computeContentBoxHeight(height.calc(availableHeight));
+        return adjustContentBoxHeight(height.calc(availableHeight));
     }
 
     while(cb && !cb->isRootBox() && (cb->style()->height().isAuto() || cb->style()->height().isPercent())) {
@@ -724,7 +739,7 @@ float BoxFrame::computePercentageReplacedHeight(const Length& height) const
     }
 
     auto availableHeight = containingBlockHeightForContent();
-    return computeContentBoxHeight(height.calc(availableHeight));
+    return adjustContentBoxHeight(height.calc(availableHeight));
 }
 
 float BoxFrame::computeReplacedWidth() const
@@ -797,7 +812,7 @@ void BoxFrame::computeVerticalMargins(float& marginTop, float& marginBottom) con
 float BoxFrame::computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth, float y) const
 {
     if(!width.isAuto())
-        return computeBorderBoxWidth(width.calc(containerWidth));
+        return adjustBorderBoxWidth(width.calc(containerWidth));
     auto marginLeft = style()->marginLeft().calcMin(containerWidth);
     auto marginRight = style()->marginRight().calcMin(containerWidth);
     auto computedWidth = containerWidth - marginLeft - marginRight;
@@ -856,14 +871,14 @@ std::optional<float> BoxFrame::computePercentageHeight(const Length& height) con
 
     float availableHeight = 0;
     if(containerStyleHeight.isFixed()) {
-        availableHeight = container->computeContentBoxHeight(containerStyleHeight.value());
+        availableHeight = container->adjustContentBoxHeight(containerStyleHeight.value());
     } else if(container->isPositioned() && (!containerStyleHeight.isAuto() || (!containerStyleTop.isAuto() && !containerStyleBottom.isAuto()))) {
         availableHeight = container->computeHeight() - container->borderPaddingHeight();
     } else if(containerStyleHeight.isPercent()) {
         auto computedHeight = container->computePercentageHeight(containerStyleHeight);
         if(!computedHeight)
             return std::nullopt;
-        availableHeight = container->computeContentBoxHeight(*computedHeight);
+        availableHeight = container->adjustContentBoxHeight(*computedHeight);
     } else if(container->isRootBox()) {
         availableHeight = containerStyle->viewportHeight();
     } else {
@@ -914,17 +929,16 @@ void BoxFrame::computePositionedWidthUsing(const Length& widthLength, const BoxM
     const Length& leftLength, const Length& rightLength, const Length& marginLeftLength, const Length& marginRightLength,
     float& x, float& width, float& marginLeft, float& marginRight) const
 {
-    auto borderPaddingWidth = borderWidth() + paddingWidth();
     auto widthLenghtIsAuto = widthLength.isAuto();
     auto leftLenghtIsAuto = leftLength.isAuto();
     auto rightLenghtIsAuto = rightLength.isAuto();
 
     float leftLengthValue = 0;
     if(!widthLenghtIsAuto && !leftLenghtIsAuto && !rightLenghtIsAuto) {
-        width = computeContentBoxWidth(widthLength.calc(containerWidth));
+        width = adjustContentBoxWidth(widthLength.calc(containerWidth));
         leftLengthValue = leftLength.calc(containerWidth);
 
-        auto availableSpace = containerWidth - (leftLengthValue + width + borderPaddingWidth + rightLength.calc(containerWidth));
+        auto availableSpace = containerWidth - (leftLengthValue + width + borderPaddingWidth() + rightLength.calc(containerWidth));
         if(marginLeftLength.isAuto() && marginRightLength.isAuto()) {
             if(availableSpace >= 0) {
                 marginLeft = availableSpace / 2.f;
@@ -955,29 +969,29 @@ void BoxFrame::computePositionedWidthUsing(const Length& widthLength, const BoxM
         marginLeft = marginLeftLength.calcMin(containerWidth);
         marginRight = marginRightLength.calcMin(containerWidth);
 
-        auto availableSpace = containerWidth - (marginLeft + marginRight + borderPaddingWidth);
+        auto availableSpace = containerWidth - (marginLeft + marginRight + borderPaddingWidth());
         if(leftLenghtIsAuto && widthLenghtIsAuto && !rightLenghtIsAuto) {
             auto rightLengthValue = rightLength.calc(containerWidth);
-            auto preferredWidth = maxPreferredWidth() - borderPaddingWidth;
-            auto preferredMinWidth = minPreferredWidth() - borderPaddingWidth;
+            auto preferredWidth = maxPreferredWidth() - borderPaddingWidth();
+            auto preferredMinWidth = minPreferredWidth() - borderPaddingWidth();
             auto availableWidth = availableSpace - rightLengthValue;
             width = std::min(preferredWidth, std::max(preferredMinWidth, availableWidth));
             leftLengthValue = availableSpace - (width + rightLengthValue);
         } else if(!leftLenghtIsAuto && widthLenghtIsAuto && rightLenghtIsAuto) {
             auto leftLengthValue = leftLength.calc(containerWidth);
-            auto preferredWidth = maxPreferredWidth() - borderPaddingWidth;
-            auto preferredMinWidth = minPreferredWidth() - borderPaddingWidth;
+            auto preferredWidth = maxPreferredWidth() - borderPaddingWidth();
+            auto preferredMinWidth = minPreferredWidth() - borderPaddingWidth();
             auto availableWidth = availableSpace - leftLengthValue;
             width = std::min(preferredWidth, std::max(preferredMinWidth, availableWidth));
         } else if(leftLenghtIsAuto && !widthLenghtIsAuto && !rightLenghtIsAuto) {
-            width = computeContentBoxWidth(widthLength.calc(containerWidth));
+            width = adjustContentBoxWidth(widthLength.calc(containerWidth));
             leftLengthValue = availableSpace - (width + rightLength.calc(containerWidth));
         } else if(!leftLenghtIsAuto && widthLenghtIsAuto && !rightLenghtIsAuto) {
             leftLengthValue = leftLength.calc(containerWidth);
             width = availableSpace - (leftLengthValue + rightLength.calc(containerWidth));
         } else if (!leftLenghtIsAuto && !widthLenghtIsAuto && rightLenghtIsAuto) {
             leftLengthValue = leftLength.calc(containerWidth);
-            width = computeContentBoxWidth(widthLength.calc(containerWidth));
+            width = adjustContentBoxWidth(widthLength.calc(containerWidth));
         }
     }
 
@@ -1169,7 +1183,6 @@ void BoxFrame::computePositionedHeightUsing(const Length& heightLength, const Bo
     const Length& topLength, const Length& bottomLength, const Length& marginTopLength, const Length& marginBottomLength,
     float& y, float& height, float& marginTop, float& marginBottom) const
 {
-    auto borderPaddingHeight = borderHeight() + paddingHeight();
     auto heightLenghtIsAuto = heightLength.isAuto();
     auto topLenghtIsAuto = topLength.isAuto();
     auto bottomLenghtIsAuto = bottomLength.isAuto();
@@ -1181,14 +1194,14 @@ void BoxFrame::computePositionedHeightUsing(const Length& heightLength, const Bo
         heightLenghtIsAuto = true;
     } else {
         heightLengthValue = heightLength.calc(containerHeight);
-        heightLengthValue = computeContentBoxHeight(heightLengthValue);
+        heightLengthValue = adjustContentBoxHeight(heightLengthValue);
     }
 
     if(!topLenghtIsAuto && !heightLenghtIsAuto && !bottomLenghtIsAuto) {
         height = heightLengthValue;
         topLengthValue = topLength.calc(containerHeight);
 
-        auto availableSpace = containerHeight - (topLengthValue + height + borderPaddingHeight + bottomLength.calc(containerHeight));
+        auto availableSpace = containerHeight - (topLengthValue + height + borderPaddingHeight() + bottomLength.calc(containerHeight));
         if(marginTopLength.isAuto() && marginBottomLength.isAuto()) {
             marginTop = availableSpace / 2.f;
             marginBottom = availableSpace - marginTop;
@@ -1206,7 +1219,7 @@ void BoxFrame::computePositionedHeightUsing(const Length& heightLength, const Bo
         marginTop = marginTopLength.calcMin(containerHeight);
         marginBottom = marginBottomLength.calcMin(containerHeight);
 
-        auto availableSpace = containerHeight - (marginTop + marginBottom + borderPaddingHeight);
+        auto availableSpace = containerHeight - (marginTop + marginBottom + borderPaddingHeight());
         if(topLenghtIsAuto && heightLenghtIsAuto && !bottomLenghtIsAuto) {
             height = contentHeight;
             topLengthValue = availableSpace - (height + bottomLength.calc(containerHeight));

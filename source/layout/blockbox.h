@@ -19,8 +19,10 @@ public:
     void computePreferredWidths(float& minWidth, float& maxWidth) const override;
 
     const PositionedBoxList* positionedBoxes() const { return m_positionedBoxes.get(); }
+    bool containsPositonedBoxes() const { return m_positionedBoxes && !m_positionedBoxes->empty(); }
     void insertPositonedBox(BoxFrame* box);
     void removePositonedBox(BoxFrame* box);
+    void layoutPositionedBoxes();
 
     void addBox(Box* box) override;
 
@@ -30,7 +32,7 @@ public:
     float endOffsetForContent() const { return style()->isLeftToRightDirection() ? width() - rightOffsetForContent() : leftOffsetForContent(); }
     float availableWidthForContent() const { return std::max(0.f, rightOffsetForContent() - leftOffsetForContent()); }
 
-protected:
+private:
     std::unique_ptr<PositionedBoxList> m_positionedBoxes;
 };
 
@@ -106,7 +108,6 @@ public:
 
     void layoutBlockChildren();
     void layoutInlineChildren();
-    void layoutPositionedBoxes();
     void layout() override;
 
     Box* continuation() const { return m_continuation; }

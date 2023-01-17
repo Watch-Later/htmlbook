@@ -68,4 +68,24 @@ void InlineBox::addBox(Box* box)
     setContinuation(newBlock);
 }
 
+void InlineBox::computeMargins(float& top, float& bottom, float& left, float& right) const
+{
+    auto compute = [this](const auto& margin) {
+        float containerWidth = 0;
+        if(margin.isPercent())
+            containerWidth = containingBlockWidthForContent();
+        return margin.calcMin(containerWidth);
+    };
+
+    top = compute(style()->marginTop());
+    bottom = compute(style()->marginBottom());
+    left = compute(style()->marginLeft());
+    right = compute(style()->marginRight());
+}
+
+void InlineBox::updateMargins()
+{
+    computeMargins(m_marginTop, m_marginBottom, m_marginLeft, m_marginRight);
+}
+
 } // namespace htmlbook

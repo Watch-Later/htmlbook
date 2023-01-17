@@ -20,6 +20,9 @@ public:
     void removeLine(LineBox* line);
     const FlowLineBoxList& lines() const { return m_lines; }
 
+    void computeMargins(float& top, float& bottom, float& left, float& right) const;
+    void updateMargins();
+
 private:
     Box* m_continuation{nullptr};
     FlowLineBoxList m_lines;
