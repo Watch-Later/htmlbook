@@ -338,7 +338,7 @@ void BoxModel::addBox(Box* box)
     newTable->addBox(box);
 }
 
-void BoxModel::computeBorders(float& top, float& bottom, float& left, float& right) const
+void BoxModel::computeBorderWidths(float& top, float& bottom, float& left, float& right) const
 {
     switch(style()->borderTopStyle()) {
     case LineStyle::None:
@@ -381,7 +381,7 @@ void BoxModel::computeBorders(float& top, float& bottom, float& left, float& rig
     }
 }
 
-void BoxModel::computePaddings(float& top, float& bottom, float& left, float& right) const
+void BoxModel::computePaddingWidths(float& top, float& bottom, float& left, float& right) const
 {
     auto compute = [this](const auto& padding) {
         float containerWidth = 0;
@@ -396,14 +396,14 @@ void BoxModel::computePaddings(float& top, float& bottom, float& left, float& ri
     right = compute(style()->paddingRight());
 }
 
-void BoxModel::updateBorders() const
+void BoxModel::updateBorderWidths() const
 {
-    computeBorders(m_borderTop, m_borderBottom, m_borderLeft, m_borderRight);
+    computeBorderWidths(m_borderTop, m_borderBottom, m_borderLeft, m_borderRight);
 }
 
-void BoxModel::updatePaddings() const
+void BoxModel::updatePaddingWidths() const
 {
-    computePaddings(m_paddingTop, m_paddingBottom, m_paddingLeft, m_paddingRight);
+    computePaddingWidths(m_paddingTop, m_paddingBottom, m_paddingLeft, m_paddingRight);
 }
 
 float BoxModel::containingBlockWidthForContent() const
@@ -419,56 +419,56 @@ float BoxModel::containingBlockHeightForContent() const
 float BoxModel::borderTop() const
 {
     if(m_borderTop < 0)
-        updateBorders();
+        updateBorderWidths();
     return m_borderTop;
 }
 
 float BoxModel::borderBottom() const
 {
     if(m_borderBottom < 0)
-        updateBorders();
+        updateBorderWidths();
     return m_borderBottom;
 }
 
 float BoxModel::borderLeft() const
 {
     if(m_borderLeft < 0)
-        updateBorders();
+        updateBorderWidths();
     return m_borderLeft;
 }
 
 float BoxModel::borderRight() const
 {
     if(m_borderRight < 0)
-        updateBorders();
+        updateBorderWidths();
     return m_borderRight;
 }
 
 float BoxModel::paddingTop() const
 {
     if(m_paddingTop < 0)
-        updatePaddings();
+        updatePaddingWidths();
     return m_paddingTop;
 }
 
 float BoxModel::paddingBottom() const
 {
     if(m_paddingBottom < 0)
-        updatePaddings();
+        updatePaddingWidths();
     return m_paddingBottom;
 }
 
 float BoxModel::paddingLeft() const
 {
     if(m_paddingLeft < 0)
-        updatePaddings();
+        updatePaddingWidths();
     return m_paddingLeft;
 }
 
 float BoxModel::paddingRight() const
 {
     if(m_paddingRight < 0)
-        updatePaddings();
+        updatePaddingWidths();
     return m_paddingRight;
 }
 
@@ -546,8 +546,16 @@ float BoxFrame::availableHeightUsing(const Length& height) const
         return adjustContentBoxHeight(height.calc(availableHeight));
     }
 
-    if(isPositioned() && is<BlockBox>(*this) && style()->height().isAuto() && !(style()->top().isAuto() || style()->bottom().isAuto()))
-        return adjustContentBoxHeight(computeHeight() - borderPaddingHeight());
+    if(isPositioned() && is<BlockBox>(*this) && style()->height().isAuto() && !(style()->top().isAuto() || style()->bottom().isAuto())) {
+        auto& block = to<BlockBox>(*this);
+        float y = 0;
+        float computedHeight = block.height();
+        float marginTop = 0;
+        float marginBottom = 0;
+        block.computeHeight(y, computedHeight, marginTop, marginBottom);
+        return block.adjustContentBoxHeight(computedHeight - block.borderPaddingHeight());
+    }
+
     return containingBlockHeightForContent();
 }
 
@@ -596,11 +604,11 @@ bool BoxFrame::shrinkToAvoidFloats() const
     return false;
 }
 
-float BoxFrame::shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container, float y) const
+float BoxFrame::shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const
 {
-    auto availableWidth = container->availableWidthForLine(y, false) - marginLeft - marginRight;
+    auto availableWidth = container->availableWidthForLine(m_y, false) - marginLeft - marginRight;
     if(marginLeft > 0) {
-        auto lineStartOffset = container->startOffsetForLine(y, false);
+        auto lineStartOffset = container->startOffsetForLine(m_y, false);
         auto contentStartOffset = container->startOffsetForContent();
         auto marginStartOffset = contentStartOffset + marginLeft;
         if(lineStartOffset > marginStartOffset) {
@@ -611,7 +619,7 @@ float BoxFrame::shrinkWidthToAvoidFloats(float marginLeft, float marginRight, co
     }
 
     if(marginRight > 0) {
-        auto lineEndOffset = container->endOffsetForLine(y, false);
+        auto lineEndOffset = container->endOffsetForLine(m_y, false);
         auto contentEndOffset = container->endOffsetForContent();
         auto marginEndOffset = contentEndOffset + marginRight;
         if(lineEndOffset > marginEndOffset) {
@@ -626,7 +634,7 @@ float BoxFrame::shrinkWidthToAvoidFloats(float marginLeft, float marginRight, co
 
 void BoxFrame::updateWidth()
 {
-    computeWidth(m_x, m_width, m_marginLeft, m_marginRight, m_y);
+    computeWidth(m_x, m_width, m_marginLeft, m_marginRight);
 }
 
 void BoxFrame::updateHeight()
@@ -637,20 +645,6 @@ void BoxFrame::updateHeight()
 void BoxFrame::updateVerticalMargins()
 {
     computeVerticalMargins(m_marginTop, m_marginBottom);
-}
-
-float BoxFrame::computeWidth(float y) const
-{
-    float x = 0, width = 0, marginLeft = 0, marginRight = 0;
-    computeWidth(x, width, marginLeft, marginRight, y);
-    return width;
-}
-
-float BoxFrame::computeHeight(float height) const
-{
-    float y = 0, marginTop = 0, marginBottom = 0;
-    computeHeight(y, height, marginTop, marginBottom);
-    return height;
 }
 
 float BoxFrame::adjustBorderBoxWidth(float width) const
@@ -720,7 +714,12 @@ float BoxFrame::computePercentageReplacedHeight(const Length& height) const
         cb = cb->containingBlock();
     if(cb->isPositioned() && cb->style()->height().isAuto() && !(cb->style()->top().isAuto() || cb->style()->bottom().isAuto())) {
         auto& block = to<BlockBox>(*cb);
-        auto availableHeight = block.adjustContentBoxHeight(block.computeHeight() - block.borderPaddingHeight());
+        float y = 0;
+        float computedHeight = block.height();
+        float marginTop = 0;
+        float marginBottom = 0;
+        block.computeHeight(y, computedHeight, marginTop, marginBottom);
+        auto availableHeight = block.adjustContentBoxHeight(computedHeight - block.borderPaddingHeight());
         return adjustContentBoxHeight(height.calc(availableHeight));
     }
 
@@ -809,7 +808,7 @@ void BoxFrame::computeVerticalMargins(float& marginTop, float& marginBottom) con
     marginBottom = style()->marginBottom().calcMin(containerWidth);
 }
 
-float BoxFrame::computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth, float y) const
+float BoxFrame::computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth) const
 {
     if(!width.isAuto())
         return adjustBorderBoxWidth(width.calc(containerWidth));
@@ -831,7 +830,7 @@ float BoxFrame::computeWidthUsing(const Length& width, const BlockBox* container
 
     auto containerBlockFlow = to<BlockFlowBox>(container);
     if(containerBlockFlow && containerBlockFlow->containsFloats() && shrinkToAvoidFloats())
-        computedWidth = std::min(computedWidth, shrinkWidthToAvoidFloats(marginLeft, marginRight, containerBlockFlow, y));
+        computedWidth = std::min(computedWidth, shrinkWidthToAvoidFloats(marginLeft, marginRight, containerBlockFlow));
 
     if(adjustswidthtofitcontent()) {
         computedWidth = std::max(computedWidth, minPreferredWidth());
@@ -873,7 +872,12 @@ std::optional<float> BoxFrame::computePercentageHeight(const Length& height) con
     if(containerStyleHeight.isFixed()) {
         availableHeight = container->adjustContentBoxHeight(containerStyleHeight.value());
     } else if(container->isPositioned() && (!containerStyleHeight.isAuto() || (!containerStyleTop.isAuto() && !containerStyleBottom.isAuto()))) {
-        availableHeight = container->computeHeight() - container->borderPaddingHeight();
+        float y = 0;
+        float computedHeight = container->height();
+        float marginTop = 0;
+        float marginBottom = 0;
+        container->computeHeight(y, computedHeight, marginTop, marginBottom);
+        availableHeight = computedHeight - container->borderPaddingHeight();
     } else if(containerStyleHeight.isPercent()) {
         auto computedHeight = container->computePercentageHeight(containerStyleHeight);
         if(!computedHeight)
@@ -895,11 +899,11 @@ std::optional<float> BoxFrame::computePercentageHeight(const Length& height) con
     return std::max(0.f, computedHeight);
 }
 
-float BoxFrame::constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth, float y) const
+float BoxFrame::constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const
 {
     if(!style()->maxWidth().isNone())
-        width = std::min(width, computeWidthUsing(style()->maxWidth(), container, containerWidth, y));
-    return std::max(width, computeWidthUsing(style()->minWidth(), container, containerWidth, y));
+        width = std::min(width, computeWidthUsing(style()->maxWidth(), container, containerWidth));
+    return std::max(width, computeWidthUsing(style()->minWidth(), container, containerWidth));
 }
 
 float BoxFrame::constrainHeightByMinMax(float height) const
@@ -1378,7 +1382,7 @@ void BoxFrame::computePositionedHeight(float& y, float& height, float& marginTop
     height += borderPaddingHeight();
 }
 
-void BoxFrame::computeWidth(float& x, float& width, float& marginLeft, float& marginRight, float y) const
+void BoxFrame::computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const
 {
     if(isPositioned()) {
         computePositionedWidth(x, width, marginLeft, marginRight);
@@ -1405,8 +1409,8 @@ void BoxFrame::computeWidth(float& x, float& width, float& marginLeft, float& ma
     }
 
     if(!computeAsReplaced) {
-        width = computeWidthUsing(style()->width(), container, containerWidth, y);
-        width = constrainWidthByMinMax(width, container, containerWidth, y);
+        width = computeWidthUsing(style()->width(), container, containerWidth);
+        width = constrainWidthByMinMax(width, container, containerWidth);
     }
 
     computeHorizontalMargins(marginLeft, marginRight, width, container, containerWidth);

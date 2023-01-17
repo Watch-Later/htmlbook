@@ -68,7 +68,7 @@ void InlineBox::addBox(Box* box)
     setContinuation(newBlock);
 }
 
-void InlineBox::computeMargins(float& top, float& bottom, float& left, float& right) const
+void InlineBox::computeMarginWidths(float& top, float& bottom, float& left, float& right) const
 {
     auto compute = [this](const auto& margin) {
         float containerWidth = 0;
@@ -83,9 +83,9 @@ void InlineBox::computeMargins(float& top, float& bottom, float& left, float& ri
     right = compute(style()->marginRight());
 }
 
-void InlineBox::updateMargins()
+void InlineBox::updateMarginWidths()
 {
-    computeMargins(m_marginTop, m_marginBottom, m_marginLeft, m_marginRight);
+    computeMarginWidths(m_marginTop, m_marginBottom, m_marginLeft, m_marginRight);
 }
 
 } // namespace htmlbook

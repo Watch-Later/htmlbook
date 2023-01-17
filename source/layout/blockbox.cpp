@@ -766,8 +766,17 @@ float BlockFlowBox::getClearDelta(BoxFrame* child, float y) const
             auto availableWidth = availableWidthForLine(top, false);
             if(availableWidth == availableWidthForContent())
                 return top - y;
-            auto newWidth = child->computeWidth(top);
-            if(newWidth <= availableWidth)
+
+            auto childX = child->x();
+            auto childY = child->y();
+            auto childWidth = child->width();
+            auto childMarginLeft = child->marginLeft();
+            auto childMarginRight = child->marginRight();
+
+            child->setY(top);
+            child->computeWidth(childX, childWidth, childMarginLeft, childMarginRight);
+            child->setY(childY);
+            if(childWidth <= availableWidth)
                 return top - y;
             top = nextFloatBottom(top);
         }

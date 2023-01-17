@@ -156,11 +156,11 @@ public:
     void buildBox(BoxLayer* layer) override;
 
     virtual bool requiresLayer() const { return false; }
-    virtual void computeBorders(float& top, float& bottom, float& left, float& right) const;
-    virtual void computePaddings(float& top, float& bottom, float& left, float& right) const;
+    virtual void computeBorderWidths(float& top, float& bottom, float& left, float& right) const;
+    virtual void computePaddingWidths(float& top, float& bottom, float& left, float& right) const;
 
-    void updateBorders() const;
-    void updatePaddings() const;
+    void updateBorderWidths() const;
+    void updatePaddingWidths() const;
 
     float containingBlockWidthForContent() const;
     float containingBlockHeightForContent() const;
@@ -278,17 +278,11 @@ public:
     float containingBlockHeightForPositioned(const BoxModel* containingBox) const;
 
     bool shrinkToAvoidFloats() const;
-    float shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container, float y) const;
+    float shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const;
 
     void updateWidth();
     void updateHeight();
     void updateVerticalMargins();
-
-    float computeWidth(float y) const;
-    float computeHeight(float height) const;
-
-    float computeWidth() const { return computeWidth(m_y); }
-    float computeHeight() const { return computeHeight(m_height); }
 
     float adjustBorderBoxWidth(float width) const;
     float adjustBorderBoxHeight(float height) const;
@@ -307,11 +301,11 @@ public:
     void computeHorizontalMargins(float& marginLeft, float& marginRight, float childWidth, const BlockBox* container, float containerWidth) const;
     void computeVerticalMargins(float& marginTop, float& marginBottom) const;
 
-    float computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth, float y) const;
+    float computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth) const;
     std::optional<float> computeHeightUsing(const Length& height) const;
     std::optional<float> computePercentageHeight(const Length& height) const;
 
-    float constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth, float y) const;
+    float constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const;
     float constrainHeightByMinMax(float height) const;
 
     void computePositionedWidthUsing(const Length& widthLength, const BoxModel* container, TextDirection containerDirection, float containerWidth,
@@ -328,7 +322,7 @@ public:
     void computePositionedHeightReplaced(float& y, float& height, float& marginTop, float& marginBottom) const;
     void computePositionedHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
 
-    virtual void computeWidth(float& x, float& width, float& marginLeft, float& marginRight, float y) const;
+    virtual void computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const;
     virtual void computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
 
     virtual bool isSelfCollapsingBlock() const { return false; }
