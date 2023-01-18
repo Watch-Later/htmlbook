@@ -8,6 +8,7 @@ namespace htmlbook {
 
 class Node;
 class BoxLayer;
+class BoxModel;
 class BlockBox;
 class BlockFlowBox;
 
@@ -280,10 +281,6 @@ public:
     bool shrinkToAvoidFloats() const;
     float shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const;
 
-    void updateWidth();
-    void updateHeight();
-    void updateVerticalMargins();
-
     float adjustBorderBoxWidth(float width) const;
     float adjustBorderBoxHeight(float height) const;
     float adjustContentBoxWidth(float width) const;
@@ -324,6 +321,10 @@ public:
 
     virtual void computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const;
     virtual void computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
+
+    void updateWidth();
+    void updateHeight();
+    void updateVerticalMargins();
 
     virtual bool isSelfCollapsingBlock() const { return false; }
 

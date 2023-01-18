@@ -288,6 +288,7 @@ BoxModel::BoxModel(Node* node, const RefPtr<BoxStyle>& style)
 
     switch(style->position()) {
     case Position::Static:
+    case Position::Relative:
         setPositioned(false);
         break;
     default:
@@ -630,21 +631,6 @@ float BoxFrame::shrinkWidthToAvoidFloats(float marginLeft, float marginRight, co
     }
 
     return availableWidth;
-}
-
-void BoxFrame::updateWidth()
-{
-    computeWidth(m_x, m_width, m_marginLeft, m_marginRight);
-}
-
-void BoxFrame::updateHeight()
-{
-    computeHeight(m_y, m_height, m_marginTop, m_marginBottom);
-}
-
-void BoxFrame::updateVerticalMargins()
-{
-    computeVerticalMargins(m_marginTop, m_marginBottom);
 }
 
 float BoxFrame::adjustBorderBoxWidth(float width) const
@@ -1448,6 +1434,21 @@ void BoxFrame::computeHeight(float& y, float& height, float& marginTop, float& m
     }
 
     computeVerticalMargins(marginTop, marginBottom);
+}
+
+void BoxFrame::updateWidth()
+{
+    computeWidth(m_x, m_width, m_marginLeft, m_marginRight);
+}
+
+void BoxFrame::updateHeight()
+{
+    computeHeight(m_y, m_height, m_marginTop, m_marginBottom);
+}
+
+void BoxFrame::updateVerticalMargins()
+{
+    computeVerticalMargins(m_marginTop, m_marginBottom);
 }
 
 float BoxFrame::maxMarginTop(bool positive) const

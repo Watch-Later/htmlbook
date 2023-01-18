@@ -110,11 +110,12 @@ public:
     void layoutInlineChildren();
     void layout() override;
 
+    LineLayout* lineLayout() const { return m_lineLayout.get(); }
     Box* continuation() const { return m_continuation; }
     void setContinuation(Box* continuation) { m_continuation = continuation; }
 
     const RefPtr<BoxStyle>& firstLineStyle() const { return m_firstLineStyle; }
-    void setFirstLineStyle(RefPtr<BoxStyle> firstLineStyle);
+    void setFirstLineStyle(RefPtr<BoxStyle> firstLineStyle) { m_firstLineStyle = std::move(firstLineStyle); }
 
     void buildIntrudingFloats();
     void buildOverhangingFloats();
@@ -150,16 +151,13 @@ public:
     void removeFloatingBox(BoxFrame* box);
 
     void addBox(Box* box) override;
-
-    void addLine(std::unique_ptr<RootLineBox> line);
-    void removeLine(LineBox* line);
-    const RootLineBoxList& lines() const { return m_lines; }
+    void buildBox(BoxLayer* layer) override;
 
 private:
     Box* m_continuation{nullptr};
+    std::unique_ptr<LineLayout> m_lineLayout;
     std::unique_ptr<FloatingBoxList> m_floatingBoxes;
     RefPtr<BoxStyle> m_firstLineStyle;
-    RootLineBoxList m_lines;
 
     float m_maxPositiveMarginTop{0};
     float m_maxNegativeMarginTop{0};

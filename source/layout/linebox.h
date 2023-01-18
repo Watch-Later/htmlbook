@@ -62,13 +62,14 @@ class TextBox;
 
 class TextLineBox final : public LineBox {
 public:
-    TextLineBox(TextBox* box, std::string text);
+    static std::unique_ptr<TextLineBox> create(TextBox* box, std::string text);
 
     bool isTextLineBox() const final { return true; }
 
     const std::string& text() const { return m_text; }
 
 private:
+    TextLineBox(TextBox* box, std::string text);
     std::string m_text;
 };
 
@@ -83,9 +84,12 @@ class BoxFrame;
 
 class ReplacedLineBox final : public LineBox {
 public:
-    ReplacedLineBox(BoxFrame* box);
+    static std::unique_ptr<ReplacedLineBox> create(BoxFrame* box);
 
     bool isReplacedLineBox() const final { return true; }
+
+private:
+    ReplacedLineBox(BoxFrame* box);
 };
 
 template<>
@@ -99,7 +103,7 @@ class BoxModel;
 
 class FlowLineBox : public LineBox {
 public:
-    FlowLineBox(BoxModel* box);
+    static std::unique_ptr<FlowLineBox> create(BoxModel* box);
 
     bool isFlowLineBox() const final { return true; }
 
@@ -114,7 +118,8 @@ public:
     float borderLeft() const { return 0; }
     float borderRight() const { return 0; }
 
-private:
+protected:
+    FlowLineBox(BoxModel* box);
     LineBox* m_firstLine{nullptr};
     LineBox* m_lastLine{nullptr};
 };
@@ -130,9 +135,12 @@ class BlockFlowBox;
 
 class RootLineBox final : public FlowLineBox {
 public:
-    RootLineBox(BlockFlowBox* box);
+    static std::unique_ptr<RootLineBox> create(BlockFlowBox* box);
 
     bool isRootLineBox() const final { return true; }
+
+private:
+    RootLineBox(BlockFlowBox* box);
 };
 
 template<>
@@ -141,6 +149,24 @@ struct is_a<RootLineBox> {
 };
 
 using RootLineBoxList = std::pmr::vector<std::unique_ptr<RootLineBox>>;
+
+class LineLayout : public HeapMember {
+public:
+    static std::unique_ptr<LineLayout> create(BlockFlowBox* box);
+
+    BlockFlowBox* box() const { return m_box; }
+    const RootLineBoxList& lines() const { return m_lines; }
+
+    void computePreferredWidths(float& minWidth, float& maxWidth) const;
+
+    void build();
+    void layout();
+
+private:
+    LineLayout(BlockFlowBox* box);
+    BlockFlowBox* m_box;
+    RootLineBoxList m_lines;
+};
 
 } // htmlbook
 

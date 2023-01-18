@@ -205,7 +205,6 @@ BlockFlowBox::~BlockFlowBox() = default;
 
 BlockFlowBox::BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
-    , m_lines(style->heap())
 {
     setChildrenInline(true);
 }
@@ -214,6 +213,9 @@ void BlockFlowBox::computeInlinePreferredWidths(float& minWidth, float& maxWidth
 {
     minWidth = 0;
     maxWidth = 0;
+    if(m_lineLayout) {
+        m_lineLayout->computePreferredWidths(minWidth, maxWidth);
+    }
 }
 
 class MarginInfo {
@@ -425,6 +427,9 @@ void BlockFlowBox::layoutBlockChildren()
 
 void BlockFlowBox::layoutInlineChildren()
 {
+    if(m_lineLayout) {
+        m_lineLayout->layout();
+    }
 }
 
 void BlockFlowBox::layout()
@@ -446,11 +451,6 @@ void BlockFlowBox::layout()
     updateHeight();
     buildOverhangingFloats();
     layoutPositionedBoxes();
-}
-
-void BlockFlowBox::setFirstLineStyle(RefPtr<BoxStyle> firstLineStyle)
-{
-    m_firstLineStyle = std::move(firstLineStyle);
 }
 
 void BlockFlowBox::buildIntrudingFloats()
@@ -830,6 +830,16 @@ void BlockFlowBox::addBox(Box* box)
     }
 
     BlockBox::addBox(box);
+}
+
+void BlockFlowBox::buildBox(BoxLayer* layer)
+{
+    if(isChildrenInline()) {
+        m_lineLayout = LineLayout::create(this);
+        m_lineLayout->build();
+    }
+
+    BoxFrame::buildBox(layer);
 }
 
 } // namespace htmlbook
