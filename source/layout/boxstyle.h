@@ -230,25 +230,16 @@ enum class AlignContent : uint8_t {
     Center,
     SpaceBetween,
     SpaceAround,
-    SpaceEvenly,
     Stretch
 };
 
 enum class AlignItems : uint8_t {
-    FlexStart,
-    FlexEnd,
-    Center,
-    Stretch,
-    Baseline
-};
-
-enum class AlignSelf : uint8_t {
     Auto,
     FlexStart,
     FlexEnd,
     Center,
-    Stretch,
-    Baseline
+    Baseline,
+    Stretch
 };
 
 enum class ColumnSpan : uint8_t {
@@ -555,7 +546,7 @@ public:
     AlignContent justifyContent() const;
     AlignContent alignContent() const;
     AlignItems alignItems() const;
-    AlignSelf alignSelf() const;
+    AlignItems alignSelf() const;
 
     float outlineOffset() const;
     Color outlineColor() const;
@@ -628,6 +619,7 @@ public:
     static FontStyle convertFontStyle(const CSSValue& value);
     static FontVariant convertFontVariant(const CSSValue& value);
     static AlignContent convertAlignContent(const CSSValue& value);
+    static AlignItems convertAlignItems(const CSSValue& value);
     static int convertInteger(const CSSValue& value);
     static std::optional<int> convertIntegerOrAuto(const CSSValue& value);
     static float convertNumber(const CSSValue& value);

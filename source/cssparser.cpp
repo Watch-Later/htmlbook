@@ -844,7 +844,7 @@ void CSSParser::addProperty(CSSPropertyList& properties, CSSPropertyID id, bool 
             value = CSSNumberValue::create(m_heap, 1.0);
             break;
         case CSSPropertyID::FlexBasis:
-            value = CSSLengthValue::create(m_heap, 0.0, CSSLengthValue::Unit::None);
+            value = CSSPercentValue::create(m_heap, 0.0);
             break;
         default:
             value = CSSInitialValue::create();
@@ -2791,15 +2791,25 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
         return consumeIdent(input, table);
     }
 
-    case CSSPropertyID::AlignContent:
     case CSSPropertyID::JustifyContent: {
         static const idententry_t table[] = {
             {"flex-start", CSSValueID::FlexStart},
             {"flex-end", CSSValueID::FlexEnd},
             {"center", CSSValueID::Center},
             {"space-between", CSSValueID::SpaceBetween},
+            {"space-around", CSSValueID::SpaceAround}
+        };
+
+        return consumeIdent(input, table);
+    }
+
+    case CSSPropertyID::AlignContent: {
+        static const idententry_t table[] = {
+            {"flex-start", CSSValueID::FlexStart},
+            {"flex-end", CSSValueID::FlexEnd},
+            {"center", CSSValueID::Center},
+            {"space-between", CSSValueID::SpaceBetween},
             {"space-around", CSSValueID::SpaceAround},
-            {"space-evenly", CSSValueID::SpaceEvenly},
             {"stretch", CSSValueID::Stretch}
         };
 
@@ -2811,8 +2821,8 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"flex-start", CSSValueID::FlexStart},
             {"flex-end", CSSValueID::FlexEnd},
             {"center", CSSValueID::Center},
-            {"stretch", CSSValueID::Stretch},
-            {"baseline", CSSValueID::Baseline}
+            {"baseline", CSSValueID::Baseline},
+            {"stretch", CSSValueID::Stretch}
         };
 
         return consumeIdent(input, table);
@@ -2824,8 +2834,8 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
             {"flex-start", CSSValueID::FlexStart},
             {"flex-end", CSSValueID::FlexEnd},
             {"center", CSSValueID::Center},
-            {"stretch", CSSValueID::Stretch},
-            {"baseline", CSSValueID::Baseline}
+            {"baseline", CSSValueID::Baseline},
+            {"stretch", CSSValueID::Stretch}
         };
 
         return consumeIdent(input, table);
@@ -2842,9 +2852,7 @@ bool CSSParser::consumeFlex(CSSTokenStream& input, CSSPropertyList& properties, 
     RefPtr<CSSValue> shrink;
     RefPtr<CSSValue> basis;
     for(int index = 0; index < 3; ++index) {
-        if(input->type() == CSSToken::Type::Ident) {
-            if(!equals(input->data(), "none", false))
-                return false;
+        if(input->type() == CSSToken::Type::Ident && equals(input->data(), "none", false)) {
             grow = CSSNumberValue::create(m_heap, 0.0);
             shrink = CSSNumberValue::create(m_heap, 0.0);
             basis = CSSIdentValue::create(CSSValueID::Auto);

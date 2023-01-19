@@ -811,7 +811,7 @@ float BoxFrame::computeWidthUsing(const Length& width, const BlockBox* container
             return true;
         if(style()->marginLeft().isAuto() || style()->marginRight().isAuto())
             return true;
-        return !(style()->alignSelf() == AlignSelf::Stretch || (style()->alignSelf() == AlignSelf::Auto && parentStyle->alignItems() == AlignItems::Stretch));
+        return !(style()->alignSelf() == AlignItems::Stretch || (style()->alignSelf() == AlignItems::Auto && parentStyle->alignItems() == AlignItems::Stretch));
     };
 
     auto containerBlockFlow = to<BlockFlowBox>(container);
