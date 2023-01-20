@@ -771,8 +771,6 @@ enum class CSSPropertyID {
     OutlineWidth,
     Overflow,
     OverflowWrap,
-    OverflowX,
-    OverflowY,
     Padding,
     PaddingBottom,
     PaddingLeft,

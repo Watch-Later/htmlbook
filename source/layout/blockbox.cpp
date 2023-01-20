@@ -17,6 +17,15 @@ BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
         setReplaced(false);
         break;
     }
+
+    switch(style->overflow()) {
+    case Overflow::Visible:
+        setOverflowHidden(false);
+        break;
+    default:
+        setOverflowHidden(true);
+        break;
+    }
 }
 
 void BlockBox::computeInlinePreferredWidths(float& minWidth, float& maxWidth) const
@@ -379,7 +388,7 @@ void BlockFlowBox::layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo)
         marginInfo.setAtTopOfBlock(false);
 
     float startOffset = 0;
-    if(child->avoidsFloats() && containsFloats())
+    if(containsFloats() && child->avoidsFloats())
         startOffset = startOffsetForLine(child->y(), false);
 
     auto childStyle = child->style();
@@ -486,7 +495,7 @@ void BlockFlowBox::buildIntrudingFloats()
         yOffset -= prevBlock->y();
     }
 
-    if(prevBlock->containsFloats() && prevBlock->floatBottom() > yOffset) {
+    if(prevBlock->floatBottom() > yOffset) {
         addIntrudingFloats(prevBlock, xOffset, yOffset);
     }
 }

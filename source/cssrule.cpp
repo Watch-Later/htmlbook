@@ -379,15 +379,6 @@ CSSShorthand CSSShorthand::longhand(CSSPropertyID id)
         return CSSShorthand(data, std::size(data));
     }
 
-    case CSSPropertyID::Overflow: {
-        static const CSSPropertyID data[] = {
-            CSSPropertyID::OverflowX,
-            CSSPropertyID::OverflowY
-        };
-
-        return CSSShorthand(data, std::size(data));
-    }
-
     case CSSPropertyID::TextDecoration: {
         static const CSSPropertyID data[] = {
             CSSPropertyID::TextDecorationLine,
@@ -532,8 +523,6 @@ CSSPropertyID csspropertyid(const std::string_view& name)
         {"outline-width", CSSPropertyID::OutlineWidth},
         {"overflow", CSSPropertyID::Overflow},
         {"overflow-wrap", CSSPropertyID::OverflowWrap},
-        {"overflow-x", CSSPropertyID::OverflowX},
-        {"overflow-y", CSSPropertyID::OverflowY},
         {"padding", CSSPropertyID::Padding},
         {"padding-bottom", CSSPropertyID::PaddingBottom},
         {"padding-left", CSSPropertyID::PaddingLeft},

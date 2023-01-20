@@ -1149,11 +1149,8 @@ void BoxStyle::set(CSSPropertyID id, RefPtr<CSSValue> value)
     case CSSPropertyID::Clear:
         m_clear = convertClear(*value);
         break;
-    case CSSPropertyID::OverflowX:
-        m_overflowX = convertOverflow(*value);
-        break;
-    case CSSPropertyID::OverflowY:
-        m_overflowY = convertOverflow(*value);
+    case CSSPropertyID::Overflow:
+        m_overflow = convertOverflow(*value);
         break;
     case CSSPropertyID::Visibility:
         m_visibility = convertVisibility(*value);
@@ -1213,11 +1210,8 @@ void BoxStyle::remove(CSSPropertyID id)
     case CSSPropertyID::Clear:
         m_clear = Clear::None;
         break;
-    case CSSPropertyID::OverflowX:
-        m_overflowX = Overflow::Visible;
-        break;
-    case CSSPropertyID::OverflowY:
-        m_overflowY = Overflow::Visible;
+    case CSSPropertyID::Overflow:
+        m_overflow = Overflow::Visible;
         break;
     case CSSPropertyID::Visibility:
         m_visibility = Visibility::Visible;
@@ -1634,10 +1628,6 @@ Overflow BoxStyle::convertOverflow(const CSSValue& value)
         return Overflow::Hidden;
     case CSSValueID::Scroll:
         return Overflow::Scroll;
-    case CSSValueID::Overlay:
-        return Overflow::Overlay;
-    case CSSValueID::Clip:
-        return Overflow::Clip;
     default:
         assert(false);
     }

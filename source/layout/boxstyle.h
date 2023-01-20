@@ -57,9 +57,7 @@ enum class Overflow : uint8_t {
     Auto,
     Visible,
     Hidden,
-    Scroll,
-    Overlay,
-    Clip
+    Scroll
 };
 
 enum class LineStyle : uint8_t {
@@ -451,8 +449,7 @@ public:
     Float floating() const;
     Position position() const { return m_position; }
     Clear clear() const { return m_clear; }
-    Overflow overflowX() const { return m_overflowX; }
-    Overflow overflowY() const { return m_overflowY; }
+    Overflow overflow() const { return m_overflow; }
     Visibility visibility() const { return m_visibility; }
     const Color& color() const { return m_color; }
 
@@ -567,7 +564,7 @@ public:
     bool isLeftToRightDirection() const { return m_direction == TextDirection::Ltr; }
     bool isColumnFlexDirection() const { return flexDirection() == FlexDirection::Column || flexDirection() == FlexDirection::ColumnReverse; }
     bool isReverseFlexDirection() const { return flexDirection() == FlexDirection::RowReverse || flexDirection() == FlexDirection::ColumnReverse; }
-    bool isOverflowVisible() const { return m_overflowX == Overflow::Visible && m_overflowY == Overflow::Visible; }
+    bool isOverflowVisible() const { return m_overflow == Overflow::Visible; }
     bool isClearLeft() const { return m_clear == Clear::Left || m_clear == Clear::Both; }
     bool isClearRight() const { return m_clear == Clear::Right || m_clear == Clear::Both; }
     bool hasTransform() const;
@@ -638,8 +635,7 @@ private:
     Position m_position{Position::Static};
     Float m_floating{Float::None};
     Clear m_clear{Clear::None};
-    Overflow m_overflowX{Overflow::Visible};
-    Overflow m_overflowY{Overflow::Visible};
+    Overflow m_overflow{Overflow::Visible};
     Visibility m_visibility{Visibility::Visible};
     BoxSizing m_boxSizing{BoxSizing::ContentBox};
     TextDirection m_direction{TextDirection::Ltr};

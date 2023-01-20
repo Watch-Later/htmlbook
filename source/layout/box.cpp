@@ -277,25 +277,6 @@ BoxLayer::BoxLayer(BoxModel* box, BoxLayer* parent)
 BoxModel::BoxModel(Node* node, const RefPtr<BoxStyle>& style)
     : Box(node, style)
 {
-    switch(style->floating()) {
-    case Float::None:
-        setFloating(false);
-        break;
-    default:
-        setFloating(true);
-        break;
-    }
-
-    switch(style->position()) {
-    case Position::Static:
-    case Position::Relative:
-        setPositioned(false);
-        break;
-    default:
-        setPositioned(true);
-        break;
-    }
-
     switch(style->display()) {
     case Display::Inline:
     case Display::InlineBlock:
@@ -477,7 +458,24 @@ BoxFrame::BoxFrame(Node* node, const RefPtr<BoxStyle>& style)
     : BoxModel(node, style)
 {
     setHasTransform(style->hasTransform());
-    setOverflowHidden(!style->isOverflowVisible());
+    switch(style->position()) {
+    case Position::Static:
+    case Position::Relative:
+        setPositioned(false);
+        break;
+    default:
+        setPositioned(true);
+        break;
+    }
+
+    switch(style->floating()) {
+    case Float::None:
+        setFloating(false);
+        break;
+    default:
+        setFloating(true);
+        break;
+    }
 }
 
 bool BoxFrame::avoidsFloats() const

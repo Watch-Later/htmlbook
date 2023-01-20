@@ -796,7 +796,6 @@ bool CSSParser::consumeDeclaractionValue(CSSTokenStream& input, CSSPropertyList&
     case CSSPropertyID::BorderStyle:
     case CSSPropertyID::BorderWidth:
         return consume4Shorthand(input, properties, id, important);
-    case CSSPropertyID::Overflow:
     case CSSPropertyID::BorderSpacing:
         return consume2Shorthand(input, properties, id, important);
     case CSSPropertyID::Background:
@@ -2486,15 +2485,12 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
         return consumeIdent(input, table);
     }
 
-    case CSSPropertyID::OverflowX:
-    case CSSPropertyID::OverflowY: {
+    case CSSPropertyID::Overflow: {
         static const idententry_t table[] = {
             {"auto", CSSValueID::Auto},
             {"visible", CSSValueID::Visible},
             {"hidden", CSSValueID::Hidden},
-            {"scroll", CSSValueID::Scroll},
-            {"overlay", CSSValueID::Overlay},
-            {"clip", CSSValueID::Clip}
+            {"scroll", CSSValueID::Scroll}
         };
 
         return consumeIdent(input, table);

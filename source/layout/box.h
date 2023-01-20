@@ -79,21 +79,21 @@ public:
     bool isBody() const;
     bool isRootBox() const { return !m_parentBox; }
     bool isAnonymous() const { return m_anonymous; }
-    bool isReplaced() const { return m_replaced; }
+    bool isChildrenInline() const { return m_childrenInline; }
     bool isInline() const { return m_inline; }
+    bool isReplaced() const { return m_replaced; }
     bool isFloating() const { return m_floating; }
     bool isPositioned() const { return m_positioned; }
     bool isFloatingOrPositioned() const { return m_floating || m_positioned; }
-    bool isChildrenInline() const { return m_childrenInline; }
     bool isOverflowHidden() const { return m_overflowHidden; }
     bool hasTransform() const { return m_hasTransform; }
 
     void setAnonymous(bool value) { m_anonymous = value; }
-    void setReplaced(bool value) { m_replaced = value; }
+    void setChildrenInline(bool value) { m_childrenInline = value; }
     void setInline(bool value) { m_inline = value; }
+    void setReplaced(bool value) { m_replaced = value; }
     void setFloating(bool value) { m_floating = value; }
     void setPositioned(bool value) { m_positioned = value; }
-    void setChildrenInline(bool value) { m_childrenInline = value; }
     void setOverflowHidden(bool value) { m_overflowHidden = value; }
     void setHasTransform(bool value) { m_hasTransform = value; }
 
@@ -111,11 +111,11 @@ private:
     Box* m_firstBox{nullptr};
     Box* m_lastBox{nullptr};
     bool m_anonymous{false};
-    bool m_replaced{false};
+    bool m_childrenInline{true};
     bool m_inline{true};
+    bool m_replaced{false};
     bool m_floating{false};
     bool m_positioned{false};
-    bool m_childrenInline{true};
     bool m_overflowHidden{false};
     bool m_hasTransform{false};
 };
