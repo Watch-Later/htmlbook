@@ -147,6 +147,7 @@ public:
     float maxNegativeMarginTop() const { return m_maxNegativeMarginTop; }
     float maxPositiveMarginBottom() const { return m_maxPositiveMarginBottom; }
     float maxNegativeMarginBottom() const { return m_maxNegativeMarginBottom; }
+    void updateMaxMargins();
 
     const FloatingBoxList* floatingBoxes() const { return m_floatingBoxes.get(); }
     void insertFloatingBox(BoxFrame* box);

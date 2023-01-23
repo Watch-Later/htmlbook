@@ -68,6 +68,16 @@ void TableBox::addBox(Box* box)
     newSection->addBox(box);
 }
 
+TableCellBox::TableCellBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BlockFlowBox(node, style)
+{
+}
+
+TableCaptionBox::TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style)
+    : BlockFlowBox(node, style), m_captionSide(style->captionSide())
+{
+}
+
 TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
     : Box(node, style)
 {
@@ -114,11 +124,6 @@ void TableRowBox::addBox(Box* box)
     newCell->addBox(box);
 }
 
-TableCellBox::TableCellBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BlockFlowBox(node, style)
-{
-}
-
 TableColumnBox::TableColumnBox(Node* node, const RefPtr<BoxStyle>& style)
     : Box(node, style)
 {
@@ -132,11 +137,6 @@ TableColumnGroupBox::TableColumnGroupBox(Node* node, const RefPtr<BoxStyle>& sty
 void TableColumnGroupBox::addBox(Box* box)
 {
     appendChild(box);
-}
-
-TableCaptionBox::TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BlockFlowBox(node, style), m_captionSide(style->captionSide())
-{
 }
 
 } // namespace htmlbook

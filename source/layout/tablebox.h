@@ -61,6 +61,11 @@ private:
     int m_rowSpan{1};
 };
 
+template<>
+struct is_a<TableCellBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::TableCell); }
+};
+
 class TableCaptionBox final : public BlockFlowBox {
 public:
     TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style);
@@ -111,11 +116,6 @@ public:
 template<>
 struct is_a<TableRowBox> {
     static bool check(const Box& box) { return box.isOfType(Box::Type::TableRow); }
-};
-
-template<>
-struct is_a<TableCellBox> {
-    static bool check(const Box& box) { return box.isOfType(Box::Type::TableCell); }
 };
 
 class TableColumnBox : public Box {

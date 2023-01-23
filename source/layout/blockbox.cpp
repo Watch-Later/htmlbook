@@ -462,12 +462,7 @@ void BlockFlowBox::layout()
 {
     updateWidth();
     buildIntrudingFloats();
-    if(!isTableCellBox()) {
-        m_maxPositiveMarginTop = std::max(0.f, m_marginTop);
-        m_maxNegativeMarginTop = std::max(0.f, -m_marginTop);
-        m_maxPositiveMarginBottom = std::max(0.f, m_marginBottom);
-        m_maxNegativeMarginBottom = std::max(0.f, -m_marginBottom);
-    }
+    updateMaxMargins();
 
     if(isChildrenInline())
         layoutInlineChildren();
@@ -801,6 +796,16 @@ float BlockFlowBox::getClearDelta(BoxFrame* child, float y) const
     }
 
     return delta;
+}
+
+void BlockFlowBox::updateMaxMargins()
+{
+    if(isTableCellBox())
+        return;
+    m_maxPositiveMarginTop = std::max(0.f, m_marginTop);
+    m_maxNegativeMarginTop = std::max(0.f, -m_marginTop);
+    m_maxPositiveMarginBottom = std::max(0.f, m_marginBottom);
+    m_maxNegativeMarginBottom = std::max(0.f, -m_marginBottom);
 }
 
 void BlockFlowBox::insertFloatingBox(BoxFrame* box)
