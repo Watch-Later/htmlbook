@@ -11,6 +11,8 @@ public:
     ListItemBox(Node* node, const RefPtr<BoxStyle>& style);
 
     bool isOfType(Type type) const final { return type == Type::ListItem || BlockFlowBox::isOfType(type); }
+
+    const char* name() const final { return "ListItemBox"; }
 };
 
 template<>
@@ -23,6 +25,8 @@ public:
     InsideListMarkerBox(const RefPtr<BoxStyle>& style);
 
     bool isOfType(Type type) const final { return type == Type::InsideListMarker || InlineBox::isOfType(type); }
+
+    const char* name() const final { return "InsideListMarkerBox"; }
 };
 
 template<>
@@ -35,6 +39,8 @@ public:
     OutsideListMarkerBox(const RefPtr<BoxStyle>& style);
 
     bool isOfType(Type type) const final { return type == Type::OutsideListMarker || BlockFlowBox::isOfType(type); }
+
+    const char* name() const final { return "OutsideListMarkerBox"; }
 };
 
 template<>

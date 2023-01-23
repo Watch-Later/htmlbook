@@ -4,7 +4,6 @@
 #include "listitembox.h"
 #include "replacedbox.h"
 #include "tablebox.h"
-#include "textbox.h"
 
 namespace htmlbook {
 
@@ -37,8 +36,10 @@ Box::~Box()
 
 void Box::buildBox(BoxLayer* layer)
 {
-    for(auto box = firstBox(); box; box = box->nextBox()) {
-        box->buildBox(layer);
+    auto child = m_firstBox;
+    while(child) {
+        child->buildBox(layer);
+        child = child->nextBox();
     }
 }
 
@@ -198,12 +199,12 @@ BlockFlowBox* Box::createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle)
 BoxModel* Box::containingBox() const
 {
     auto parent = parentBox();
-    if(!is<TextBox>(*this)) {
+    if(!isTextBox()) {
         if(position() == Position::Fixed)
             return containingBlockFixed();
         if(position() == Position::Absolute) {
             while(parent && parent->position() == Position::Static) {
-                if(parent->isRootBox() || (parent->hasTransform() && is<BlockBox>(*parent)))
+                if(parent->isBoxView() || (parent->hasTransform() && parent->isBlockBox()))
                     break;
                 parent = parent->parentBox();
             }
@@ -215,7 +216,7 @@ BoxModel* Box::containingBox() const
 
 BlockBox* Box::containingBlock() const
 {
-    if(!is<TextBox>(*this)) {
+    if(!isTextBox()) {
         if(position() == Position::Fixed)
             return containingBlockFixed();
         if(position() == Position::Absolute) {
@@ -224,7 +225,7 @@ BlockBox* Box::containingBlock() const
     }
 
     auto parent = parentBox();
-    while(parent && ((parent->isInline() && !parent->isReplaced()) || !is<BlockBox>(*parent)))
+    while(parent && ((parent->isInline() && !parent->isReplaced()) || !parent->isBlockBox()))
         parent = parent->parentBox();
     return to<BlockBox>(parent);
 }
@@ -232,7 +233,7 @@ BlockBox* Box::containingBlock() const
 BlockBox* Box::containingBlockFixed() const
 {
     auto parent = parentBox();
-    while(parent && !(parent->isRootBox() || (parent->hasTransform() && is<BlockBox>(*parent))))
+    while(parent && !(parent->isBoxView() || (parent->hasTransform() && parent->isBlockBox())))
         parent = parent->parentBox();
     return to<BlockBox>(parent);
 }
@@ -241,12 +242,12 @@ BlockBox* Box::containingBlockAbsolute() const
 {
     auto parent = parentBox();
     while(parent && parent->position() == Position::Static) {
-        if(parent->isRootBox() || (parent->hasTransform() && is<BlockBox>(*parent)))
+        if(parent->isBoxView() || (parent->hasTransform() && parent->isBlockBox()))
             break;
         parent = parent->parentBox();
     }
 
-    if(parent && !is<BlockBox>(*parent))
+    if(parent && !parent->isBlockBox())
         parent = parent->containingBox();
     while(parent && parent->isAnonymous())
         parent = parent->containingBox();
@@ -256,6 +257,16 @@ BlockBox* Box::containingBlockAbsolute() const
 bool Box::isBody() const
 {
     return m_node && m_node->tagName() == bodyTag;
+}
+
+bool Box::isRootBox() const
+{
+    return m_node && m_node->isRootNode();
+}
+
+bool Box::isFlexItem() const
+{
+    return m_parentBox && m_parentBox->isFlexibleBox();
 }
 
 std::unique_ptr<BoxLayer> BoxLayer::create(BoxModel* box, BoxLayer* parent)
@@ -302,15 +313,15 @@ void BoxModel::buildBox(BoxLayer* layer)
 
 void BoxModel::addBox(Box* box)
 {
-    if(!is<TableCellBox>(box) && !is<TableRowBox>(box)
-        && !is<TableCaptionBox>(box) && !is<TableColumnBox>(box)
-        && !is<TableSectionBox>(box)) {
+    if(!box->isTableCellBox() && !box->isTableRowBox()
+        && !box->isTableCaptionBox() && !box->isTableColumnBox()
+        && !box->isTableSectionBox()) {
         appendChild(box);
         return;
     }
 
     auto lastChild = lastBox();
-    if(lastChild && lastChild->isAnonymous() && is<TableBox>(lastChild)) {
+    if(lastChild && lastChild->isAnonymous() && lastChild->isTableBox()) {
         lastChild->addBox(box);
         return;
     }
@@ -478,18 +489,6 @@ BoxFrame::BoxFrame(Node* node, const RefPtr<BoxStyle>& style)
     }
 }
 
-bool BoxFrame::avoidsFloats() const
-{
-    return isReplaced() || isOverflowHidden() || is<FlexibleBox>(parentBox());
-}
-
-void BoxFrame::layout()
-{
-    for(auto box = firstBox(); box; box = box->nextBox()) {
-        box->layout();
-    }
-}
-
 void BoxFrame::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
     minWidth = 0;
@@ -532,20 +531,24 @@ float BoxFrame::intrinsicHeight() const
 float BoxFrame::availableHeightUsing(const Length& height) const
 {
     if(height.isFixed())
-        adjustContentBoxHeight(height.value());
+        return adjustContentBoxHeight(height.value());
 
-    if(isRootBox())
+    if(isBoxView())
         return style()->viewportHeight();
 
-    if(is<TableCellBox>(*this) && (height.isAuto() || height.isPercent()))
-        return overrideHeight() - borderPaddingHeight();
+    if(isTableCellBox() && (height.isAuto() || height.isPercent())) {
+        if(hasOverrideHeight())
+            return overrideHeight();
+        return m_height - borderPaddingHeight();
+    }
 
     if(height.isPercent()) {
         auto availableHeight = containingBlockHeightForContent();
         return adjustContentBoxHeight(height.calc(availableHeight));
     }
 
-    if(isPositioned() && is<BlockBox>(*this) && style()->height().isAuto() && !(style()->top().isAuto() || style()->bottom().isAuto())) {
+    if(isPositioned() && isBlockBox() && style()->height().isAuto()
+        && !(style()->top().isAuto() || style()->bottom().isAuto())) {
         auto& block = to<BlockBox>(*this);
         float y = 0;
         float computedHeight = block.height();
@@ -600,7 +603,9 @@ float BoxFrame::containingBlockHeightForPositioned(const BoxModel* containingBox
 
 bool BoxFrame::shrinkToAvoidFloats() const
 {
-    return false;
+    if(isInline() || isFloating() || !avoidsFloats())
+        return false;
+    return style()->width().isAuto();
 }
 
 float BoxFrame::shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const
@@ -629,6 +634,30 @@ float BoxFrame::shrinkWidthToAvoidFloats(float marginLeft, float marginRight, co
     }
 
     return availableWidth;
+}
+
+bool BoxFrame::adjustToFitContent() const
+{
+    if(isFloating() || (isReplaced() && isInline() && isBlockBox()))
+        return true;
+    if(!isFlexItem())
+        return false;
+    auto parentStyle = parentBox()->style();
+    if(!parentStyle->isColumnFlexDirection() || parentStyle->flexWrap() != FlexWrap::Nowrap)
+        return true;
+    if(style()->marginLeft().isAuto() || style()->marginRight().isAuto())
+        return true;
+    return !(style()->alignSelf() == AlignItems::Stretch || (style()->alignSelf() == AlignItems::Auto && parentStyle->alignItems() == AlignItems::Stretch));
+}
+
+float BoxFrame::adjustWidthToFitContent(float width) const
+{
+    if(adjustToFitContent()) {
+        width = std::max(width, minPreferredWidth());
+        width = std::min(width, maxPreferredWidth());
+    }
+
+    return width;
 }
 
 float BoxFrame::adjustBorderBoxWidth(float width) const
@@ -696,7 +725,8 @@ float BoxFrame::computePercentageReplacedHeight(const Length& height) const
     auto cb = isPositioned() ? containingBox() : containingBlock();
     while(cb->isAnonymous())
         cb = cb->containingBlock();
-    if(cb->isPositioned() && cb->style()->height().isAuto() && !(cb->style()->top().isAuto() || cb->style()->bottom().isAuto())) {
+    if(cb->isPositioned() && cb->style()->height().isAuto()
+        && !(cb->style()->top().isAuto() || cb->style()->bottom().isAuto())) {
         auto& block = to<BlockBox>(*cb);
         float y = 0;
         float computedHeight = block.height();
@@ -712,8 +742,8 @@ float BoxFrame::computePercentageReplacedHeight(const Length& height) const
         return adjustContentBoxHeight(height.calc(availableHeight));
     }
 
-    while(cb && !cb->isRootBox() && (cb->style()->height().isAuto() || cb->style()->height().isPercent())) {
-        if(is<TableCellBox>(*cb)) {
+    while(cb && !cb->isBoxView() && (cb->style()->height().isAuto() || cb->style()->height().isPercent())) {
+        if(cb->isTableCellBox()) {
             auto availableHeight = std::max(intrinsicHeight(), containingBlockHeightForContent());
             return height.calc(availableHeight - borderPaddingHeight());
         }
@@ -781,7 +811,7 @@ void BoxFrame::computeHorizontalMargins(float& marginLeft, float& marginRight, f
 
 void BoxFrame::computeVerticalMargins(float& marginTop, float& marginBottom) const
 {
-    if(is<TableCellBox>(*this)) {
+    if(isTableCellBox()) {
         marginTop = 0;
         marginBottom = 0;
         return;
@@ -799,29 +829,10 @@ float BoxFrame::computeWidthUsing(const Length& width, const BlockBox* container
     auto marginLeft = style()->marginLeft().calcMin(containerWidth);
     auto marginRight = style()->marginRight().calcMin(containerWidth);
     auto computedWidth = containerWidth - marginLeft - marginRight;
-    auto adjustswidthtofitcontent = [this]() -> bool {
-        if(isFloating() || (isReplaced() && isInline() && is<BlockBox>(*this)))
-            return true;
-        if(!is<FlexibleBox>(*parentBox()))
-            return false;
-        auto parentStyle = parentBox()->style();
-        if(!parentStyle->isColumnFlexDirection() || parentStyle->flexWrap() != FlexWrap::Nowrap)
-            return true;
-        if(style()->marginLeft().isAuto() || style()->marginRight().isAuto())
-            return true;
-        return !(style()->alignSelf() == AlignItems::Stretch || (style()->alignSelf() == AlignItems::Auto && parentStyle->alignItems() == AlignItems::Stretch));
-    };
-
     auto containerBlockFlow = to<BlockFlowBox>(container);
     if(containerBlockFlow && containerBlockFlow->containsFloats() && shrinkToAvoidFloats())
         computedWidth = std::min(computedWidth, shrinkWidthToAvoidFloats(marginLeft, marginRight, containerBlockFlow));
-
-    if(adjustswidthtofitcontent()) {
-        computedWidth = std::max(computedWidth, minPreferredWidth());
-        computedWidth = std::min(computedWidth, maxPreferredWidth());
-    }
-
-    return computedWidth;
+    return adjustWidthToFitContent(computedWidth);
 }
 
 std::optional<float> BoxFrame::computeHeightUsing(const Length& height) const
@@ -838,7 +849,7 @@ std::optional<float> BoxFrame::computeHeightUsing(const Length& height) const
 
 std::optional<float> BoxFrame::computePercentageHeight(const Length& height) const
 {
-    if(is<TableCellBox>(*this)) {
+    if(isTableCellBox()) {
         if(!hasOverrideHeight())
             return std::nullopt;
         auto computedHeight = height.calc(overrideHeight());
@@ -867,27 +878,30 @@ std::optional<float> BoxFrame::computePercentageHeight(const Length& height) con
         if(!computedHeight)
             return std::nullopt;
         availableHeight = container->adjustContentBoxHeight(*computedHeight);
-    } else if(container->isRootBox()) {
+    } else if(container->isBoxView()) {
         availableHeight = containerStyle->viewportHeight();
     } else {
         return std::nullopt;
     }
 
-    auto computedHeight = height.calc(availableHeight);
-    if(is<TableBox>(*this)) {
+    if(isTableBox()) {
         if(isPositioned())
-            computedHeight += paddingHeight();
+            availableHeight += paddingHeight();
+        auto computedHeight = height.calc(availableHeight);
         computedHeight -= borderPaddingHeight();
+        return std::max(0.f, computedHeight);
     }
 
-    return std::max(0.f, computedHeight);
+    return height.calc(availableHeight);
 }
 
 float BoxFrame::constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const
 {
-    if(!style()->maxWidth().isNone())
-        width = std::min(width, computeWidthUsing(style()->maxWidth(), container, containerWidth));
-    return std::max(width, computeWidthUsing(style()->minWidth(), container, containerWidth));
+    auto minWidthLength = style()->minWidth();
+    auto maxWidthLength = style()->maxWidth();
+    if(!maxWidthLength.isNone())
+        width = std::min(width, computeWidthUsing(maxWidthLength, container, containerWidth));
+    return std::max(width, adjustBorderBoxWidth(minWidthLength.calcMin(containerWidth)));
 }
 
 float BoxFrame::constrainHeightByMinMax(float height) const
@@ -901,7 +915,7 @@ float BoxFrame::constrainHeightByMinMax(float height) const
 
 static float computePositionedLeftOffset(float left, float marginLeft, const BoxModel* container, TextDirection containerDirection)
 {
-    if(containerDirection == TextDirection::Rtl && is<InlineBox>(*container)) {
+    if(containerDirection == TextDirection::Rtl && container->isInlineBox()) {
         auto& lines = to<InlineBox>(*container).lines();
         if(lines.size() > 1) {
             auto& firstLine = *lines.front();
@@ -1149,7 +1163,7 @@ void BoxFrame::computePositionedWidth(float& x, float& width, float& marginLeft,
         }
     }
 
-    if(!minWidthLength.isZero()) {
+    if(minWidthLength.isAuto() || !minWidthLength.isZero()) {
         float minX = 0;
         float minWidth = 0;
         float minMarginLeft = 0;
@@ -1177,7 +1191,7 @@ void BoxFrame::computePositionedHeightUsing(const Length& heightLength, const Bo
 
     float topLengthValue = 0;
     float heightLengthValue = 0;
-    if(is<TableBox>(*this)) {
+    if(isTableBox()) {
         heightLengthValue = contentHeight;
         heightLenghtIsAuto = true;
     } else {
@@ -1348,7 +1362,7 @@ void BoxFrame::computePositionedHeight(float& y, float& height, float& marginTop
         }
     }
 
-    if(!minHeightLength.isZero()) {
+    if(minHeightLength.isAuto() || !minHeightLength.isZero()) {
         float minY = 0;
         float minHeight = 0;
         float minMarginTop = 0;
@@ -1373,18 +1387,18 @@ void BoxFrame::computeWidth(float& x, float& width, float& marginLeft, float& ma
         return;
     }
 
-    if(hasOverrideWidth() && is<FlexibleBox>(*parentBox())) {
+    if(hasOverrideWidth() && isFlexItem()) {
         width = overrideWidth() + borderPaddingWidth();
         return;
     }
 
-    auto computeAsReplaced = isReplaced() && !(isInline() && is<BlockBox>(*this));
+    auto computeAsReplaced = isReplaced() && !(isInline() && isBlockBox());
     if(computeAsReplaced)
         width = computeReplacedWidth() + borderPaddingWidth();
 
     auto container = containingBlock();
     auto containerWidth = std::max(0.f, container->availableWidth());
-    if(isInline() && !(isReplaced() && is<BlockBox>(*this))) {
+    if(isInline() && !(isReplaced() && isBlockBox())) {
         if(computeAsReplaced)
             width = std::max(width, minPreferredWidth());
         marginLeft = style()->marginLeft().calcMin(containerWidth);
@@ -1398,7 +1412,7 @@ void BoxFrame::computeWidth(float& x, float& width, float& marginLeft, float& ma
     }
 
     computeHorizontalMargins(marginLeft, marginRight, width, container, containerWidth);
-    if(containerWidth && !(containerWidth == (width + marginLeft + marginRight)) && !isInline() && !isFloating() && !is<FlexibleBox>(*this)) {
+    if(containerWidth && !(containerWidth == (width + marginLeft + marginRight)) && !isInline() && !isFloating() && !isFlexibleBox()) {
         if(style()->isLeftToRightDirection() == container->style()->isLeftToRightDirection()) {
             marginRight = containerWidth - width - marginLeft;
         } else {
@@ -1409,21 +1423,21 @@ void BoxFrame::computeWidth(float& x, float& width, float& marginLeft, float& ma
 
 void BoxFrame::computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const
 {
-    if(is<TableCellBox>(*this) || (isInline() && !isReplaced()))
+    if(isTableCellBox() || (isInline() && !isReplaced()))
         return;
     if(isPositioned()) {
         computePositionedHeight(y, height, marginTop, marginBottom);
         return;
     }
 
-    if(is<TableBox>(*this)) {
+    if(isTableBox()) {
         computeVerticalMargins(marginTop, marginBottom);
         return;
     }
 
-    if(hasOverrideHeight() && is<FlexibleBox>(*parentBox())) {
+    if(hasOverrideHeight() && isFlexItem()) {
         height = overrideHeight() + borderPaddingHeight();
-    } else if(isReplaced() && !(isInline() && is<BlockBox>(*this))) {
+    } else if(isReplaced() && !(isInline() && isBlockBox())) {
         height = computeReplacedHeight() + borderPaddingHeight();
     } else {
         if(auto computedHeight = computeHeightUsing(style()->height()))

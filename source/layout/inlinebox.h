@@ -23,6 +23,8 @@ public:
     void computeMarginWidths(float& top, float& bottom, float& left, float& right) const;
     void updateMarginWidths();
 
+    const char* name() const override { return "InlineBox"; }
+
 private:
     Box* m_continuation{nullptr};
     FlowLineBoxList m_lines;

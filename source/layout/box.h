@@ -37,10 +37,11 @@ public:
     Box(Node* node, const RefPtr<BoxStyle>& style);
 
     virtual ~Box();
+    virtual bool isOfType(Type type) const { return false; }
     virtual bool isBoxModel() const { return false; }
     virtual bool isBoxFrame() const { return false; }
-    virtual bool isOfType(Type type) const { return false; }
-    virtual bool avoidsFloats() const { return false; }
+    virtual bool isBoxView() const { return false; }
+    virtual bool avoidsFloats() const { return true; }
 
     virtual void addBox(Box* box);
     virtual void buildBox(BoxLayer* layer);
@@ -77,7 +78,27 @@ public:
     BlockBox* containingBlockAbsolute() const;
 
     bool isBody() const;
-    bool isRootBox() const { return !m_parentBox; }
+    bool isRootBox() const;
+    bool isFlexItem() const;
+
+    bool isTextBox() const { return isOfType(Type::Text); }
+    bool isInlineBox() const { return isOfType(Type::Inline); }
+    bool isBlockBox() const { return isOfType(Type::Block); }
+    bool isBlockFlowBox() const { return isOfType(Type::BlockFlow); }
+    bool isFlexibleBox() const { return isOfType(Type::Flexible); }
+    bool isReplacedBox() const { return isOfType(Type::Replaced); }
+    bool isImageBox() const { return isOfType(Type::Image); }
+    bool isListItemBox() const { return isOfType(Type::ListItem); }
+    bool isInsideListMarkerBox() const { return isOfType(Type::InsideListMarker); }
+    bool isOutsideListMarkerBox() const { return isOfType(Type::OutsideListMarker); }
+    bool isTableBox() const { return isOfType(Type::Table); }
+    bool isTableCellBox() const { return isOfType(Type::TableCell); }
+    bool isTableColumnBox() const { return isOfType(Type::TableColumn); }
+    bool isTableColumnGroupBox() const { return isOfType(Type::TableColumnGroup); }
+    bool isTableRowBox() const { return isOfType(Type::TableRow); }
+    bool isTableCaptionBox() const { return isOfType(Type::TableCaption); }
+    bool isTableSectionBox() const { return isOfType(Type::TableSection); }
+
     bool isAnonymous() const { return m_anonymous; }
     bool isChildrenInline() const { return m_childrenInline; }
     bool isInline() const { return m_inline; }
@@ -101,6 +122,8 @@ public:
     Document* document() const { return m_style->document(); }
     Display display() const { return m_style->display(); }
     Position position() const { return m_style->position(); }
+
+    virtual const char* name() const { return "Box"; }
 
 private:
     Node* m_node;
@@ -182,6 +205,11 @@ public:
     float paddingWidth() const { return paddingLeft() + paddingRight(); }
     float paddingHeight() const { return paddingTop() + paddingBottom(); }
 
+    float borderPaddingTop() const { return borderTop() + paddingTop(); }
+    float borderPaddingBottom() const { return borderBottom() + paddingBottom(); }
+    float borderPaddingLeft() const { return borderLeft() + paddingLeft(); }
+    float borderPaddingRight() const { return borderRight() + paddingRight(); }
+
     float borderPaddingWidth() const { return borderWidth() + paddingWidth(); }
     float borderPaddingHeight() const { return borderHeight() + paddingHeight(); }
 
@@ -196,6 +224,8 @@ public:
     void setMarginRight(float value) { m_marginRight = value; }
 
     BoxLayer* layer() const { return m_layer.get(); }
+
+    const char* name() const override { return "BoxModel"; }
 
 private:
     std::unique_ptr<BoxLayer> m_layer;
@@ -227,9 +257,6 @@ public:
     BoxFrame(Node* node, const RefPtr<BoxStyle>& style);
 
     bool isBoxFrame() const final { return true; }
-    bool avoidsFloats() const override;
-
-    void layout() override;
 
     ReplacedLineBox* line() const { return m_line.get(); }
     void setLine(std::unique_ptr<ReplacedLineBox> line) { m_line = std::move(line); }
@@ -280,6 +307,9 @@ public:
 
     bool shrinkToAvoidFloats() const;
     float shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const;
+
+    bool adjustToFitContent() const;
+    float adjustWidthToFitContent(float width) const;
 
     float adjustBorderBoxWidth(float width) const;
     float adjustBorderBoxHeight(float height) const;
@@ -332,6 +362,8 @@ public:
     float maxMarginBottom(bool positive) const;
     float collapsedMarginTop() const;
     float collapsedMarginBottom() const;
+
+    const char* name() const override { return "BoxFrame"; }
 
 private:
     std::unique_ptr<ReplacedLineBox> m_line;

@@ -25,6 +25,8 @@ public:
     virtual bool isElementNode() const { return false; }
     virtual bool isDocumentNode() const { return false; }
 
+    bool isRootNode() const;
+
     const GlobalString& tagName() const;
     const GlobalString& namespaceUri() const;
 
@@ -229,25 +231,34 @@ public:
     RefPtr<ImageResource> fetchImageResource(const std::string_view& url);
     RefPtr<FontResource> fetchFontResource(const std::string_view& url);
 
-    Element* rootElement() const;
-    RefPtr<BoxStyle> rootStyle() const;
     const CSSStyleSheet& styleSheet() const { return m_styleSheet; }
+    Element* rootElement() const { return m_rootElement; }
+    RefPtr<BoxStyle> rootStyle() const;
+
+    void finishParsingChildren() override;
 
     virtual float viewportWidth() const = 0;
     virtual float viewportHeight() const = 0;
 
+    Box* createBox(const RefPtr<BoxStyle>& style) override;
     void buildBox(Counters& counters, Box* parent) override;
     void build();
 
 private:
     template<typename ResourceType>
     RefPtr<ResourceType> fetchResource(const std::string_view& url);
-    Heap* m_heap;
+    Element* m_rootElement{nullptr};
     Url m_baseUrl;
+    Heap* m_heap;
     std::pmr::map<HeapString, Element*> m_idCache;
     std::pmr::map<Url, RefPtr<Resource>> m_resourceCache;
     CSSStyleSheet m_styleSheet;
 };
+
+inline bool Node::isRootNode() const
+{
+    return this == m_document->rootElement();
+}
 
 template<>
 struct is_a<Document> {

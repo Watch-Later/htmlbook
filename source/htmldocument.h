@@ -140,8 +140,6 @@ public:
 
     bool load(const std::string_view& content) final;
 
-    Box* createBox(const RefPtr<BoxStyle>& style) final;
-
     float viewportWidth() const final;
     float viewportHeight() const final;
 

@@ -457,11 +457,6 @@ bool HTMLDocument::load(const std::string_view& content)
     return HTMLParser(this, content).parse();
 }
 
-Box* HTMLDocument::createBox(const RefPtr<BoxStyle>& style)
-{
-    return new (heap()) BlockBox(this, style);
-}
-
 float HTMLDocument::viewportWidth() const
 {
     return m_book->viewportWidth();

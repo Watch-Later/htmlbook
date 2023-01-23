@@ -32,6 +32,8 @@ public:
     float endOffsetForContent() const { return style()->isLeftToRightDirection() ? width() - rightOffsetForContent() : leftOffsetForContent(); }
     float availableWidthForContent() const { return std::max(0.f, rightOffsetForContent() - leftOffsetForContent()); }
 
+    const char* name() const override { return "BlockBox"; }
+
 private:
     std::unique_ptr<PositionedBoxList> m_positionedBoxes;
 };
@@ -95,8 +97,8 @@ public:
     BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style);
 
     bool isOfType(Type type) const override { return type == Type::BlockFlow || BlockBox::isOfType(type); }
-
-    bool isSelfCollapsingBlock() const override { return false; }
+    bool avoidsFloats() const override;
+    bool isSelfCollapsingBlock() const override;
 
     void computeInlinePreferredWidths(float& minWidth, float& maxWidth) const override;
 
@@ -119,7 +121,7 @@ public:
 
     void buildIntrudingFloats();
     void buildOverhangingFloats();
-    void addIntrudingFloats(BlockFlowBox* prevBlock, float xOffset, float yOffset);
+    void addIntrudingFloats(BlockFlowBox* prevBlock, float offsetX, float offsetY);
     void addOverhangingFloats(BlockFlowBox* childBlock);
     void positionNewFloats();
     bool containsFloat(Box* box) const;
@@ -152,6 +154,8 @@ public:
 
     void addBox(Box* box) override;
     void buildBox(BoxLayer* layer) override;
+
+    const char* name() const override { return "BlockFlowBox"; }
 
 private:
     Box* m_continuation{nullptr};

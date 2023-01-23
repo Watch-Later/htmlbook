@@ -40,7 +40,7 @@ void TableBox::buildBox(BoxLayer* layer)
                 m_columns.push_back(column);
             }
         } else {
-            assert(is<TableCaptionBox>(child));
+            assert(child->isTableCaptionBox());
             auto caption = to<TableCaptionBox>(child);
             m_captions.push_back(caption);
         }
@@ -51,14 +51,14 @@ void TableBox::buildBox(BoxLayer* layer)
 
 void TableBox::addBox(Box* box)
 {
-    if(is<TableCaptionBox>(box) || is<TableColumnBox>(box)
-        || is<TableSectionBox>(box)) {
+    if(box->isTableCaptionBox() || box->isTableColumnBox()
+        || box->isTableSectionBox()) {
         appendChild(box);
         return;
     }
 
     auto lastChild = lastBox();
-    if(lastChild && lastChild->isAnonymous() && is<TableSectionBox>(lastChild)) {
+    if(lastChild && lastChild->isAnonymous() && lastChild->isTableSectionBox()) {
         lastChild->addBox(box);
         return;
     }
@@ -75,13 +75,13 @@ TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableSectionBox::addBox(Box* box)
 {
-    if(is<TableRowBox>(box)) {
+    if(box->isTableRowBox()) {
         appendChild(box);
         return;
     }
 
     auto lastChild = lastBox();
-    if(lastChild && lastChild->isAnonymous() && is<TableRowBox>(lastChild)) {
+    if(lastChild && lastChild->isAnonymous() && lastChild->isTableRowBox()) {
         lastChild->addBox(box);
         return;
     }
@@ -98,13 +98,13 @@ TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
 
 void TableRowBox::addBox(Box* box)
 {
-    if(is<TableCellBox>(box)) {
+    if(box->isTableCellBox()) {
         appendChild(box);
         return;
     }
 
     auto lastChild = lastBox();
-    if(lastChild && lastChild->isAnonymous() && is<TableCellBox>(lastChild)) {
+    if(lastChild && lastChild->isAnonymous() && lastChild->isTableCellBox()) {
         lastChild->addBox(box);
         return;
     }

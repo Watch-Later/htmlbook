@@ -1,15 +1,16 @@
 target_sources(htmlbook
 PRIVATE
-    "${CMAKE_CURRENT_LIST_DIR}/layout/blockbox.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/layout/box.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/layout/boxstyle.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/layout/box.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/layout/boxview.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/layout/linebox.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/layout/flexiblebox.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/layout/inlinebox.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/layout/listitembox.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/layout/replacedbox.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/layout/tablebox.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/layout/textbox.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/layout/inlinebox.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/layout/replacedbox.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/layout/blockbox.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/layout/flexiblebox.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/layout/listitembox.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/layout/tablebox.cpp"
 
     "${CMAKE_CURRENT_LIST_DIR}/cssparser.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/cssrule.cpp"

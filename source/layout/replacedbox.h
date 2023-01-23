@@ -17,6 +17,8 @@ public:
     void setIntrinsicWidth(float width) { m_intrinsicWidth = width; }
     void setIntrinsicHeight(float height) { m_intrinsicHeight = height; }
 
+    const char* name() const override { return "ReplacedBox"; }
+
 private:
     float m_intrinsicWidth{0};
     float m_intrinsicHeight{0};
@@ -40,6 +42,8 @@ public:
 
     void setImage(RefPtr<Image> image);
     void setAlternativeText(const HeapString& text) { m_alternativeText = text; }
+
+    const char* name() const final { return "ImageBox"; }
 
 private:
     RefPtr<Image> m_image;

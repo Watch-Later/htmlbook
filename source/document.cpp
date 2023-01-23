@@ -4,6 +4,7 @@
 #include "resource.h"
 #include "counters.h"
 #include "textbox.h"
+#include "boxview.h"
 
 namespace htmlbook {
 
@@ -444,16 +445,24 @@ RefPtr<FontResource> Document::fetchFontResource(const std::string_view& url)
     return fetchResource<FontResource>(url);
 }
 
-Element* Document::rootElement() const
-{
-    return nullptr;
-}
-
 RefPtr<BoxStyle> Document::rootStyle() const
 {
-    if(auto element = rootElement())
-        return element->style();
+    if(m_rootElement)
+        m_rootElement->style();
     return style();
+}
+
+void Document::finishParsingChildren()
+{
+    auto child = firstChild();
+    while(child && !is<Element>(*child))
+        child = child->nextSibling();
+    m_rootElement = to<Element>(child);
+}
+
+Box* Document::createBox(const RefPtr<BoxStyle>& style)
+{
+    return new (m_heap) BoxView(this, style);
 }
 
 void Document::buildBox(Counters& counters, Box* parent)

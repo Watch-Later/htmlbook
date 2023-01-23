@@ -18,6 +18,8 @@ public:
     void removeLine(LineBox* line);
     const TextLineBoxList& lines() const { return m_lines; }
 
+    const char* name() const override { return "TextBox"; }
+
 private:
     HeapString m_text;
     TextLineBoxList m_lines;
