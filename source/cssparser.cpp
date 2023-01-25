@@ -2847,37 +2847,36 @@ bool CSSParser::consumeFlex(CSSTokenStream& input, CSSPropertyList& properties, 
     RefPtr<CSSValue> grow;
     RefPtr<CSSValue> shrink;
     RefPtr<CSSValue> basis;
-    for(int index = 0; index < 3; ++index) {
-        if(input->type() == CSSToken::Type::Ident && equals(input->data(), "none", false)) {
-            grow = CSSNumberValue::create(m_heap, 0.0);
-            shrink = CSSNumberValue::create(m_heap, 0.0);
-            basis = CSSIdentValue::create(CSSValueID::Auto);
-            input.consumeIncludingWhitespace();
+    if(input->type() == CSSToken::Type::Ident && equals(input->data(), "none", false)) {
+        grow = CSSNumberValue::create(m_heap, 0.0);
+        shrink = CSSNumberValue::create(m_heap, 0.0);
+        basis = CSSIdentValue::create(CSSValueID::Auto);
+        input.consumeIncludingWhitespace();
+    } else {
+        for(int index = 0; index < 3; ++index) {
+            if(input->type() == CSSToken::Type::Number) {
+                if(input->number() < 0.0)
+                    return false;
+                if(grow == nullptr)
+                    grow = CSSNumberValue::create(m_heap, input->number());
+                else if(shrink == nullptr)
+                    shrink = CSSNumberValue::create(m_heap, input->number());
+                else if(input->number() == 0.0)
+                    basis = CSSLengthValue::create(m_heap, 0.0, CSSLengthValue::Unit::None);
+                else
+                    return false;
+                input.consumeIncludingWhitespace();
+                continue;
+            }
+
+            if(basis == nullptr && (basis = consumeLengthOrPercentOrAuto(input, false, false))) {
+                if(index == 1 && !input.empty())
+                    return false;
+                continue;
+            }
+
             break;
         }
-
-        if(input->type() == CSSToken::Type::Number) {
-            if(input->number() < 0.0)
-                return false;
-            if(grow == nullptr)
-                grow = CSSNumberValue::create(m_heap, input->number());
-            else if(shrink == nullptr)
-                shrink = CSSNumberValue::create(m_heap, input->number());
-            else if(input->number() == 0.0)
-                basis = CSSLengthValue::create(m_heap, 0.0, CSSLengthValue::Unit::None);
-            else
-                return false;
-            input.consumeIncludingWhitespace();
-            continue;
-        }
-
-        if(basis == nullptr && (basis = consumeLengthOrPercentOrAuto(input, false, false))) {
-            if(index == 1 && !input.empty())
-                return false;
-            continue;
-        }
-
-        break;
     }
 
     if(!input.empty())
@@ -2903,7 +2902,7 @@ bool CSSParser::consumeBackground(CSSTokenStream& input, CSSPropertyList& proper
         if(position == nullptr && (position = consumeBackgroundPosition(input))) {
             if(input->type() == CSSToken::Type::Delim && input->delim() == '/') {
                 input.consumeIncludingWhitespace();
-                if(size = consumeBackgroundSize(input))
+                if(size == nullptr && (size = consumeBackgroundSize(input)))
                     continue;
                 return false;
             }

@@ -11,7 +11,7 @@ public:
 
     bool isOfType(Type type) const final { return type == Type::Flexible || BlockBox::isOfType(type); }
 
-    void computeBlockPreferredWidths(float& minWidth, float& maxWidth) const final;
+    void computeIntrinsicWidths(float& minWidth, float& maxWidth) const final;
 
     const char* name() const final { return "FlexibleBox"; }
 };

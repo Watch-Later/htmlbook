@@ -493,7 +493,7 @@ BackgroundBox BoxStyle::backgroundOrigin() const
 
 BackgroundBox BoxStyle::backgroundClip() const
 {
-    auto value = get(CSSPropertyID::BackgroundOrigin);
+    auto value = get(CSSPropertyID::BackgroundClip);
     if(value == nullptr)
         return BackgroundBox::BorderBox;
     return convertBackgroundBox(*value);

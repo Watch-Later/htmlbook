@@ -258,6 +258,9 @@ public:
 
     bool isBoxFrame() const final { return true; }
 
+    BoxFrame* firstBoxFrame() const;
+    BoxFrame* nextBoxFrame() const;
+
     ReplacedLineBox* line() const { return m_line.get(); }
     void setLine(std::unique_ptr<ReplacedLineBox> line) { m_line = std::move(line); }
 
@@ -384,6 +387,16 @@ template<>
 struct is_a<BoxFrame> {
     static bool check(const Box& box) { return box.isBoxFrame(); }
 };
+
+inline BoxFrame* BoxFrame::firstBoxFrame() const
+{
+    return to<BoxFrame>(firstBox());
+}
+
+inline BoxFrame* BoxFrame::nextBoxFrame() const
+{
+    return to<BoxFrame>(nextBox());
+}
 
 } // namespace htmlbook
 

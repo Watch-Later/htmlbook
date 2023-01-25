@@ -13,8 +13,7 @@ public:
 
     bool isOfType(Type type) const override { return type == Type::Block || BoxFrame::isOfType(type); }
 
-    virtual void computeInlinePreferredWidths(float& minWidth, float& maxWidth) const;
-    virtual void computeBlockPreferredWidths(float& minWidth, float& maxWidth) const;
+    virtual void computeIntrinsicWidths(float& minWidth, float& maxWidth) const = 0;
 
     void computePreferredWidths(float& minWidth, float& maxWidth) const override;
 
@@ -29,7 +28,7 @@ public:
     float leftOffsetForContent() const { return borderLeft() + paddingLeft(); }
     float rightOffsetForContent() const { return leftOffsetForContent() + availableWidth(); }
     float startOffsetForContent() const { return style()->isLeftToRightDirection() ? leftOffsetForContent() : width() - rightOffsetForContent(); }
-    float endOffsetForContent() const { return style()->isLeftToRightDirection() ? width() - rightOffsetForContent() : leftOffsetForContent(); }
+    float endOffsetForContent() const { return style()->isRightToLeftDirection() ? leftOffsetForContent() : width() - rightOffsetForContent(); }
     float availableWidthForContent() const { return std::max(0.f, rightOffsetForContent() - leftOffsetForContent()); }
 
     const char* name() const override { return "BlockBox"; }
@@ -100,7 +99,7 @@ public:
     bool avoidsFloats() const override;
     bool isSelfCollapsingBlock() const override;
 
-    void computeInlinePreferredWidths(float& minWidth, float& maxWidth) const override;
+    void computeIntrinsicWidths(float& minWidth, float& maxWidth) const override;
 
     void adjustPositionedBox(BoxFrame* child, const MarginInfo& marginInfo);
     void adjustFloatingBox(const MarginInfo& marginInfo);
@@ -138,7 +137,7 @@ public:
     float leftOffsetForLine(float y, bool indent) const { return leftOffsetForFloat(y, leftOffsetForContent(), indent); }
     float rightOffsetForLine(float y, bool indent) const { return rightOffsetForFloat(y, rightOffsetForContent(), indent); }
     float startOffsetForLine(float y, bool indent) const { return style()->isLeftToRightDirection() ? leftOffsetForLine(y, indent) : width() - rightOffsetForLine(y, indent); }
-    float endOffsetForLine(float y, bool indent) const { return style()->isLeftToRightDirection() ? width() - rightOffsetForLine(y, indent) : leftOffsetForLine(y, indent); }
+    float endOffsetForLine(float y, bool indent) const { return style()->isRightToLeftDirection() ? leftOffsetForLine(y, indent) : width() - rightOffsetForLine(y, indent); }
     float availableWidthForLine(float y, bool indent) const { return std::max(0.f, rightOffsetForLine(y, indent) - leftOffsetForLine(y, indent)); }
 
     float getClearDelta(BoxFrame* child, float y) const;

@@ -8,6 +8,12 @@ BoxView::BoxView(Document* document, const RefPtr<BoxStyle>& style)
 {
 }
 
+void BoxView::computeIntrinsicWidths(float& minWidth, float& maxWidth) const
+{
+    minWidth = 0;
+    maxWidth = 0;
+}
+
 void BoxView::computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const
 {
     width = style()->viewportWidth();

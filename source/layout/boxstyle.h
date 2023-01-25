@@ -80,10 +80,10 @@ enum class ListStylePosition : uint8_t {
 };
 
 enum class BackgroundRepeat : uint8_t {
-    NoRepeat,
     Repeat,
     RepeatX,
-    RepeatY
+    RepeatY,
+    NoRepeat
 };
 
 enum class BackgroundBox : uint8_t {
@@ -94,8 +94,8 @@ enum class BackgroundBox : uint8_t {
 
 enum class BackgroundAttachment : uint8_t {
     Scroll,
-    Local,
-    Fixed
+    Fixed,
+    Local
 };
 
 enum class FontStyle : uint8_t {
@@ -562,9 +562,10 @@ public:
     int orphans() const;
 
     bool isLeftToRightDirection() const { return m_direction == TextDirection::Ltr; }
+    bool isRightToLeftDirection() const { return m_direction == TextDirection::Rtl; }
+    bool isRowFlexDirection() const { return flexDirection() == FlexDirection::Row || flexDirection() == FlexDirection::RowReverse; }
     bool isColumnFlexDirection() const { return flexDirection() == FlexDirection::Column || flexDirection() == FlexDirection::ColumnReverse; }
     bool isReverseFlexDirection() const { return flexDirection() == FlexDirection::RowReverse || flexDirection() == FlexDirection::ColumnReverse; }
-    bool isOverflowVisible() const { return m_overflow == Overflow::Visible; }
     bool isClearLeft() const { return m_clear == Clear::Left || m_clear == Clear::Both; }
     bool isClearRight() const { return m_clear == Clear::Right || m_clear == Clear::Both; }
     bool hasTransform() const;

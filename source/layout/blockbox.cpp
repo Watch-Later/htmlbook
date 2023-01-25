@@ -28,107 +28,16 @@ BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
     }
 }
 
-void BlockBox::computeInlinePreferredWidths(float& minWidth, float& maxWidth) const
-{
-    minWidth = 0;
-    maxWidth = 0;
-}
-
-void BlockBox::computeBlockPreferredWidths(float& minWidth, float& maxWidth) const
-{
-    float floatLeftWidth = 0;
-    float floatRightWidth = 0;
-
-    auto nowrap = style()->whiteSpace() == WhiteSpace::Nowrap;
-    for(auto child = firstBox(); child; child = child->nextBox()) {
-        if(child->isPositioned())
-            continue;
-        auto childStyle = child->style();
-        if(child->isFloating() || child->avoidsFloats()) {
-            auto floatWidth = floatLeftWidth + floatRightWidth;
-            if(childStyle->isClearLeft()) {
-                maxWidth = std::max(floatWidth, maxWidth);
-                floatLeftWidth = 0;
-            }
-
-            if(childStyle->isClearRight()) {
-                maxWidth = std::max(floatWidth, maxWidth);
-                floatRightWidth = 0;
-            }
-        }
-
-        auto marginLeftLength = childStyle->marginLeft();
-        auto marginRightLength = childStyle->marginRight();
-
-        float marginLeft = 0;
-        float marginRight = 0;
-        if(marginLeftLength.isFixed())
-            marginLeft = marginLeftLength.value();
-        if(marginRightLength.isFixed())
-            marginRight = marginRightLength.value();
-
-        float childMinWidth = 0;
-        float childMaxWidth = 0;
-        if(auto box = to<BoxFrame>(child)) {
-            childMinWidth = box->minPreferredWidth();
-            childMaxWidth = box->maxPreferredWidth();
-        }
-
-        auto marginWidth = marginLeft + marginRight;
-        auto width = childMinWidth + marginWidth;
-
-        minWidth = std::max(width, minWidth);
-        if(nowrap && !isTableBox())
-            maxWidth = std::max(width, maxWidth);
-        width = childMaxWidth + marginWidth;
-
-        if(child->isFloating()) {
-            if(childStyle->floating() == Float::Left) {
-                floatLeftWidth += width;
-            } else {
-                floatRightWidth += width;
-            }
-        } else {
-            if(child->avoidsFloats()) {
-                if(marginLeft > 0)
-                    marginLeft = std::max(floatLeftWidth, marginLeft);
-                else
-                    marginLeft += floatLeftWidth;
-
-                if(marginRight > 0)
-                    marginRight = std::max(floatRightWidth, marginRight);
-                else
-                    marginRight += floatRightWidth;
-                width = std::max(childMaxWidth + marginLeft + marginRight, floatLeftWidth + floatRightWidth);
-            } else {
-                maxWidth = std::max(maxWidth, floatLeftWidth + floatRightWidth);
-            }
-
-            maxWidth = std::max(width, maxWidth);
-            floatLeftWidth = 0;
-            floatRightWidth = 0;
-        }
-    }
-
-    minWidth = std::max(0.f, minWidth);
-    maxWidth = std::max(0.f, maxWidth);
-
-    maxWidth = std::max(maxWidth, floatLeftWidth + floatRightWidth);
-    maxWidth = std::max(maxWidth, minWidth);
-}
-
 void BlockBox::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
     minWidth = 0;
     maxWidth = 0;
 
     auto widthLength = style()->width();
-    if(widthLength.isFixed() && !isTableCellBox()) {
+    if(widthLength.isFixed() && !isTableBox() && !isTableCellBox()) {
         minWidth = maxWidth = adjustContentBoxWidth(widthLength.value());
-    } else if(isChildrenInline()) {
-        computeInlinePreferredWidths(minWidth, maxWidth);
     } else {
-        computeBlockPreferredWidths(minWidth, maxWidth);
+        computeIntrinsicWidths(minWidth, maxWidth);
     }
 
     auto minWidthLength = style()->minWidth();
@@ -143,8 +52,10 @@ void BlockBox::computePreferredWidths(float& minWidth, float& maxWidth) const
         maxWidth = std::min(maxWidth, adjustContentBoxWidth(maxWidthLength.value()));
     }
 
-    minWidth += borderPaddingWidth();
-    maxWidth += borderPaddingWidth();
+    if(!isTableBox()) {
+        minWidth += borderPaddingWidth();
+        maxWidth += borderPaddingWidth();
+    }
 }
 
 void BlockBox::insertPositonedBox(BoxFrame* box)
@@ -229,11 +140,10 @@ bool BlockFlowBox::isSelfCollapsingBlock() const
         return false;
     if(isChildrenInline())
         return m_lineLayout->empty();
-    for(auto child = firstBox(); child; child = child->nextBox()) {
+    for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
         if(child->isFloatingOrPositioned())
             continue;
-        auto& box = to<BoxFrame>(*child);
-        if(!box.isSelfCollapsingBlock()) {
+        if(!child->isSelfCollapsingBlock()) {
             return false;
         }
     }
@@ -241,9 +151,88 @@ bool BlockFlowBox::isSelfCollapsingBlock() const
     return true;
 }
 
-void BlockFlowBox::computeInlinePreferredWidths(float& minWidth, float& maxWidth) const
+void BlockFlowBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) const
 {
-    m_lineLayout->computePreferredWidths(minWidth, maxWidth);
+    if(isChildrenInline()) {
+        m_lineLayout->computeIntrinsicWidths(minWidth, maxWidth);
+        return;
+    }
+
+    float floatLeftWidth = 0;
+    float floatRightWidth = 0;
+
+    auto nowrap = style()->whiteSpace() == WhiteSpace::Nowrap;
+    for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
+        if(child->isPositioned())
+            continue;
+        auto childStyle = child->style();
+        if(child->isFloating() || child->avoidsFloats()) {
+            auto floatWidth = floatLeftWidth + floatRightWidth;
+            if(childStyle->isClearLeft()) {
+                maxWidth = std::max(floatWidth, maxWidth);
+                floatLeftWidth = 0;
+            }
+
+            if(childStyle->isClearRight()) {
+                maxWidth = std::max(floatWidth, maxWidth);
+                floatRightWidth = 0;
+            }
+        }
+
+        auto marginLeftLength = childStyle->marginLeft();
+        auto marginRightLength = childStyle->marginRight();
+
+        float marginLeft = 0;
+        float marginRight = 0;
+        if(marginLeftLength.isFixed())
+            marginLeft = marginLeftLength.value();
+        if(marginRightLength.isFixed())
+            marginRight = marginRightLength.value();
+
+        auto childMinWidth = child->minPreferredWidth();
+        auto childMaxWidth = child->maxPreferredWidth();
+
+        auto marginWidth = marginLeft + marginRight;
+        auto width = childMinWidth + marginWidth;
+
+        minWidth = std::max(width, minWidth);
+        if(nowrap && !isTableBox())
+            maxWidth = std::max(width, maxWidth);
+        width = childMaxWidth + marginWidth;
+
+        if(child->isFloating()) {
+            if(childStyle->floating() == Float::Left) {
+                floatLeftWidth += width;
+            } else {
+                floatRightWidth += width;
+            }
+        } else {
+            if(child->avoidsFloats()) {
+                if(marginLeft > 0)
+                    marginLeft = std::max(floatLeftWidth, marginLeft);
+                else
+                    marginLeft += floatLeftWidth;
+
+                if(marginRight > 0)
+                    marginRight = std::max(floatRightWidth, marginRight);
+                else
+                    marginRight += floatRightWidth;
+                width = std::max(childMaxWidth + marginLeft + marginRight, floatLeftWidth + floatRightWidth);
+            } else {
+                maxWidth = std::max(maxWidth, floatLeftWidth + floatRightWidth);
+            }
+
+            maxWidth = std::max(width, maxWidth);
+            floatLeftWidth = 0;
+            floatRightWidth = 0;
+        }
+    }
+
+    minWidth = std::max(0.f, minWidth);
+    maxWidth = std::max(0.f, maxWidth);
+
+    maxWidth = std::max(maxWidth, floatLeftWidth + floatRightWidth);
+    maxWidth = std::max(maxWidth, minWidth);
 }
 
 class MarginInfo {
@@ -418,7 +407,7 @@ void BlockFlowBox::layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo)
         }
     }
 
-    if(style()->direction() == TextDirection::Rtl) {
+    if(style()->isRightToLeftDirection()) {
         auto totalAvailableWidth = borderPaddingWidth() + availableWidth();
         offsetX = totalAvailableWidth - offsetX - child->width();
     }
@@ -437,12 +426,11 @@ void BlockFlowBox::layoutBlockChildren()
     setHeight(top);
 
     MarginInfo marginInfo(this, top, bottom);
-    for(auto box = firstBox(); box; box = box->nextBox()) {
-        auto child = to<BoxFrame>(box);
+    for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
         if(child->isPositioned()) {
             child->containingBlock()->insertPositonedBox(child);
             adjustPositionedBox(child, marginInfo);
-        } else if(box->isFloating()) {
+        } else if(child->isFloating()) {
             insertFloatingBox(child);
             adjustFloatingBox(marginInfo);
         } else {
@@ -481,7 +469,7 @@ void BlockFlowBox::buildIntrudingFloats()
 {
     if(m_floatingBoxes)
         m_floatingBoxes->clear();
-    if(isFloating() || isPositioned() || avoidsFloats())
+    if(isFloatingOrPositioned() || avoidsFloats())
         return;
 
     auto parentBlock = to<BlockFlowBox>(parentBox());
@@ -742,7 +730,7 @@ float BlockFlowBox::rightOffsetForFloat(float y, float offset, bool indent, floa
         }
     }
 
-    if(indent && !style()->isLeftToRightDirection()) {
+    if(indent && style()->isRightToLeftDirection()) {
         float availableWidth = 0;
         auto textIndentLength = style()->textIndent();
         if(textIndentLength.isPercent())
