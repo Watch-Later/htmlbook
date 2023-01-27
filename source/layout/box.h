@@ -44,7 +44,7 @@ public:
     virtual bool avoidsFloats() const { return true; }
 
     virtual void addBox(Box* box);
-    virtual void buildBox(BoxLayer* layer);
+    virtual void build(BoxLayer* layer);
     virtual void layout();
 
     void insertChild(Box* box, Box* nextBox);
@@ -177,7 +177,7 @@ public:
     bool isBoxModel() const final { return true; }
 
     void addBox(Box* box) override;
-    void buildBox(BoxLayer* layer) override;
+    void build(BoxLayer* layer) override;
 
     virtual bool requiresLayer() const { return false; }
     virtual void computeBorderWidths(float& top, float& bottom, float& left, float& right) const;

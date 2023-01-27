@@ -131,7 +131,7 @@ BlockFlowBox::BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style)
 
 bool BlockFlowBox::avoidsFloats() const
 {
-    return isReplaced() || isInline() || isFloatingOrPositioned() || isOverflowHidden() || isRootBox() || isFlexItem();
+    return isInline() || isFloatingOrPositioned() || isOverflowHidden() || isRootBox() || isFlexItem();
 }
 
 bool BlockFlowBox::isSelfCollapsingBlock() const
@@ -838,14 +838,14 @@ void BlockFlowBox::addBox(Box* box)
     BlockBox::addBox(box);
 }
 
-void BlockFlowBox::buildBox(BoxLayer* layer)
+void BlockFlowBox::build(BoxLayer* layer)
 {
     if(isChildrenInline()) {
         m_lineLayout = LineLayout::create(this);
         m_lineLayout->build();
     }
 
-    BoxFrame::buildBox(layer);
+    BoxFrame::build(layer);
 }
 
 } // namespace htmlbook

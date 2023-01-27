@@ -24,7 +24,7 @@ public:
     const std::vector<TableColumnBox*>& columns() const { return m_columns; }
 
     void addBox(Box* box) final;
-    void buildBox(BoxLayer* layer) final;
+    void build(BoxLayer* layer) final;
 
     const char* name() const final { return "TableBox"; }
 

@@ -475,7 +475,7 @@ void Document::buildBox(Counters& counters, Box* parent)
 
     auto box = createBox(style);
     ContainerNode::buildBox(counters, box);
-    box->buildBox(nullptr);
+    box->build(nullptr);
 }
 
 void Document::build()

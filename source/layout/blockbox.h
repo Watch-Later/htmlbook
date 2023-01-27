@@ -153,7 +153,7 @@ public:
     void removeFloatingBox(BoxFrame* box);
 
     void addBox(Box* box) override;
-    void buildBox(BoxLayer* layer) override;
+    void build(BoxLayer* layer) override;
 
     const char* name() const override { return "BlockFlowBox"; }
 

@@ -14,7 +14,7 @@ void TableBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) const
     maxWidth = 0;
 }
 
-void TableBox::buildBox(BoxLayer* layer)
+void TableBox::build(BoxLayer* layer)
 {
     for(auto child = firstBox(); child; child = child->nextBox()) {
         if(auto section = to<TableSectionBox>(child)) {
@@ -46,7 +46,7 @@ void TableBox::buildBox(BoxLayer* layer)
         }
     }
 
-    BlockBox::buildBox(layer);
+    BlockBox::build(layer);
 }
 
 void TableBox::addBox(Box* box)
