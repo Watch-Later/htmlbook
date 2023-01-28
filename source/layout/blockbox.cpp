@@ -160,8 +160,6 @@ void BlockFlowBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) cons
 
     float floatLeftWidth = 0;
     float floatRightWidth = 0;
-
-    auto nowrap = style()->whiteSpace() == WhiteSpace::Nowrap;
     for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
         if(child->isPositioned())
             continue;
@@ -196,7 +194,7 @@ void BlockFlowBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) cons
         auto width = childMinWidth + marginWidth;
 
         minWidth = std::max(width, minWidth);
-        if(nowrap && !isTableBox())
+        if(style()->whiteSpace() == WhiteSpace::Nowrap)
             maxWidth = std::max(width, maxWidth);
         width = childMaxWidth + marginWidth;
 
