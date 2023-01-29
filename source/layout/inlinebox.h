@@ -16,9 +16,8 @@ public:
 
     void addBox(Box* box) override;
 
-    void addLine(std::unique_ptr<FlowLineBox> line);
-    void removeLine(LineBox* line);
     const FlowLineBoxList& lines() const { return m_lines; }
+    FlowLineBoxList& lines() { return m_lines; }
 
     const char* name() const override { return "InlineBox"; }
 

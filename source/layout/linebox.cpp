@@ -51,28 +51,28 @@ std::unique_ptr<FlowLineBox> FlowLineBox::create(BoxModel* box)
 void FlowLineBox::addLine(LineBox* line)
 {
     assert(line->parentLine() == nullptr);
-    assert(line->prevOnLine() == nullptr);
-    assert(line->nextOnLine() == nullptr);
+    assert(line->prevLine() == nullptr);
+    assert(line->nextLine() == nullptr);
     line->setParentLine(this);
     if(m_firstLine == nullptr) {
         m_firstLine = m_lastLine = line;
         return;
     }
 
-    line->setPrevOnLine(m_lastLine);
-    m_lastLine->setNextOnLine(line);
+    line->setPrevLine(m_lastLine);
+    m_lastLine->setNextLine(line);
     m_lastLine = line;
 }
 
 void FlowLineBox::removeLine(LineBox *line)
 {
     assert(line->parentLine() == this);
-    auto nextLine = line->nextOnLine();
-    auto prevLine = line->prevOnLine();
+    auto nextLine = line->nextLine();
+    auto prevLine = line->prevLine();
     if(nextLine)
-        nextLine->setPrevOnLine(prevLine);
+        nextLine->setPrevLine(prevLine);
     if(prevLine)
-        prevLine->setNextOnLine(nextLine);
+        prevLine->setNextLine(nextLine);
 
     if(m_firstLine == line)
         m_firstLine = nextLine;
@@ -80,8 +80,19 @@ void FlowLineBox::removeLine(LineBox *line)
         m_lastLine = prevLine;
 
     line->setParentLine(nullptr);
-    line->setPrevOnLine(nullptr);
-    line->setNextOnLine(nullptr);
+    line->setPrevLine(nullptr);
+    line->setNextLine(nullptr);
+}
+
+FlowLineBox::~FlowLineBox()
+{
+    auto line = m_firstLine;
+    while(line) {
+        line->setParentLine(nullptr);
+        line->setPrevLine(nullptr);
+        line->setNextLine(nullptr);
+        line = line->nextLine();
+    }
 }
 
 std::unique_ptr<RootLineBox> RootLineBox::create(BlockFlowBox* box)

@@ -32,8 +32,8 @@ std::unique_ptr<FlexLine> FlexLine::create(FlexibleBox* box)
 void FlexLine::addItem(FlexItem* item)
 {
     assert(item->line() == nullptr);
-    assert(item->prevOnLine() == nullptr);
-    assert(item->nextOnLine() == nullptr);
+    assert(item->prevItem() == nullptr);
+    assert(item->nextItem() == nullptr);
     item->setLine(this);
     if(m_firstItem == nullptr) {
         m_firstItem = m_lastItem = item;
@@ -41,8 +41,8 @@ void FlexLine::addItem(FlexItem* item)
         return;
     }
 
-    item->setPrevOnLine(m_lastItem);
-    m_lastItem->setNextOnLine(item);
+    item->setPrevItem(m_lastItem);
+    m_lastItem->setNextItem(item);
     m_lastItem = item;
     m_itemCount += 1;
 }
@@ -50,12 +50,12 @@ void FlexLine::addItem(FlexItem* item)
 void FlexLine::removeItem(FlexItem* item)
 {
     assert(item->line() == this);
-    auto nextItem = item->nextOnLine();
-    auto prevItem = item->prevOnLine();
+    auto nextItem = item->nextItem();
+    auto prevItem = item->prevItem();
     if(nextItem)
-        nextItem->setPrevOnLine(prevItem);
+        nextItem->setPrevItem(prevItem);
     if(prevItem)
-        prevItem->setNextOnLine(nextItem);
+        prevItem->setNextItem(nextItem);
 
     if(m_firstItem == item)
         m_firstItem = nextItem;
@@ -63,8 +63,8 @@ void FlexLine::removeItem(FlexItem* item)
         m_lastItem = prevItem;
 
     item->setLine(nullptr);
-    item->setPrevOnLine(nullptr);
-    item->setNextOnLine(nullptr);
+    item->setPrevItem(nullptr);
+    item->setNextItem(nullptr);
     m_itemCount -= 1;
 }
 
@@ -73,9 +73,9 @@ FlexLine::~FlexLine()
     auto item = m_firstItem;
     while(item) {
         item->setLine(nullptr);
-        item->setPrevOnLine(nullptr);
-        item->setNextOnLine(nullptr);
-        item = item->nextOnLine();
+        item->setPrevItem(nullptr);
+        item->setNextItem(nullptr);
+        item = item->nextItem();
     }
 }
 

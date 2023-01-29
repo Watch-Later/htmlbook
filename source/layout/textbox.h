@@ -14,9 +14,8 @@ public:
     const HeapString& text() const { return m_text; }
     void setText(const HeapString& text) { m_text = text; }
 
-    void addLine(std::unique_ptr<TextLineBox> line);
-    void removeLine(LineBox* line);
     const TextLineBoxList& lines() const { return m_lines; }
+    TextLineBoxList& lines() { return m_lines; }
 
     const char* name() const override { return "TextBox"; }
 

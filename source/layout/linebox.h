@@ -25,12 +25,12 @@ public:
 
     Box* box() const { return m_box; }
     FlowLineBox* parentLine() const { return m_parentLine; }
-    LineBox* nextOnLine() const { return m_nextOnLine; }
-    LineBox* prevOnLine() const { return m_prevOnLine; }
+    LineBox* nextLine() const { return m_nextLine; }
+    LineBox* prevLine() const { return m_prevLine; }
 
     void setParentLine(FlowLineBox* line) { m_parentLine = line; }
-    void setNextOnLine(LineBox* line) { m_nextOnLine = line; }
-    void setPrevOnLine(LineBox* line) { m_prevOnLine = line; }
+    void setNextLine(LineBox* line) { m_nextLine = line; }
+    void setPrevLine(LineBox* line) { m_prevLine = line; }
 
     RootLineBox* rootLine() const;
 
@@ -47,16 +47,14 @@ public:
 private:
     Box* m_box;
     FlowLineBox* m_parentLine{nullptr};
-    LineBox* m_nextOnLine{nullptr};
-    LineBox* m_prevOnLine{nullptr};
+    LineBox* m_nextLine{nullptr};
+    LineBox* m_prevLine{nullptr};
 
     float m_x{0};
     float m_y{0};
     float m_width{0};
     float m_height{0};
 };
-
-using LineBoxList = std::pmr::vector<std::unique_ptr<LineBox>>;
 
 class TextBox;
 
@@ -117,6 +115,8 @@ public:
     float borderBottom() const { return 0; }
     float borderLeft() const { return 0; }
     float borderRight() const { return 0; }
+
+    ~FlowLineBox() override;
 
 protected:
     FlowLineBox(BoxModel* box);

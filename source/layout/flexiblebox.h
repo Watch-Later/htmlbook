@@ -13,12 +13,12 @@ public:
 
     BoxFrame* box() const { return m_box; }
     FlexLine* line() const { return m_line; }
-    FlexItem* nextOnLine() const { return m_nextOnLine; }
-    FlexItem* prevOnLine() const { return m_prevOnLine; }
+    FlexItem* nextItem() const { return m_nextItem; }
+    FlexItem* prevItem() const { return m_prevItem; }
 
     void setLine(FlexLine* line) { m_line = line; }
-    void setNextOnLine(FlexItem* item) { m_nextOnLine = item; }
-    void setPrevOnLine(FlexItem* item) { m_prevOnLine = item; }
+    void setNextItem(FlexItem* item) { m_nextItem = item; }
+    void setPrevItem(FlexItem* item) { m_prevItem = item; }
 
     int order() const;
 
@@ -28,8 +28,8 @@ private:
     FlexItem(BoxFrame* box);
     BoxFrame* m_box;
     FlexLine* m_line{nullptr};
-    FlexItem* m_nextOnLine{nullptr};
-    FlexItem* m_prevOnLine{nullptr};
+    FlexItem* m_nextItem{nullptr};
+    FlexItem* m_prevItem{nullptr};
 };
 
 using FlexItemList = std::pmr::vector<std::unique_ptr<FlexItem>>;
