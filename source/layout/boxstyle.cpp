@@ -957,20 +957,20 @@ AlignContent BoxStyle::alignContent() const
     return convertAlignContent(*value);
 }
 
-AlignItems BoxStyle::alignItems() const
+AlignItem BoxStyle::alignItems() const
 {
     auto value = get(CSSPropertyID::AlignItems);
     if(value == nullptr)
-        return AlignItems::Stretch;
-    return convertAlignItems(*value);
+        return AlignItem::Stretch;
+    return convertAlignItem(*value);
 }
 
-AlignItems BoxStyle::alignSelf() const
+AlignItem BoxStyle::alignSelf() const
 {
     auto value = get(CSSPropertyID::AlignSelf);
     if(value == nullptr)
-        return AlignItems::Auto;
-    return convertAlignItems(*value);
+        return AlignItem::Auto;
+    return convertAlignItem(*value);
 }
 
 float BoxStyle::outlineOffset() const
@@ -1829,27 +1829,27 @@ AlignContent BoxStyle::convertAlignContent(const CSSValue& value)
     return AlignContent::FlexStart;
 }
 
-AlignItems BoxStyle::convertAlignItems(const CSSValue &value)
+AlignItem BoxStyle::convertAlignItem(const CSSValue &value)
 {
     auto& ident = to<CSSIdentValue>(value);
     switch(ident.value()) {
     case CSSValueID::Auto:
-        return AlignItems::Auto;
+        return AlignItem::Auto;
     case CSSValueID::FlexStart:
-        return AlignItems::FlexStart;
+        return AlignItem::FlexStart;
     case CSSValueID::FlexEnd:
-        return AlignItems::FlexEnd;
+        return AlignItem::FlexEnd;
     case CSSValueID::Center:
-        return AlignItems::Center;
+        return AlignItem::Center;
     case CSSValueID::Stretch:
-        return AlignItems::Stretch;
+        return AlignItem::Stretch;
     case CSSValueID::Baseline:
-        return AlignItems::Baseline;
+        return AlignItem::Baseline;
     default:
         assert(false);
     }
 
-    return AlignItems::Auto;
+    return AlignItem::Auto;
 }
 
 int BoxStyle::convertInteger(const CSSValue& value)

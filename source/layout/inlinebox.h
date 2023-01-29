@@ -20,9 +20,6 @@ public:
     void removeLine(LineBox* line);
     const FlowLineBoxList& lines() const { return m_lines; }
 
-    void computeMarginWidths(float& top, float& bottom, float& left, float& right) const;
-    void updateMarginWidths();
-
     const char* name() const override { return "InlineBox"; }
 
 private:

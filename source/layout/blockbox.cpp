@@ -523,9 +523,6 @@ void BlockFlowBox::addIntrudingFloats(BlockFlowBox* prevBlock, float offsetX, fl
     for(auto& item : *prevBlock->floatingBoxes()) {
         if(item.bottom() > offsetY && !containsFloat(item.box())) {
             FloatingBox floatingBox(item.box());
-            floatingBox.setIsIntruding(true);
-            floatingBox.setIsHidden(true);
-            floatingBox.setIsPlaced(true);
             if(prevBlock == parentBox())
                 floatingBox.setX(item.x() - offsetX);
             else
@@ -533,6 +530,8 @@ void BlockFlowBox::addIntrudingFloats(BlockFlowBox* prevBlock, float offsetX, fl
             floatingBox.setY(item.y() - offsetY);
             floatingBox.setWidth(item.width());
             floatingBox.setHeight(item.height());
+            floatingBox.setIsIntruding(true);
+            floatingBox.setIsPlaced(true);
             if(!m_floatingBoxes)
                 m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
             m_floatingBoxes->push_back(floatingBox);
@@ -548,13 +547,12 @@ void BlockFlowBox::addOverhangingFloats(BlockFlowBox* childBlock)
         auto floatBottom = item.bottom() + childBlock->y();
         if(floatBottom > height() && !containsFloat(item.box())) {
             FloatingBox floatingBox(item.box());
-            floatingBox.setIsIntruding(true);
-            floatingBox.setIsHidden(true);
-            floatingBox.setIsPlaced(true);
             floatingBox.setX(item.x() + childBlock->x());
             floatingBox.setY(item.y() + childBlock->y());
             floatingBox.setWidth(item.width());
             floatingBox.setHeight(item.height());
+            floatingBox.setIsIntruding(true);
+            floatingBox.setIsPlaced(true);
             if(!m_floatingBoxes)
                 m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
             m_floatingBoxes->push_back(floatingBox);
@@ -802,10 +800,9 @@ void BlockFlowBox::insertFloatingBox(BoxFrame* box)
     box->layout();
 
     FloatingBox floatingBox(box);
-    floatingBox.setIsIntruding(false);
-    floatingBox.setIsHidden(false);
-    floatingBox.setIsPlaced(false);
     floatingBox.setWidth(box->width() + box->marginLeft() + box->marginRight());
+    floatingBox.setIsIntruding(false);
+    floatingBox.setIsPlaced(false);
     if(!m_floatingBoxes)
         m_floatingBoxes = std::make_unique<FloatingBoxList>(heap());
     m_floatingBoxes->push_back(floatingBox);

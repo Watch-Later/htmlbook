@@ -52,11 +52,9 @@ public:
     Float type() const { return m_type; }
 
     void setIsIntruding(bool value) { m_isIntruding = value; }
-    void setIsHidden(bool value) { m_isHidden = value; }
     void setIsPlaced(bool value) { m_isPlaced = value; }
 
     bool isIntruding() const { return m_isIntruding; }
-    bool isHidden() const { return m_isHidden; }
     bool isPlaced() const { return m_isPlaced; }
 
     void setX(float x) { m_x = x; }
@@ -77,7 +75,6 @@ private:
     Float m_type;
 
     bool m_isIntruding{false};
-    bool m_isHidden{false};
     bool m_isPlaced{false};
 
     float m_x{0};

@@ -12,6 +12,13 @@ int FlexItem::order() const
     return m_box->style()->order();
 }
 
+FlexItem::~FlexItem()
+{
+    if(m_line) {
+        m_line->removeItem(this);
+    }
+}
+
 FlexItem::FlexItem(BoxFrame* box)
     : m_box(box)
 {
@@ -59,6 +66,17 @@ void FlexLine::removeItem(FlexItem* item)
     item->setPrevOnLine(nullptr);
     item->setNextOnLine(nullptr);
     m_itemCount -= 1;
+}
+
+FlexLine::~FlexLine()
+{
+    auto item = m_firstItem;
+    while(item) {
+        item->setLine(nullptr);
+        item->setPrevOnLine(nullptr);
+        item->setNextOnLine(nullptr);
+        item = item->nextOnLine();
+    }
 }
 
 FlexLine::FlexLine(FlexibleBox* box)

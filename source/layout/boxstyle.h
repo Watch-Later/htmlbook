@@ -231,7 +231,7 @@ enum class AlignContent : uint8_t {
     Stretch
 };
 
-enum class AlignItems : uint8_t {
+enum class AlignItem : uint8_t {
     Auto,
     FlexStart,
     FlexEnd,
@@ -542,8 +542,8 @@ public:
     FlexWrap flexWrap() const;
     AlignContent justifyContent() const;
     AlignContent alignContent() const;
-    AlignItems alignItems() const;
-    AlignItems alignSelf() const;
+    AlignItem alignItems() const;
+    AlignItem alignSelf() const;
 
     float outlineOffset() const;
     Color outlineColor() const;
@@ -617,7 +617,7 @@ public:
     static FontStyle convertFontStyle(const CSSValue& value);
     static FontVariant convertFontVariant(const CSSValue& value);
     static AlignContent convertAlignContent(const CSSValue& value);
-    static AlignItems convertAlignItems(const CSSValue& value);
+    static AlignItem convertAlignItem(const CSSValue& value);
     static int convertInteger(const CSSValue& value);
     static std::optional<int> convertIntegerOrAuto(const CSSValue& value);
     static float convertNumber(const CSSValue& value);

@@ -389,6 +389,26 @@ void BoxModel::computePaddingWidths(float& top, float& bottom, float& left, floa
     right = compute(style()->paddingRight());
 }
 
+void BoxModel::computeMarginWidths(float& top, float& bottom, float& left, float& right) const
+{
+    auto compute = [this](const auto& margin) {
+        float containerWidth = 0;
+        if(margin.isPercent())
+            containerWidth = containingBlockWidthForContent();
+        return margin.calcMin(containerWidth);
+    };
+
+    top = compute(style()->marginTop());
+    bottom = compute(style()->marginBottom());
+    left = compute(style()->marginLeft());
+    right = compute(style()->marginRight());
+}
+
+void BoxModel::updateMarginWidths()
+{
+    computeMarginWidths(m_marginTop, m_marginBottom, m_marginLeft, m_marginRight);
+}
+
 void BoxModel::updateBorderWidths() const
 {
     computeBorderWidths(m_borderTop, m_borderBottom, m_borderLeft, m_borderRight);
@@ -512,6 +532,12 @@ float BoxFrame::maxPreferredWidth() const
     if(m_maxPreferredWidth < 0)
         updatePreferredWidths();
     return m_maxPreferredWidth;
+}
+
+void BoxFrame::clearOverrideSize()
+{
+    m_overrideWidth = -1;
+    m_overrideHeight = -1;
 }
 
 float BoxFrame::intrinsicWidth() const
@@ -646,7 +672,7 @@ bool BoxFrame::adjustToFitContent() const
         return true;
     if(style()->marginLeft().isAuto() || style()->marginRight().isAuto())
         return true;
-    return !(style()->alignSelf() == AlignItems::Stretch || (style()->alignSelf() == AlignItems::Auto && parentStyle->alignItems() == AlignItems::Stretch));
+    return !(style()->alignSelf() == AlignItem::Stretch || (style()->alignSelf() == AlignItem::Auto && parentStyle->alignItems() == AlignItem::Stretch));
 }
 
 float BoxFrame::adjustWidthToFitContent(float width) const

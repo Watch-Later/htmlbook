@@ -22,6 +22,8 @@ public:
 
     int order() const;
 
+    ~FlexItem();
+
 private:
     FlexItem(BoxFrame* box);
     BoxFrame* m_box;
@@ -45,6 +47,8 @@ public:
 
     void addItem(FlexItem* item);
     void removeItem(FlexItem* item);
+
+    ~FlexLine();
 
 private:
     FlexLine(FlexibleBox* box);

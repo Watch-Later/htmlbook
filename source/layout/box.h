@@ -183,6 +183,9 @@ public:
     virtual void computeBorderWidths(float& top, float& bottom, float& left, float& right) const;
     virtual void computePaddingWidths(float& top, float& bottom, float& left, float& right) const;
 
+    void computeMarginWidths(float& top, float& bottom, float& left, float& right) const;
+
+    void updateMarginWidths();
     void updateBorderWidths() const;
     void updatePaddingWidths() const;
 
@@ -297,6 +300,8 @@ public:
 
     bool hasOverrideWidth() const { return m_overrideWidth >= 0; }
     bool hasOverrideHeight() const { return m_overrideHeight >= 0; }
+
+    void clearOverrideSize();
 
     float intrinsicWidth() const;
     float intrinsicHeight() const;
