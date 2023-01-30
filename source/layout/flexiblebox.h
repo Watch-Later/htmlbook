@@ -13,26 +13,18 @@ public:
 
     BoxFrame* box() const { return m_box; }
     FlexLine* line() const { return m_line; }
-    FlexItem* nextItem() const { return m_nextItem; }
-    FlexItem* prevItem() const { return m_prevItem; }
-
     void setLine(FlexLine* line) { m_line = line; }
-    void setNextItem(FlexItem* item) { m_nextItem = item; }
-    void setPrevItem(FlexItem* item) { m_prevItem = item; }
 
     int order() const;
-
-    ~FlexItem();
 
 private:
     FlexItem(BoxFrame* box);
     BoxFrame* m_box;
     FlexLine* m_line{nullptr};
-    FlexItem* m_nextItem{nullptr};
-    FlexItem* m_prevItem{nullptr};
 };
 
 using FlexItemList = std::pmr::vector<std::unique_ptr<FlexItem>>;
+using FlexItemListView = std::pmr::vector<FlexItem*>;
 
 class FlexibleBox;
 
@@ -41,21 +33,14 @@ public:
     static std::unique_ptr<FlexLine> create(FlexibleBox* box);
 
     FlexibleBox* box() const { return m_box; }
-    FlexItem* firstItem() const { return m_firstItem; }
-    FlexItem* lastItem() const { return m_firstItem; }
-    size_t itemCount() const { return m_itemCount; }
+    const FlexItemListView& items() const { return m_items; }
 
     void addItem(FlexItem* item);
-    void removeItem(FlexItem* item);
-
-    ~FlexLine();
 
 private:
     FlexLine(FlexibleBox* box);
     FlexibleBox* m_box;
-    FlexItem* m_firstItem{nullptr};
-    FlexItem* m_lastItem{nullptr};
-    size_t m_itemCount{0};
+    FlexItemListView m_items;
 };
 
 using FlexLineList = std::pmr::vector<std::unique_ptr<FlexLine>>;

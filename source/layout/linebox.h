@@ -25,13 +25,6 @@ public:
 
     Box* box() const { return m_box; }
     FlowLineBox* parentLine() const { return m_parentLine; }
-    LineBox* nextLine() const { return m_nextLine; }
-    LineBox* prevLine() const { return m_prevLine; }
-
-    void setParentLine(FlowLineBox* line) { m_parentLine = line; }
-    void setNextLine(LineBox* line) { m_nextLine = line; }
-    void setPrevLine(LineBox* line) { m_prevLine = line; }
-
     RootLineBox* rootLine() const;
 
     float x() const { return m_x; }
@@ -47,14 +40,14 @@ public:
 private:
     Box* m_box;
     FlowLineBox* m_parentLine{nullptr};
-    LineBox* m_nextLine{nullptr};
-    LineBox* m_prevLine{nullptr};
 
     float m_x{0};
     float m_y{0};
     float m_width{0};
     float m_height{0};
 };
+
+using LineBoxListView = std::pmr::vector<LineBox*>;
 
 class TextBox;
 
@@ -95,8 +88,6 @@ struct is_a<ReplacedLineBox> {
     static bool check(const LineBox& line) { return line.isReplacedLineBox(); }
 };
 
-using ReplacedLineBoxList = std::pmr::vector<std::unique_ptr<ReplacedLineBox>>;
-
 class BoxModel;
 
 class FlowLineBox : public LineBox {
@@ -105,23 +96,18 @@ public:
 
     bool isFlowLineBox() const final { return true; }
 
-    LineBox* firstLine() const { return m_firstLine; }
-    LineBox* lastLine() const { return m_lastLine; }
-
     void addLine(LineBox* line);
-    void removeLine(LineBox* line);
 
     float borderTop() const { return 0; }
     float borderBottom() const { return 0; }
     float borderLeft() const { return 0; }
     float borderRight() const { return 0; }
 
-    ~FlowLineBox() override;
+    const LineBoxListView& children() const { return m_children; }
 
 protected:
     FlowLineBox(BoxModel* box);
-    LineBox* m_firstLine{nullptr};
-    LineBox* m_lastLine{nullptr};
+    LineBoxListView m_children;
 };
 
 template<>

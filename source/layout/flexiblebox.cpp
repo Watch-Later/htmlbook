@@ -12,13 +12,6 @@ int FlexItem::order() const
     return m_box->style()->order();
 }
 
-FlexItem::~FlexItem()
-{
-    if(m_line) {
-        m_line->removeItem(this);
-    }
-}
-
 FlexItem::FlexItem(BoxFrame* box)
     : m_box(box)
 {
@@ -31,56 +24,12 @@ std::unique_ptr<FlexLine> FlexLine::create(FlexibleBox* box)
 
 void FlexLine::addItem(FlexItem* item)
 {
-    assert(item->line() == nullptr);
-    assert(item->prevItem() == nullptr);
-    assert(item->nextItem() == nullptr);
-    item->setLine(this);
-    if(m_firstItem == nullptr) {
-        m_firstItem = m_lastItem = item;
-        m_itemCount += 1;
-        return;
-    }
-
-    item->setPrevItem(m_lastItem);
-    m_lastItem->setNextItem(item);
-    m_lastItem = item;
-    m_itemCount += 1;
-}
-
-void FlexLine::removeItem(FlexItem* item)
-{
-    assert(item->line() == this);
-    auto nextItem = item->nextItem();
-    auto prevItem = item->prevItem();
-    if(nextItem)
-        nextItem->setPrevItem(prevItem);
-    if(prevItem)
-        prevItem->setNextItem(nextItem);
-
-    if(m_firstItem == item)
-        m_firstItem = nextItem;
-    if(m_lastItem == item)
-        m_lastItem = prevItem;
-
-    item->setLine(nullptr);
-    item->setPrevItem(nullptr);
-    item->setNextItem(nullptr);
-    m_itemCount -= 1;
-}
-
-FlexLine::~FlexLine()
-{
-    auto item = m_firstItem;
-    while(item) {
-        item->setLine(nullptr);
-        item->setPrevItem(nullptr);
-        item->setNextItem(nullptr);
-        item = item->nextItem();
-    }
+    m_items.push_back(item);
 }
 
 FlexLine::FlexLine(FlexibleBox* box)
     : m_box(box)
+    , m_items(box->heap())
 {
 }
 

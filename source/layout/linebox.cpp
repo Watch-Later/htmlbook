@@ -11,12 +11,7 @@ LineBox::LineBox(Box* box)
 {
 }
 
-LineBox::~LineBox()
-{
-    if(m_parentLine) {
-        m_parentLine->removeLine(this);
-    }
-}
+LineBox::~LineBox() = default;
 
 std::unique_ptr<TextLineBox> TextLineBox::create(TextBox* box, std::string text)
 {
@@ -40,6 +35,7 @@ ReplacedLineBox::ReplacedLineBox(BoxFrame* box)
 
 FlowLineBox::FlowLineBox(BoxModel* box)
     : LineBox(box)
+    , m_children(box->heap())
 {
 }
 
@@ -50,49 +46,7 @@ std::unique_ptr<FlowLineBox> FlowLineBox::create(BoxModel* box)
 
 void FlowLineBox::addLine(LineBox* line)
 {
-    assert(line->parentLine() == nullptr);
-    assert(line->prevLine() == nullptr);
-    assert(line->nextLine() == nullptr);
-    line->setParentLine(this);
-    if(m_firstLine == nullptr) {
-        m_firstLine = m_lastLine = line;
-        return;
-    }
-
-    line->setPrevLine(m_lastLine);
-    m_lastLine->setNextLine(line);
-    m_lastLine = line;
-}
-
-void FlowLineBox::removeLine(LineBox *line)
-{
-    assert(line->parentLine() == this);
-    auto nextLine = line->nextLine();
-    auto prevLine = line->prevLine();
-    if(nextLine)
-        nextLine->setPrevLine(prevLine);
-    if(prevLine)
-        prevLine->setNextLine(nextLine);
-
-    if(m_firstLine == line)
-        m_firstLine = nextLine;
-    if(m_lastLine == line)
-        m_lastLine = prevLine;
-
-    line->setParentLine(nullptr);
-    line->setPrevLine(nullptr);
-    line->setNextLine(nullptr);
-}
-
-FlowLineBox::~FlowLineBox()
-{
-    auto line = m_firstLine;
-    while(line) {
-        line->setParentLine(nullptr);
-        line->setPrevLine(nullptr);
-        line->setNextLine(nullptr);
-        line = line->nextLine();
-    }
+    m_children.push_back(line);
 }
 
 std::unique_ptr<RootLineBox> RootLineBox::create(BlockFlowBox* box)
