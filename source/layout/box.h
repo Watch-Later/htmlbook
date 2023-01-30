@@ -208,13 +208,13 @@ public:
     float paddingWidth() const { return paddingLeft() + paddingRight(); }
     float paddingHeight() const { return paddingTop() + paddingBottom(); }
 
-    float borderPaddingTop() const { return borderTop() + paddingTop(); }
-    float borderPaddingBottom() const { return borderBottom() + paddingBottom(); }
-    float borderPaddingLeft() const { return borderLeft() + paddingLeft(); }
-    float borderPaddingRight() const { return borderRight() + paddingRight(); }
+    float borderAndPaddingTop() const { return borderTop() + paddingTop(); }
+    float borderAndPaddingBottom() const { return borderBottom() + paddingBottom(); }
+    float borderAndPaddingLeft() const { return borderLeft() + paddingLeft(); }
+    float borderAndPaddingRight() const { return borderRight() + paddingRight(); }
 
-    float borderPaddingWidth() const { return borderWidth() + paddingWidth(); }
-    float borderPaddingHeight() const { return borderHeight() + paddingHeight(); }
+    float borderAndPaddingWidth() const { return borderWidth() + paddingWidth(); }
+    float borderAndPaddingHeight() const { return borderHeight() + paddingHeight(); }
 
     float marginTop() const { return m_marginTop; }
     float marginBottom() const { return m_marginBottom; }
@@ -307,7 +307,7 @@ public:
     float intrinsicHeight() const;
 
     float availableWidth() const { return contentWidth(); }
-    float availableHeight() const { return availableHeightUsing(style()->height()); }
+    float availableHeight() const;
     float availableHeightUsing(const Length& height) const;
 
     float containingBlockWidthForPositioned(const BoxModel* containingBox) const;
@@ -342,6 +342,7 @@ public:
 
     float constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const;
     float constrainHeightByMinMax(float height) const;
+    float constrainContentHeightByMinMax(float height) const;
 
     void computePositionedWidthUsing(const Length& widthLength, const BoxModel* container, TextDirection containerDirection, float containerWidth,
         const Length& leftLength, const Length& rightLength, const Length& marginLeftLength, const Length& marginRightLength,

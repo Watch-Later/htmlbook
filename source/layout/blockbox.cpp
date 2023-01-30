@@ -53,8 +53,8 @@ void BlockBox::computePreferredWidths(float& minWidth, float& maxWidth) const
     }
 
     if(!isTableBox()) {
-        minWidth += borderPaddingWidth();
-        maxWidth += borderPaddingWidth();
+        minWidth += borderAndPaddingWidth();
+        maxWidth += borderAndPaddingWidth();
     }
 }
 
@@ -406,7 +406,7 @@ void BlockFlowBox::layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo)
     }
 
     if(style()->isRightToLeftDirection()) {
-        auto totalAvailableWidth = borderPaddingWidth() + availableWidth();
+        auto totalAvailableWidth = borderAndPaddingWidth() + availableWidth();
         offsetX = totalAvailableWidth - offsetX - child->width();
     }
 
@@ -593,7 +593,7 @@ void BlockFlowBox::positionNewFloats()
                 floatLeft = leftOffsetForFloat(floatTop, leftOffset, false, &heightRemainingLeft);
             }
 
-            floatLeft = std::max(floatLeft, leftOffset - borderPaddingLeft());
+            floatLeft = std::max(floatLeft, leftOffset - borderAndPaddingLeft());
         } else {
             float heightRemainingLeft = 1;
             float heightRemainingRight = 1;
