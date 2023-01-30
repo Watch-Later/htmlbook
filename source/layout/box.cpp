@@ -809,6 +809,14 @@ void BoxFrame::computeHorizontalMargins(float& marginLeft, float& marginRight, f
         return;
     }
 
+    if(container->isFlexibleBox()) {
+        if(marginLeftLength.isAuto())
+            marginLeftLength = Length::ZeroFixed;
+        if(marginRightLength.isAuto()) {
+            marginRightLength = Length::ZeroFixed;
+        }
+    }
+
     auto containerStyle = container->style();
     auto containerTextAlign = containerStyle->textAlign();
     auto containerDirection = containerStyle->direction();
@@ -971,7 +979,7 @@ void BoxFrame::computePositionedWidthUsing(const Length& widthLength, const BoxM
         width = adjustContentBoxWidth(widthLength.calc(containerWidth));
         leftLengthValue = leftLength.calc(containerWidth);
 
-        auto availableSpace = containerWidth - (leftLengthValue + width + borderAndPaddingWidth() + rightLength.calc(containerWidth));
+        auto availableSpace = containerWidth - (width + leftLengthValue + rightLength.calc(containerWidth) + borderAndPaddingWidth());
         if(marginLeftLength.isAuto() && marginRightLength.isAuto()) {
             if(availableSpace >= 0) {
                 marginLeft = availableSpace / 2.f;
@@ -1123,11 +1131,10 @@ void BoxFrame::computePositionedWidthReplaced(float& x, float& width, float& mar
         marginRight = marginRightLength.calc(containerWidth);
         leftLengthValue = leftLength.calc(containerWidth);
         rightLengthValue = rightLength.calc(containerWidth);
-    }
-
-    auto totalWidth = width + leftLengthValue + rightLengthValue +  marginLeft + marginRight;
-    if(totalWidth > containerWidth && containerDirection == TextDirection::Rtl) {
-        leftLengthValue = containerWidth - (totalWidth - leftLengthValue);
+        if(containerDirection == TextDirection::Rtl) {
+            auto totalWidth = width + leftLengthValue + rightLengthValue +  marginLeft + marginRight;
+            leftLengthValue = containerWidth - (totalWidth - leftLengthValue);
+        }
     }
 
     x = computePositionedLeftOffset(leftLengthValue, marginLeft, container, containerDirection);
@@ -1194,7 +1201,7 @@ void BoxFrame::computePositionedWidth(float& x, float& width, float& marginLeft,
         }
     }
 
-    if(minWidthLength.isAuto() || !minWidthLength.isZero()) {
+    if(!minWidthLength.isZero()) {
         float minX = 0;
         float minWidth = 0;
         float minMarginLeft = 0;
@@ -1234,7 +1241,7 @@ void BoxFrame::computePositionedHeightUsing(const Length& heightLength, const Bo
         height = heightLengthValue;
         topLengthValue = topLength.calc(containerHeight);
 
-        auto availableSpace = containerHeight - (topLengthValue + height + borderAndPaddingHeight() + bottomLength.calc(containerHeight));
+        auto availableSpace = containerHeight - (height + topLengthValue + bottomLength.calc(containerHeight) + borderAndPaddingHeight());
         if(marginTopLength.isAuto() && marginBottomLength.isAuto()) {
             marginTop = availableSpace / 2.f;
             marginBottom = availableSpace - marginTop;
@@ -1393,7 +1400,7 @@ void BoxFrame::computePositionedHeight(float& y, float& height, float& marginTop
         }
     }
 
-    if(minHeightLength.isAuto() || !minHeightLength.isZero()) {
+    if(!minHeightLength.isZero()) {
         float minY = 0;
         float minHeight = 0;
         float minMarginTop = 0;
