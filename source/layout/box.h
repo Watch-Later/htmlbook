@@ -298,64 +298,19 @@ public:
 
     void clearOverrideSize();
 
-    float intrinsicWidth() const;
-    float intrinsicHeight() const;
-
-    float availableWidth() const { return contentWidth(); }
-    float availableHeight() const;
-    float availableHeightUsing(const Length& height) const;
-
     float containingBlockWidthForPositioned(const BoxModel* containingBox) const;
     float containingBlockHeightForPositioned(const BoxModel* containingBox) const;
-
-    bool shrinkToAvoidFloats() const;
-    float shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const;
-
-    bool adjustToFitContent() const;
-    float adjustWidthToFitContent(float width) const;
 
     float adjustBorderBoxWidth(float width) const;
     float adjustBorderBoxHeight(float height) const;
     float adjustContentBoxWidth(float width) const;
     float adjustContentBoxHeight(float height) const;
 
-    float computeReplacedWidthUsing(const Length& width) const;
-    float computeReplacedHeightUsing(const Length& height) const;
-
-    float computePercentageReplacedWidth(const Length& width) const;
-    float computePercentageReplacedHeight(const Length& height) const;
-
-    float computeReplacedWidth() const;
-    float computeReplacedHeight() const;
-
     void computeHorizontalMargins(float& marginLeft, float& marginRight, float childWidth, const BlockBox* container, float containerWidth) const;
     void computeVerticalMargins(float& marginTop, float& marginBottom) const;
 
-    float computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth) const;
-    float constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const;
-
-    std::optional<float> computePercentageHeight(const Length& height) const;
-    std::optional<float> computeHeightUsing(const Length& height) const;
-
-    float constrainBorderBoxHeightByMinMax(float height) const;
-    float constrainContentBoxHeightByMinMax(float height) const;
-
-    void computePositionedWidthUsing(const Length& widthLength, const BoxModel* container, TextDirection containerDirection, float containerWidth,
-        const Length& leftLength, const Length& rightLength, const Length& marginLeftLength, const Length& marginRightLength,
-        float& x, float& width, float& marginLeft, float& marginRight) const;
-
-    void computePositionedWidthReplaced(float& x, float& width, float& marginLeft, float& marginRight) const;
-    void computePositionedWidth(float& x, float& width, float& marginLeft, float& marginRight) const;
-
-    void computePositionedHeightUsing(const Length& heightLength, const BoxModel* container, float containerHeight, float contentHeight,
-        const Length& topLength, const Length& bottomLength, const Length& marginTopLength, const Length& marginBottomLength,
-        float& y, float& height, float& marginTop, float& marginBottom) const;
-
-    void computePositionedHeightReplaced(float& y, float& height, float& marginTop, float& marginBottom) const;
-    void computePositionedHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
-
-    virtual void computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const;
-    virtual void computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
+    virtual void computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const = 0;
+    virtual void computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const = 0;
 
     void updateWidth();
     void updateHeight();

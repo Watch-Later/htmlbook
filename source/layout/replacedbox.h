@@ -11,15 +11,33 @@ public:
 
     bool isOfType(Type type) const override { return type == Type::Replaced || BoxFrame::isOfType(type); }
 
-    virtual void updateIntrinsicInformation() const;
+    virtual void updateIntrinsicSize() const;
 
     float intrinsicWidth() const;
     float intrinsicHeight() const;
     float intrinsicRatio() const;
 
+    void computePositionedReplacedWidth(float& x, float& width, float& marginLeft, float& marginRight) const;
+    void computePositionedReplacedHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
+
+    float computePercentageReplacedWidth(const Length& width) const;
+    float computePercentageReplacedHeight(const Length& height) const;
+
+    float computeReplacedWidthUsing(const Length& width) const;
+    float computeReplacedHeightUsing(const Length& height) const;
+
+    float constrainReplacedWidthByMinMax(float width) const;
+    float constrainReplacedHeightByMinMax(float height) const;
+
+    float computeReplacedWidth() const;
+    float computeReplacedHeight() const;
+
+    void computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const override;
+    void computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const override;
+
     const char* name() const override { return "ReplacedBox"; }
 
-private:
+protected:
     mutable float m_intrinsicWidth{-1};
     mutable float m_intrinsicHeight{-1};
     mutable float m_intrinsicRatio{-1};

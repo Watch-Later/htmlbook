@@ -41,6 +41,40 @@ public:
     float endOffsetForContent() const { return style()->isRightToLeftDirection() ? leftOffsetForContent() : width() - rightOffsetForContent(); }
     float availableWidthForContent() const { return std::max(0.f, rightOffsetForContent() - leftOffsetForContent()); }
 
+    float availableWidth() const { return contentWidth(); }
+    float availableHeight() const;
+    float availableHeightUsing(const Length& height) const;
+
+    bool shrinkToAvoidFloats() const;
+    float shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const;
+
+    bool adjustToFitContent() const;
+    float adjustWidthToFitContent(float width) const;
+
+    float computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth) const;
+    float constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const;
+
+    std::optional<float> computePercentageHeight(const Length& height) const;
+    std::optional<float> computeHeightUsing(const Length& height) const;
+
+    float constrainBorderBoxHeightByMinMax(float height) const;
+    float constrainContentBoxHeightByMinMax(float height) const;
+
+    void computePositionedWidthUsing(const Length& widthLength, const BoxModel* container, TextDirection containerDirection, float containerWidth,
+        const Length& leftLength, const Length& rightLength, const Length& marginLeftLength, const Length& marginRightLength,
+        float& x, float& width, float& marginLeft, float& marginRight) const;
+
+    void computePositionedWidth(float& x, float& width, float& marginLeft, float& marginRight) const;
+
+    void computePositionedHeightUsing(const Length& heightLength, const BoxModel* container, float containerHeight, float contentHeight,
+        const Length& topLength, const Length& bottomLength, const Length& marginTopLength, const Length& marginBottomLength,
+        float& y, float& height, float& marginTop, float& marginBottom) const;
+
+    void computePositionedHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
+
+    void computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const override;
+    void computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const override;
+
     const char* name() const override { return "BlockBox"; }
 
 protected:
