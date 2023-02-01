@@ -11,17 +11,18 @@ public:
 
     bool isOfType(Type type) const override { return type == Type::Replaced || BoxFrame::isOfType(type); }
 
-    float intrinsicWidth() const { return m_intrinsicWidth; }
-    float intrinsicHeight() const { return m_intrinsicHeight; }
+    virtual void updateIntrinsicInformation() const;
 
-    void setIntrinsicWidth(float width) { m_intrinsicWidth = width; }
-    void setIntrinsicHeight(float height) { m_intrinsicHeight = height; }
+    float intrinsicWidth() const;
+    float intrinsicHeight() const;
+    float intrinsicRatio() const;
 
     const char* name() const override { return "ReplacedBox"; }
 
 private:
-    float m_intrinsicWidth{0};
-    float m_intrinsicHeight{0};
+    mutable float m_intrinsicWidth{-1};
+    mutable float m_intrinsicHeight{-1};
+    mutable float m_intrinsicRatio{-1};
 };
 
 template<>

@@ -8,7 +8,7 @@ TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
     setChildrenInline(false);
 }
 
-void TableBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) const
+void TableBox::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
     minWidth = 0;
     maxWidth = 0;

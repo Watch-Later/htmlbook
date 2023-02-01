@@ -11,7 +11,7 @@ public:
 
     bool isBoxView() const final { return true; }
 
-    void computeIntrinsicWidths(float& minWidth, float& maxWidth) const final;
+    void computePreferredWidths(float& minWidth, float& maxWidth) const final;
     void computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const final;
     void computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const final;
     void layout() final;

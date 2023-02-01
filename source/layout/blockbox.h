@@ -13,15 +13,25 @@ public:
 
     bool isOfType(Type type) const override { return type == Type::Block || BoxFrame::isOfType(type); }
 
-    virtual void computeIntrinsicWidths(float& minWidth, float& maxWidth) const = 0;
+    virtual void computePreferredWidths(float& minWidth, float& maxWidth) const = 0;
 
-    void computePreferredWidths(float& minWidth, float& maxWidth) const override;
+    void updatePreferredWidths() const override;
 
     const PositionedBoxList* positionedBoxes() const { return m_positionedBoxes.get(); }
     bool containsPositonedBoxes() const { return m_positionedBoxes && !m_positionedBoxes->empty(); }
     void insertPositonedBox(BoxFrame* box);
     void removePositonedBox(BoxFrame* box);
     void layoutPositionedBoxes();
+
+    float overflowTop() const { return m_overflowTop; }
+    float overflowBottom() const { return m_overflowBottom; }
+    float overflowLeft() const { return m_overflowLeft; }
+    float overflowRight() const { return m_overflowRight; }
+
+    void setOverflowTop(float value) { m_overflowTop = value; }
+    void setOverflowBottom(float value) { m_overflowBottom = value; }
+    void setOverflowLeft(float value) { m_overflowLeft = value; }
+    void setOverflowRight(float value) { m_overflowRight = value; }
 
     void addBox(Box* box) override;
 
@@ -33,8 +43,13 @@ public:
 
     const char* name() const override { return "BlockBox"; }
 
-private:
+protected:
     std::unique_ptr<PositionedBoxList> m_positionedBoxes;
+
+    float m_overflowTop{0};
+    float m_overflowBottom{0};
+    float m_overflowLeft{0};
+    float m_overflowRight{0};
 };
 
 template<>
@@ -96,7 +111,7 @@ public:
     bool avoidsFloats() const override;
     bool isSelfCollapsingBlock() const override;
 
-    void computeIntrinsicWidths(float& minWidth, float& maxWidth) const override;
+    void computePreferredWidths(float& minWidth, float& maxWidth) const override;
 
     void adjustPositionedBox(BoxFrame* child, const MarginInfo& marginInfo);
     void adjustFloatingBox(const MarginInfo& marginInfo);
@@ -139,11 +154,12 @@ public:
 
     float getClearDelta(BoxFrame* child, float y) const;
 
+    void updateMaxMargins();
+
     float maxPositiveMarginTop() const { return m_maxPositiveMarginTop; }
     float maxNegativeMarginTop() const { return m_maxNegativeMarginTop; }
     float maxPositiveMarginBottom() const { return m_maxPositiveMarginBottom; }
     float maxNegativeMarginBottom() const { return m_maxNegativeMarginBottom; }
-    void updateMaxMargins();
 
     const FloatingBoxList* floatingBoxes() const { return m_floatingBoxes.get(); }
     void insertFloatingBox(BoxFrame* box);

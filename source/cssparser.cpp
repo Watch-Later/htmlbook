@@ -2189,10 +2189,10 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
     case CSSPropertyID::MarginBottom:
     case CSSPropertyID::MarginLeft:
         return consumeLengthOrPercentOrAuto(input, true, true);
-    case CSSPropertyID::MinWidth:
-    case CSSPropertyID::MinHeight:
     case CSSPropertyID::Width:
     case CSSPropertyID::Height:
+    case CSSPropertyID::MinWidth:
+    case CSSPropertyID::MinHeight:
         return consumeLengthOrPercentOrAuto(input, false, true);
     case CSSPropertyID::MaxWidth:
     case CSSPropertyID::MaxHeight:

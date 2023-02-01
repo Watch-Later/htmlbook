@@ -15,7 +15,7 @@ public:
 
     bool isOfType(Type type) const final { return type == Type::Table || BlockBox::isOfType(type); }
 
-    void computeIntrinsicWidths(float& minWidth, float& maxWidth) const final;
+    void computePreferredWidths(float& minWidth, float& maxWidth) const final;
 
     TableSectionBox* header() const { return m_header; }
     TableSectionBox* footer() const { return m_footer; }

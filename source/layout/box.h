@@ -180,17 +180,24 @@ public:
     void build(BoxLayer* layer) override;
 
     virtual bool requiresLayer() const { return false; }
-    virtual void computeBorderWidths(float& top, float& bottom, float& left, float& right) const;
-    virtual void computePaddingWidths(float& top, float& bottom, float& left, float& right) const;
-
-    void computeMarginWidths(float& top, float& bottom, float& left, float& right) const;
-
-    void updateMarginWidths();
-    void updateBorderWidths() const;
-    void updatePaddingWidths() const;
 
     float containingBlockWidthForContent() const;
     float containingBlockHeightForContent() const;
+
+    void updateMarginWidths();
+
+    float marginTop() const { return m_marginTop; }
+    float marginBottom() const { return m_marginBottom; }
+    float marginLeft() const { return m_marginLeft; }
+    float marginRight() const { return m_marginRight; }
+
+    void setMarginTop(float value) { m_marginTop = value; }
+    void setMarginBottom(float value) { m_marginBottom = value; }
+    void setMarginLeft(float value) { m_marginLeft = value; }
+    void setMarginRight(float value) { m_marginRight = value; }
+
+    virtual void updateBorderWidths() const;
+    virtual void updatePaddingWidths() const;
 
     float borderTop() const;
     float borderBottom() const;
@@ -216,22 +223,17 @@ public:
     float borderAndPaddingWidth() const { return borderWidth() + paddingWidth(); }
     float borderAndPaddingHeight() const { return borderHeight() + paddingHeight(); }
 
-    float marginTop() const { return m_marginTop; }
-    float marginBottom() const { return m_marginBottom; }
-    float marginLeft() const { return m_marginLeft; }
-    float marginRight() const { return m_marginRight; }
-
-    void setMarginTop(float value) { m_marginTop = value; }
-    void setMarginBottom(float value) { m_marginBottom = value; }
-    void setMarginLeft(float value) { m_marginLeft = value; }
-    void setMarginRight(float value) { m_marginRight = value; }
-
     BoxLayer* layer() const { return m_layer.get(); }
 
     const char* name() const override { return "BoxModel"; }
 
-private:
+protected:
     std::unique_ptr<BoxLayer> m_layer;
+
+    float m_marginTop{0};
+    float m_marginBottom{0};
+    float m_marginLeft{0};
+    float m_marginRight{0};
 
     mutable float m_borderTop{-1};
     mutable float m_borderBottom{-1};
@@ -242,12 +244,6 @@ private:
     mutable float m_paddingBottom{-1};
     mutable float m_paddingLeft{-1};
     mutable float m_paddingRight{-1};
-
-protected:
-    float m_marginTop{0};
-    float m_marginBottom{0};
-    float m_marginLeft{0};
-    float m_marginRight{0};
 };
 
 template<>
@@ -286,8 +282,7 @@ public:
     float contentWidth() const { return clientWidth() - paddingLeft() - paddingRight(); }
     float contentHeight() const { return clientHeight() - paddingTop() - paddingBottom(); }
 
-    virtual void computePreferredWidths(float& minWidth, float& maxWidth) const;
-    void updatePreferredWidths() const;
+    virtual void updatePreferredWidths() const;
 
     float minPreferredWidth() const;
     float maxPreferredWidth() const;
@@ -337,12 +332,13 @@ public:
     void computeVerticalMargins(float& marginTop, float& marginBottom) const;
 
     float computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth) const;
-    std::optional<float> computeHeightUsing(const Length& height) const;
-    std::optional<float> computePercentageHeight(const Length& height) const;
-
     float constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const;
-    float constrainHeightByMinMax(float height) const;
-    float constrainContentHeightByMinMax(float height) const;
+
+    std::optional<float> computePercentageHeight(const Length& height) const;
+    std::optional<float> computeHeightUsing(const Length& height) const;
+
+    float constrainBorderBoxHeightByMinMax(float height) const;
+    float constrainContentBoxHeightByMinMax(float height) const;
 
     void computePositionedWidthUsing(const Length& widthLength, const BoxModel* container, TextDirection containerDirection, float containerWidth,
         const Length& leftLength, const Length& rightLength, const Length& marginLeftLength, const Length& marginRightLength,
@@ -385,6 +381,7 @@ private:
     float m_overrideWidth{-1};
     float m_overrideHeight{-1};
 
+protected:
     mutable float m_minPreferredWidth{-1};
     mutable float m_maxPreferredWidth{-1};
 };

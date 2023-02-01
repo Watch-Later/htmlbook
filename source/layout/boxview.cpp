@@ -8,7 +8,7 @@ BoxView::BoxView(Document* document, const RefPtr<BoxStyle>& style)
 {
 }
 
-void BoxView::computeIntrinsicWidths(float& minWidth, float& maxWidth) const
+void BoxView::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
     minWidth = 0;
     maxWidth = 0;

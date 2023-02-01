@@ -64,7 +64,7 @@ std::unique_ptr<LineLayout> LineLayout::create(BlockFlowBox* box)
     return std::unique_ptr<LineLayout>(new (box->heap()) LineLayout(box));
 }
 
-void LineLayout::computeIntrinsicWidths(float& minWidth, float& maxWidth) const
+void LineLayout::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
     minWidth = 0;
     maxWidth = 0;

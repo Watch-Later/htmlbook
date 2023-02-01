@@ -51,7 +51,7 @@ public:
 
     bool isOfType(Type type) const final { return type == Type::Flexible || BlockBox::isOfType(type); }
 
-    void computeIntrinsicWidths(float& minWidth, float& maxWidth) const final;
+    void computePreferredWidths(float& minWidth, float& maxWidth) const final;
 
     void build(BoxLayer* layer) final;
 

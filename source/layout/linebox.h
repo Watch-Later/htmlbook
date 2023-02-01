@@ -144,7 +144,7 @@ public:
     const RootLineBoxList& lines() const { return m_lines; }
     bool empty() const { return m_lines.empty(); }
 
-    void computeIntrinsicWidths(float& minWidth, float& maxWidth) const;
+    void computePreferredWidths(float& minWidth, float& maxWidth) const;
 
     void build();
     void layout();

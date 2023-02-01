@@ -28,33 +28,33 @@ BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
     }
 }
 
-void BlockBox::computePreferredWidths(float& minWidth, float& maxWidth) const
+void BlockBox::updatePreferredWidths() const
 {
-    minWidth = 0;
-    maxWidth = 0;
+    m_minPreferredWidth = 0;
+    m_maxPreferredWidth = 0;
 
     auto widthLength = style()->width();
     if(widthLength.isFixed() && !isTableBox() && !isTableCellBox()) {
-        minWidth = maxWidth = adjustContentBoxWidth(widthLength.value());
+        m_minPreferredWidth = m_maxPreferredWidth = adjustContentBoxWidth(widthLength.value());
     } else {
-        computeIntrinsicWidths(minWidth, maxWidth);
+        computePreferredWidths(m_minPreferredWidth, m_maxPreferredWidth);
     }
 
     auto minWidthLength = style()->minWidth();
     if(minWidthLength.isFixed() && minWidthLength.value() > 0) {
-        minWidth = std::max(minWidth, adjustContentBoxWidth(minWidthLength.value()));
-        maxWidth = std::max(maxWidth, adjustContentBoxWidth(minWidthLength.value()));
+        m_minPreferredWidth = std::max(m_minPreferredWidth, adjustContentBoxWidth(minWidthLength.value()));
+        m_maxPreferredWidth = std::max(m_maxPreferredWidth, adjustContentBoxWidth(minWidthLength.value()));
     }
 
     auto maxWidthLength = style()->maxWidth();
     if(maxWidthLength.isFixed()) {
-        minWidth = std::min(minWidth, adjustContentBoxWidth(maxWidthLength.value()));
-        maxWidth = std::min(maxWidth, adjustContentBoxWidth(maxWidthLength.value()));
+        m_minPreferredWidth = std::min(m_minPreferredWidth, adjustContentBoxWidth(maxWidthLength.value()));
+        m_maxPreferredWidth = std::min(m_maxPreferredWidth, adjustContentBoxWidth(maxWidthLength.value()));
     }
 
     if(!isTableBox()) {
-        minWidth += borderAndPaddingWidth();
-        maxWidth += borderAndPaddingWidth();
+        m_minPreferredWidth += borderAndPaddingWidth();
+        m_maxPreferredWidth += borderAndPaddingWidth();
     }
 }
 
@@ -151,10 +151,10 @@ bool BlockFlowBox::isSelfCollapsingBlock() const
     return true;
 }
 
-void BlockFlowBox::computeIntrinsicWidths(float& minWidth, float& maxWidth) const
+void BlockFlowBox::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
     if(isChildrenInline()) {
-        m_lineLayout->computeIntrinsicWidths(minWidth, maxWidth);
+        m_lineLayout->computePreferredWidths(minWidth, maxWidth);
         return;
     }
 
@@ -406,7 +406,7 @@ void BlockFlowBox::layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo)
     }
 
     if(style()->isRightToLeftDirection()) {
-        auto totalAvailableWidth = borderAndPaddingWidth() + availableWidth();
+        auto totalAvailableWidth = availableWidth() + borderAndPaddingWidth();
         offsetX = totalAvailableWidth - offsetX - child->width();
     }
 
