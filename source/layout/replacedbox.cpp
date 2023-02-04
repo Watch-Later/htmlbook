@@ -32,7 +32,7 @@ float ReplacedBox::intrinsicHeight() const
     return m_intrinsicHeight;
 }
 
-float ReplacedBox::intrinsicRatio() const
+double ReplacedBox::intrinsicRatio() const
 {
     if(m_intrinsicRatio < 0)
         updateIntrinsicSize();
@@ -220,7 +220,7 @@ void ReplacedBox::computePositionedReplacedHeight(float& y, float& height, float
     y = topLengthValue + marginTop + container->borderTop();
 }
 
-float ReplacedBox::computePercentageReplacedWidth(const Length& width) const
+float ReplacedBox::computePercentageReplacedWidth(const Length& widthLength) const
 {
     float containerWidth = 0;
     if(isPositioned())
@@ -228,62 +228,39 @@ float ReplacedBox::computePercentageReplacedWidth(const Length& width) const
     else
         containerWidth = containingBlockWidthForContent();
 
-    return adjustContentBoxWidth(width.calcMin(containerWidth));
+    return adjustContentBoxWidth(widthLength.calcMin(containerWidth));
 }
 
-float ReplacedBox::computePercentageReplacedHeight(const Length& height) const
+float ReplacedBox::computePercentageReplacedHeight(const Length& heightLength) const
 {
-    auto container = isPositioned() ? containingBox() : containingBlock();
-    while(container->isAnonymous())
-        container = container->containingBlock();
-    auto containerStyle = container->style();
-    auto containerStyleHeight = containerStyle->height();
-    auto containerStyleTop = containerStyle->top();
-    auto containerStyleBottom = containerStyle->bottom();
-    if(container->isPositioned() && containerStyleHeight.isAuto() && !(containerStyleTop.isAuto() || containerStyleBottom.isAuto())) {
-        auto& block = to<BlockBox>(*container);
-        float y = 0;
-        float computedHeight = block.height();
-        float marginTop = 0;
-        float marginBottom = 0;
-        block.computeHeight(y, computedHeight, marginTop, marginBottom);
-        auto availableHeight = block.adjustContentBoxHeight(computedHeight - block.borderAndPaddingHeight());
-        return adjustContentBoxHeight(height.calc(availableHeight));
-    }
-
-    float availableHeight = 0;
+    float containerHeight = 0;
     if(isPositioned())
-        availableHeight = containingBlockHeightForPositioned(container);
+        containerHeight = containingBlockHeightForPositioned(containingBox());
     else
-        availableHeight = containingBlockHeightForContent();
+        containerHeight = containingBlockHeightForContent();
 
-    if(container->isTableCellBox() && (containerStyleHeight.isAuto() || containerStyleHeight.isPercent())) {
-        availableHeight = std::max(availableHeight, intrinsicHeight());
-        return height.calc(availableHeight - borderAndPaddingHeight());
-    }
-
-    return adjustContentBoxHeight(height.calc(availableHeight));
+    return adjustContentBoxHeight(heightLength.calc(containerHeight));
 }
 
-float ReplacedBox::computeReplacedWidthUsing(const Length& width) const
+float ReplacedBox::computeReplacedWidthUsing(const Length& widthLength) const
 {
-    switch(width.type()) {
+    switch(widthLength.type()) {
     case Length::Type::Fixed:
-        return adjustContentBoxWidth(width.value());
+        return adjustContentBoxWidth(widthLength.value());
     case Length::Type::Percent:
-        return computePercentageReplacedWidth(width);
+        return computePercentageReplacedWidth(widthLength);
     default:
         return intrinsicWidth();
     }
 }
 
-float ReplacedBox::computeReplacedHeightUsing(const Length& height) const
+float ReplacedBox::computeReplacedHeightUsing(const Length& heightLength) const
 {
-    switch(height.type()) {
+    switch(heightLength.type()) {
     case Length::Type::Fixed:
-        return adjustContentBoxHeight(height.value());
+        return adjustContentBoxHeight(heightLength.value());
     case Length::Type::Percent:
-        return computePercentageReplacedHeight(height);
+        return computePercentageReplacedHeight(heightLength);
     default:
         return intrinsicHeight();
     }

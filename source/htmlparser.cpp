@@ -78,6 +78,7 @@ inline bool isSpecialElement(const Element* element)
 
     return tagName == addressTag
         || tagName == areaTag
+        || tagName == appletTag
         || tagName == articleTag
         || tagName == asideTag
         || tagName == baseTag
@@ -321,44 +322,51 @@ void HTMLElementStack::popHTMLBodyElement()
 
 void HTMLElementStack::popUntil(const GlobalString& tagName)
 {
-    while(tagName != top()->tagName())
+    while(tagName != top()->tagName()) {
         pop();
+    }
 }
 
 void HTMLElementStack::popUntil(Element* element)
 {
-    while(element != top())
+    while(element != top()) {
         pop();
+    }
 }
 
 void HTMLElementStack::popUntilNumberedHeaderElement()
 {
-    while(!isNumberedHeaderElement(top()))
+    while(!isNumberedHeaderElement(top())) {
         pop();
+    }
 }
 
 void HTMLElementStack::popUntilTableScopeMarker()
 {
-    while(!isTableScopeMarker(top()))
+    while(!isTableScopeMarker(top())) {
         pop();
+    }
 }
 
 void HTMLElementStack::popUntilTableBodyScopeMarker()
 {
-    while(!isTableBodyScopeMarker(top()))
+    while(!isTableBodyScopeMarker(top())) {
         pop();
+    }
 }
 
 void HTMLElementStack::popUntilTableRowScopeMarker()
 {
-    while(!isTableRowScopeMarker(top()))
+    while(!isTableRowScopeMarker(top())) {
         pop();
+    }
 }
 
 void HTMLElementStack::popUntilForeignContentScopeMarker()
 {
-    while(!isForeignContentScopeMarker(top()))
+    while(!isForeignContentScopeMarker(top())) {
         pop();
+    }
 }
 
 void HTMLElementStack::popUntilPopped(const GlobalString& tagName)
@@ -393,14 +401,16 @@ void HTMLElementStack::popAll()
 
 void HTMLElementStack::generateImpliedEndTags()
 {
-    while(isImpliedEndTag(top()->tagName()))
+    while(isImpliedEndTag(top()->tagName())) {
         pop();
+    }
 }
 
 void HTMLElementStack::generateImpliedEndTagsExcept(const GlobalString& tagName)
 {
-    while(top()->tagName() != tagName && isImpliedEndTag(top()->tagName()))
+    while(top()->tagName() != tagName && isImpliedEndTag(top()->tagName())) {
         pop();
+    }
 }
 
 void HTMLElementStack::remove(Element* element)
@@ -746,13 +756,11 @@ void HTMLParser::insert(const InsertionLocation& location)
     else
         location.parent->insertChild(location.child, location.nextChild);
 
-    if(!location.child->isContainerNode())
-        return;
-
-    auto child = to<ContainerNode>(location.child);
-    child->beginParsingChildren();
-    if(location.selfClosing) {
-        child->finishParsingChildren();
+    if(auto child = to<ContainerNode>(location.child)) {
+        child->beginParsingChildren();
+        if(location.selfClosing) {
+            child->finishParsingChildren();
+        }
     }
 }
 
@@ -809,7 +817,7 @@ void HTMLParser::adoptionAgencyAlgorithm(HTMLTokenView& token)
     for(int i = 0; i < outerIterationLimit; ++i) {
         auto formattingElement = m_activeFormattingElements.closestElementInScope(token.tagName());
         if(formattingElement == nullptr) {
-            defaultForInBodyEndTagToken(token);
+            handleFormattingEndTagToken(token);
             return;
         }
 
@@ -906,6 +914,25 @@ void HTMLParser::reconstructActiveFormattingElements()
         m_openElements.push(newElement);
         m_activeFormattingElements.replace(index, newElement);
     }
+}
+
+void HTMLParser::flushPendingTableCharacters()
+{
+    for(auto cc : m_pendingTableCharacters) {
+        if(isspace(cc))
+            continue;
+
+        reconstructActiveFormattingElements();
+        m_fosterParenting = true;
+        insertTextNode(m_pendingTableCharacters);
+        m_fosterParenting = false;
+        m_framesetOk = false;
+        m_insertionMode = m_originalInsertionMode;
+        return;
+    }
+
+    insertTextNode(m_pendingTableCharacters);
+    m_insertionMode = m_originalInsertionMode;
 }
 
 void HTMLParser::closeCell()
@@ -2096,7 +2123,7 @@ void HTMLParser::handleInBodyMode(HTMLTokenView& token)
             return;
         }
 
-        defaultForInBodyEndTagToken(token);
+        handleFormattingEndTagToken(token);
         return;
     }
 
@@ -2271,9 +2298,7 @@ void HTMLParser::handleInTableMode(HTMLTokenView& token)
         m_insertionMode = InsertionMode::InTableText;
         handleInTableTextMode(token);
         return;
-    }
-
-    if(token.type() == HTMLToken::Type::EndOfFile) {
+    } else if(token.type() == HTMLToken::Type::EndOfFile) {
         assert(currentElement()->tagName() != htmlTag);
         handleErrorToken(token);
         return;
@@ -2373,9 +2398,7 @@ void HTMLParser::handleInColumnGroupMode(HTMLTokenView& token)
     } else if(token.type() == HTMLToken::Type::SpaceCharacter) {
         insertTextNode(token.data());
         return;
-    }
-
-    if(token.type() == HTMLToken::Type::EndOfFile) {
+    } else if(token.type() == HTMLToken::Type::EndOfFile) {
         assert(currentElement()->tagName() != htmlTag);
     }
 
@@ -2663,9 +2686,7 @@ void HTMLParser::handleInSelectMode(HTMLTokenView& token)
         || token.type() == HTMLToken::Type::SpaceCharacter) {
         insertTextNode(token.data());
         return;
-    }
-
-    if(token.type() == HTMLToken::Type::EndOfFile) {
+    } else if(token.type() == HTMLToken::Type::EndOfFile) {
         assert(currentElement()->tagName() != htmlTag);
         handleErrorToken(token);
         return;
@@ -2822,9 +2843,7 @@ void HTMLParser::handleAfterBodyMode(HTMLTokenView& token)
     } else if(token.type() == HTMLToken::Type::SpaceCharacter) {
         handleInBodyMode(token);
         return;
-    }
-
-    if(token.type() == HTMLToken::Type::EndOfFile) {
+    } else if(token.type() == HTMLToken::Type::EndOfFile) {
         return;
     }
 
@@ -2866,9 +2885,7 @@ void HTMLParser::handleInFramesetMode(HTMLTokenView& token)
     } else if(token.type() == HTMLToken::Type::SpaceCharacter) {
         insertTextNode(token.data());
         return;
-    }
-
-    if(token.type() == HTMLToken::Type::EndOfFile) {
+    } else if(token.type() == HTMLToken::Type::EndOfFile) {
         assert(currentElement()->tagName() != htmlTag);
         handleErrorToken(token);
         return;
@@ -2897,9 +2914,7 @@ void HTMLParser::handleAfterFramesetMode(HTMLTokenView& token)
     } else if(token.type() == HTMLToken::Type::SpaceCharacter) {
         insertTextNode(token.data());
         return;
-    }
-
-    if(token.type() == HTMLToken::Type::EndOfFile) {
+    } else if(token.type() == HTMLToken::Type::EndOfFile) {
         return;
     }
 
@@ -2917,9 +2932,7 @@ void HTMLParser::handleAfterAfterBodyMode(HTMLTokenView& token)
         || token.type() == HTMLToken::Type::DOCTYPE) {
         handleInBodyMode(token);
         return;
-    }
-
-    if(token.type() == HTMLToken::Type::EndOfFile) {
+    } else if(token.type() == HTMLToken::Type::EndOfFile) {
         return;
     }
 
@@ -2944,9 +2957,7 @@ void HTMLParser::handleAfterAfterFramesetMode(HTMLTokenView& token)
         || token.type() == HTMLToken::Type::DOCTYPE) {
         handleInBodyMode(token);
         return;
-    }
-
-    if(token.type() == HTMLToken::Type::EndOfFile) {
+    } else if(token.type() == HTMLToken::Type::EndOfFile) {
         return;
     }
 
@@ -2965,7 +2976,7 @@ void HTMLParser::handleFakeEndTagToken(const GlobalString& tagName)
     handleToken(token, m_insertionMode);
 }
 
-void HTMLParser::defaultForInBodyEndTagToken(HTMLTokenView& token)
+void HTMLParser::handleFormattingEndTagToken(HTMLTokenView& token)
 {
     for(int i = m_openElements.size() - 1; i >= 0; --i) {
         auto element = m_openElements.at(i);
@@ -2982,25 +2993,6 @@ void HTMLParser::defaultForInBodyEndTagToken(HTMLTokenView& token)
             break;
         }
     }
-}
-
-void HTMLParser::flushPendingTableCharacters()
-{
-    for(auto cc : m_pendingTableCharacters) {
-        if(isspace(cc))
-            continue;
-
-        reconstructActiveFormattingElements();
-        m_fosterParenting = true;
-        insertTextNode(m_pendingTableCharacters);
-        m_fosterParenting = false;
-        m_framesetOk = false;
-        m_insertionMode = m_originalInsertionMode;
-        return;
-    }
-
-    insertTextNode(m_pendingTableCharacters);
-    m_insertionMode = m_originalInsertionMode;
 }
 
 void HTMLParser::handleErrorToken(HTMLTokenView& token)

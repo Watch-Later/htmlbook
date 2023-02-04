@@ -15,16 +15,16 @@ public:
 
     float intrinsicWidth() const;
     float intrinsicHeight() const;
-    float intrinsicRatio() const;
+    double intrinsicRatio() const;
 
     void computePositionedReplacedWidth(float& x, float& width, float& marginLeft, float& marginRight) const;
     void computePositionedReplacedHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
 
-    float computePercentageReplacedWidth(const Length& width) const;
-    float computePercentageReplacedHeight(const Length& height) const;
+    float computePercentageReplacedWidth(const Length& widthLength) const;
+    float computePercentageReplacedHeight(const Length& heightLength) const;
 
-    float computeReplacedWidthUsing(const Length& width) const;
-    float computeReplacedHeightUsing(const Length& height) const;
+    float computeReplacedWidthUsing(const Length& widthLength) const;
+    float computeReplacedHeightUsing(const Length& heightLength) const;
 
     float constrainReplacedWidthByMinMax(float width) const;
     float constrainReplacedHeightByMinMax(float height) const;
@@ -40,7 +40,7 @@ public:
 protected:
     mutable float m_intrinsicWidth{-1};
     mutable float m_intrinsicHeight{-1};
-    mutable float m_intrinsicRatio{-1};
+    mutable double m_intrinsicRatio{-1};
 };
 
 template<>

@@ -43,7 +43,7 @@ public:
 
     float availableWidth() const { return contentWidth(); }
     float availableHeight() const;
-    float availableHeightUsing(const Length& height) const;
+    float availableHeightUsing(const Length& heightLength) const;
 
     bool shrinkToAvoidFloats() const;
     float shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const;
@@ -51,11 +51,11 @@ public:
     bool adjustToFitContent() const;
     float adjustWidthToFitContent(float width) const;
 
-    float computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth) const;
+    float computeWidthUsing(const Length& widthLength, const BlockBox* container, float containerWidth) const;
     float constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const;
 
-    std::optional<float> computePercentageHeight(const Length& height) const;
-    std::optional<float> computeHeightUsing(const Length& height) const;
+    std::optional<float> computePercentageHeight(const Length& heightLength) const;
+    std::optional<float> computeHeightUsing(const Length& heightLength) const;
 
     float constrainBorderBoxHeightByMinMax(float height) const;
     float constrainContentBoxHeightByMinMax(float height) const;

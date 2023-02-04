@@ -132,6 +132,7 @@ private:
 
     void adoptionAgencyAlgorithm(HTMLTokenView& token);
     void reconstructActiveFormattingElements();
+    void flushPendingTableCharacters();
     void closeCell();
 
     static void adjustSVGTagNames(HTMLTokenView& token);
@@ -208,9 +209,7 @@ private:
 
     void handleFakeStartTagToken(const GlobalString& tagName);
     void handleFakeEndTagToken(const GlobalString& tagName);
-
-    void defaultForInBodyEndTagToken(HTMLTokenView& token);
-    void flushPendingTableCharacters();
+    void handleFormattingEndTagToken(HTMLTokenView& token);
 
     void handleErrorToken(HTMLTokenView& token);
     void handleRCDataToken(HTMLTokenView& token);

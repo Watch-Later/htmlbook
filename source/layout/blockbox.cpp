@@ -128,7 +128,7 @@ float BlockBox::availableHeight() const
     return constrainContentBoxHeightByMinMax(availableHeight);
 }
 
-float BlockBox::availableHeightUsing(const Length& height) const
+float BlockBox::availableHeightUsing(const Length& heightLength) const
 {
     if(isBoxView())
         return style()->viewportHeight();
@@ -136,23 +136,22 @@ float BlockBox::availableHeightUsing(const Length& height) const
     if(hasOverrideHeight())
         return overrideHeight() - borderAndPaddingHeight();
 
-    if(height.isPercent() && isPositioned()) {
+    if(heightLength.isPercent() && isPositioned()) {
         auto availableHeight = containingBlockHeightForPositioned(containingBlock());
-        return adjustContentBoxHeight(height.calc(availableHeight));
+        return adjustContentBoxHeight(heightLength.calc(availableHeight));
     }
 
-    if(auto computedHeight = computeHeightUsing(height))
-        return adjustContentBoxHeight(*computedHeight);
-
-    if(isPositioned() && style()->height().isAuto() && !(style()->top().isAuto() || style()->bottom().isAuto())) {
+    if(heightLength.isAuto() && isPositioned() && !(style()->top().isAuto() || style()->bottom().isAuto())) {
         float y = 0;
-        float computedHeight = 0;
+        float computedHeight = height();
         float marginTop = 0;
         float marginBottom = 0;
         computeHeight(y, computedHeight, marginTop, marginBottom);
         return adjustContentBoxHeight(computedHeight - borderAndPaddingHeight());
     }
 
+    if(auto computedHeight = computeHeightUsing(heightLength))
+        return adjustContentBoxHeight(*computedHeight);
     return containingBlockHeightForContent();
 }
 
@@ -193,11 +192,12 @@ float BlockBox::shrinkWidthToAvoidFloats(float marginLeft, float marginRight, co
 
 bool BlockBox::adjustToFitContent() const
 {
-    if(isFloating() || (isInline() && isBlockBox()))
+    if(isFloating() || isInline())
         return true;
-    if(!isFlexItem())
+    auto parent = parentBox();
+    if(!parent || !parent->isFlexibleBox())
         return false;
-    auto parentStyle = parentBox()->style();
+    auto parentStyle = parent->style();
     if(!parentStyle->isColumnFlexDirection() || parentStyle->flexWrap() != FlexWrap::Nowrap)
         return true;
     if(style()->marginLeft().isAuto() || style()->marginRight().isAuto())
@@ -215,10 +215,10 @@ float BlockBox::adjustWidthToFitContent(float width) const
     return width;
 }
 
-float BlockBox::computeWidthUsing(const Length& width, const BlockBox* container, float containerWidth) const
+float BlockBox::computeWidthUsing(const Length& widthLength, const BlockBox* container, float containerWidth) const
 {
-    if(!width.isAuto())
-        return adjustBorderBoxWidth(width.calc(containerWidth));
+    if(!widthLength.isAuto())
+        return adjustBorderBoxWidth(widthLength.calc(containerWidth));
     auto marginLeft = style()->marginLeft().calcMin(containerWidth);
     auto marginRight = style()->marginRight().calcMin(containerWidth);
     auto computedWidth = containerWidth - marginLeft - marginRight;
@@ -240,7 +240,7 @@ float BlockBox::constrainWidthByMinMax(float width, const BlockBox* container, f
     return std::max(width, computeWidthUsing(minWidthLength, container, containerWidth));
 }
 
-std::optional<float> BlockBox::computePercentageHeight(const Length& height) const
+std::optional<float> BlockBox::computePercentageHeight(const Length& heightLength) const
 {
     auto container = containingBlock();
     auto containerStyle = container->style();
@@ -269,29 +269,22 @@ std::optional<float> BlockBox::computePercentageHeight(const Length& height) con
         availableHeight = container->constrainContentBoxHeightByMinMax(availableHeight);
     } else if(container->isBoxView()) {
         availableHeight = containerStyle->viewportHeight();
+    } else if(container->isAnonymous()) {
+        return container->computePercentageHeight(heightLength);
     } else {
         return std::nullopt;
     }
 
-    if(isTableBox() && isPositioned())
-        availableHeight += paddingHeight();
-
-    auto computedHeight = height.calc(availableHeight);
-    if(isTableBox() || (container->isTableCellBox() && container->hasOverrideHeight() && style()->boxSizing() == BoxSizing::ContentBox)) {
-        computedHeight -= borderAndPaddingHeight();
-        return std::max(0.f, computedHeight);
-    }
-
-    return computedHeight;
+    return heightLength.calc(availableHeight);
 }
 
-std::optional<float> BlockBox::computeHeightUsing(const Length& height) const
+std::optional<float> BlockBox::computeHeightUsing(const Length& heightLength) const
 {
-    switch(height.type()) {
+    switch(heightLength.type()) {
     case Length::Type::Fixed:
-        return height.value();
+        return heightLength.value();
     case Length::Type::Percent:
-        return computePercentageHeight(height);
+        return computePercentageHeight(heightLength);
     default:
         return std::nullopt;
     }
