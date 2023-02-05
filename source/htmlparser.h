@@ -138,6 +138,7 @@ private:
     static void adjustSVGTagNames(HTMLTokenView& token);
     static void adjustSVGAttributes(HTMLTokenView& token);
     static void adjustMathMLAttributes(HTMLTokenView& token);
+    static void adjustForeignAttributes(HTMLTokenView& token);
 
     void insertDoctype(HTMLTokenView& token);
     void insertComment(HTMLTokenView& token, ContainerNode* parent);
@@ -169,12 +170,12 @@ private:
         InCell,
         InSelect,
         InSelectInTable,
-        InForeignContent,
         AfterBody,
         InFrameset,
         AfterFrameset,
         AfterAfterBody,
-        AfterAfterFrameset
+        AfterAfterFrameset,
+        InForeignContent
     };
 
     void setInsertionMode(InsertionMode mode) { m_insertionMode = mode; }
@@ -200,12 +201,12 @@ private:
     void handleInCellMode(HTMLTokenView& token);
     void handleInSelectMode(HTMLTokenView& token);
     void handleInSelectInTableMode(HTMLTokenView& token);
-    void handleInForeignContentMode(HTMLTokenView& token);
     void handleAfterBodyMode(HTMLTokenView& token);
     void handleInFramesetMode(HTMLTokenView& token);
     void handleAfterFramesetMode(HTMLTokenView& token);
     void handleAfterAfterBodyMode(HTMLTokenView& token);
     void handleAfterAfterFramesetMode(HTMLTokenView& token);
+    void handleInForeignContentMode(HTMLTokenView& token);
 
     void handleFakeStartTagToken(const GlobalString& tagName);
     void handleFakeEndTagToken(const GlobalString& tagName);
@@ -219,6 +220,7 @@ private:
     void handleDoctypeToken(HTMLTokenView& token);
     void handleCommentToken(HTMLTokenView& token);
     void handleToken(HTMLTokenView& token, InsertionMode mode);
+    void handleToken(HTMLTokenView& token) { handleToken(token, m_insertionMode); }
 
 private:
     HTMLDocument* m_document;

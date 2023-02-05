@@ -67,6 +67,7 @@ const GlobalString aTag("a");
 const GlobalString abbrTag("abbr");
 const GlobalString acronymTag("acronym");
 const GlobalString addressTag("address");
+const GlobalString appletTag("applet");
 const GlobalString areaTag("area");
 const GlobalString articleTag("article");
 const GlobalString asideTag("aside");
