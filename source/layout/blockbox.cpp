@@ -190,29 +190,15 @@ float BlockBox::shrinkWidthToAvoidFloats(float marginLeft, float marginRight, co
     return availableWidth;
 }
 
-bool BlockBox::adjustToFitContent() const
+static bool isStretchingFlexItem(const BoxFrame* child)
 {
-    if(isFloating() || isInline())
-        return true;
-    auto parent = parentBox();
-    if(!parent || !parent->isFlexibleBox())
+    auto childStyle = child->style();
+    auto parentStyle = child->parentBox()->style();
+    if(parentStyle->isRowFlexDirection() || parentStyle->flexWrap() != FlexWrap::Nowrap)
         return false;
-    auto parentStyle = parent->style();
-    if(!parentStyle->isColumnFlexDirection() || parentStyle->flexWrap() != FlexWrap::Nowrap)
-        return true;
-    if(style()->marginLeft().isAuto() || style()->marginRight().isAuto())
-        return true;
-    return !(style()->alignSelf() == AlignItem::Stretch || (style()->alignSelf() == AlignItem::Auto && parentStyle->alignItems() == AlignItem::Stretch));
-}
-
-float BlockBox::adjustWidthToFitContent(float width) const
-{
-    if(adjustToFitContent()) {
-        width = std::max(width, minPreferredWidth());
-        width = std::min(width, maxPreferredWidth());
-    }
-
-    return width;
+    if(childStyle->marginLeft().isAuto() || childStyle->marginRight().isAuto())
+        return false;
+    return childStyle->alignSelf() == AlignItem::Stretch || (childStyle->alignSelf() == AlignItem::Auto && parentStyle->alignItems() == AlignItem::Stretch);
 }
 
 float BlockBox::computeWidthUsing(const Length& widthLength, const BlockBox* container, float containerWidth) const
@@ -222,10 +208,15 @@ float BlockBox::computeWidthUsing(const Length& widthLength, const BlockBox* con
     auto marginLeft = style()->marginLeft().calcMin(containerWidth);
     auto marginRight = style()->marginRight().calcMin(containerWidth);
     auto computedWidth = containerWidth - marginLeft - marginRight;
-    auto containerBlockFlow = to<BlockFlowBox>(container);
-    if(containerBlockFlow && containerBlockFlow->containsFloats() && shrinkToAvoidFloats())
-        computedWidth = std::min(computedWidth, shrinkWidthToAvoidFloats(marginLeft, marginRight, containerBlockFlow));
-    return adjustWidthToFitContent(computedWidth);
+    auto containerFlow = to<BlockFlowBox>(container);
+    if(containerFlow && containerFlow->containsFloats() && shrinkToAvoidFloats())
+        computedWidth = std::min(computedWidth, shrinkWidthToAvoidFloats(marginLeft, marginRight, containerFlow));
+    if(isFloating() || isInline() || (isFlexItem() && !isStretchingFlexItem(this))) {
+        computedWidth = std::min(computedWidth, maxPreferredWidth());
+        computedWidth = std::max(computedWidth, minPreferredWidth());
+    }
+
+    return computedWidth;
 }
 
 float BlockBox::constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const
@@ -1296,6 +1287,16 @@ void BlockFlowBox::updateMaxMargins()
     m_maxNegativeMarginTop = std::max(0.f, -m_marginTop);
     m_maxPositiveMarginBottom = std::max(0.f, m_marginBottom);
     m_maxNegativeMarginBottom = std::max(0.f, -m_marginBottom);
+}
+
+float BlockFlowBox::maxMarginTop(bool positive) const
+{
+    return positive ? m_maxPositiveMarginTop : m_maxNegativeMarginTop;
+}
+
+float BlockFlowBox::maxMarginBottom(bool positive) const
+{
+    return positive ? m_maxPositiveMarginBottom : m_maxNegativeMarginBottom;
 }
 
 void BlockFlowBox::insertFloatingBox(BoxFrame* box)

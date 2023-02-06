@@ -7,9 +7,29 @@ std::unique_ptr<FlexItem> FlexItem::create(BoxFrame* box)
     return std::unique_ptr<FlexItem>(new (box->heap()) FlexItem(box));
 }
 
-int FlexItem::order() const
+FlexibleBox* FlexItem::parentBox() const
 {
-    return m_box->style()->order();
+    return to<FlexibleBox>(m_box->parentBox());
+}
+
+const RefPtr<BoxStyle>& FlexItem::parentStyle() const
+{
+    return parentBox()->style();
+}
+
+AlignItem FlexItem::alignSelf() const
+{
+    if(style()->alignSelf() == AlignItem::Auto)
+        return parentStyle()->alignItems();
+    return style()->alignSelf();
+}
+
+Length FlexItem::flexBasis() const
+{
+    auto flexBasis = style()->flexBasis();
+    if(flexBasis.isAuto())
+        return parentStyle()->isRowFlexDirection() ? style()->width() : style()->height();
+    return flexBasis;
 }
 
 FlexItem::FlexItem(BoxFrame* box)

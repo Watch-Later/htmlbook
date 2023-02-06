@@ -316,9 +316,9 @@ public:
     void updateVerticalMargins();
 
     virtual bool isSelfCollapsingBlock() const { return false; }
+    virtual float maxMarginTop(bool positive) const;
+    virtual float maxMarginBottom(bool positive) const;
 
-    float maxMarginTop(bool positive) const;
-    float maxMarginBottom(bool positive) const;
     float collapsedMarginTop() const;
     float collapsedMarginBottom() const;
 

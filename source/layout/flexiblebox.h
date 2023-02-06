@@ -6,16 +6,24 @@
 namespace htmlbook {
 
 class FlexLine;
+class FlexibleBox;
 
 class FlexItem : public HeapMember {
 public:
     static std::unique_ptr<FlexItem> create(BoxFrame* box);
 
     BoxFrame* box() const { return m_box; }
+    const RefPtr<BoxStyle>& style() const { return m_box->style(); }
+    int order() const { return style()->order(); }
+
+    FlexibleBox* parentBox() const;
+    const RefPtr<BoxStyle>& parentStyle() const;
+
     FlexLine* line() const { return m_line; }
     void setLine(FlexLine* line) { m_line = line; }
 
-    int order() const;
+    AlignItem alignSelf() const;
+    Length flexBasis() const;
 
 private:
     FlexItem(BoxFrame* box);
@@ -26,6 +34,11 @@ private:
 using FlexItemList = std::pmr::vector<std::unique_ptr<FlexItem>>;
 using FlexItemListView = std::pmr::vector<FlexItem*>;
 
+enum class FlexSign {
+    Positive,
+    Negative
+};
+
 class FlexibleBox;
 
 class FlexLine : public HeapMember {
@@ -34,6 +47,7 @@ public:
 
     FlexibleBox* box() const { return m_box; }
     const FlexItemListView& items() const { return m_items; }
+    FlexSign flexSign() const;
 
     void addItem(FlexItem* item);
 

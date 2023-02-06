@@ -10,24 +10,24 @@ BoxView::BoxView(Document* document, const RefPtr<BoxStyle>& style)
 
 void BoxView::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
-    minWidth = 0;
-    maxWidth = 0;
+    assert(false);
 }
 
 void BoxView::computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const
 {
-    width = style()->viewportWidth();
+    assert(false);
 }
 
 void BoxView::computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const
 {
-    height = style()->viewportHeight();
+    assert(false);
 }
 
 void BoxView::layout()
 {
-    updateWidth();
-    updateHeight();
+    setWidth(style()->viewportWidth());
+    setHeight(style()->viewportHeight());
+
     auto child = firstBox();
     while(child) {
         child->layout();

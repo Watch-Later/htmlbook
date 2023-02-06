@@ -48,9 +48,6 @@ public:
     bool shrinkToAvoidFloats() const;
     float shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const;
 
-    bool adjustToFitContent() const;
-    float adjustWidthToFitContent(float width) const;
-
     float computeWidthUsing(const Length& widthLength, const BlockBox* container, float containerWidth) const;
     float constrainWidthByMinMax(float width, const BlockBox* container, float containerWidth) const;
 
@@ -194,6 +191,9 @@ public:
     float maxNegativeMarginTop() const { return m_maxNegativeMarginTop; }
     float maxPositiveMarginBottom() const { return m_maxPositiveMarginBottom; }
     float maxNegativeMarginBottom() const { return m_maxNegativeMarginBottom; }
+
+    float maxMarginTop(bool positive) const override;
+    float maxMarginBottom(bool positive) const override;
 
     const FloatingBoxList* floatingBoxes() const { return m_floatingBoxes.get(); }
     void insertFloatingBox(BoxFrame* box);

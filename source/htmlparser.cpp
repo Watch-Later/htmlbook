@@ -2399,10 +2399,13 @@ void HTMLParser::handleInColumnGroupMode(HTMLTokenView& token)
         return;
     } else if(token.type() == HTMLToken::Type::EndOfFile) {
         assert(currentElement()->tagName() != htmlTag);
+        handleFakeEndTagToken(colgroupTag);
+        handleToken(token);
+        return;
     }
 
     handleFakeEndTagToken(colgroupTag);
-    handleInTableMode(token);
+    handleToken(token);
 }
 
 void HTMLParser::handleInTableBodyMode(HTMLTokenView& token)
@@ -2869,6 +2872,14 @@ void HTMLParser::handleAfterAfterFramesetMode(HTMLTokenView& token)
 
 void HTMLParser::handleInForeignContentMode(HTMLTokenView& token)
 {
+    if(token.type() == HTMLToken::Type::Character
+        || token.type() == HTMLToken::Type::SpaceCharacter) {
+        insertTextNode(token.data());
+        if(token.type() == HTMLToken::Type::Character)
+            m_framesetOk = false;
+        return;
+    }
+
     if(token.type() == HTMLToken::Type::StartTag) {
         if(token.tagName() == bTag
             || token.tagName() == bigTag
@@ -2946,14 +2957,6 @@ void HTMLParser::handleInForeignContentMode(HTMLTokenView& token)
                 return;
             }
         }
-    }
-
-    if(token.type() == HTMLToken::Type::Character
-        || token.type() == HTMLToken::Type::SpaceCharacter) {
-        insertTextNode(token.data());
-        if(token.type() == HTMLToken::Type::Character)
-            m_framesetOk = false;
-        return;
     }
 }
 

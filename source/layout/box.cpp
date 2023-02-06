@@ -658,30 +658,22 @@ void BoxFrame::updateVerticalMargins()
 
 float BoxFrame::maxMarginTop(bool positive) const
 {
-    if(auto block = to<BlockFlowBox>(this))
-        return positive ? block->maxPositiveMarginTop() : block->maxNegativeMarginTop();
     return positive ? std::max(0.f, m_marginTop) : -std::min(0.f, m_marginTop);
 }
 
 float BoxFrame::maxMarginBottom(bool positive) const
 {
-    if(auto block = to<BlockFlowBox>(this))
-        return positive ? block->maxPositiveMarginBottom() : block->maxNegativeMarginBottom();
     return positive ? std::max(0.f, m_marginBottom) : -std::min(0.f, m_marginBottom);
 }
 
 float BoxFrame::collapsedMarginTop() const
 {
-    if(auto block = to<BlockFlowBox>(this))
-        return block->maxPositiveMarginTop() - block->maxNegativeMarginTop();
-    return m_marginTop;
+    return maxMarginTop(true) - maxMarginTop(false);
 }
 
 float BoxFrame::collapsedMarginBottom() const
 {
-    if(auto block = to<BlockFlowBox>(this))
-        return block->maxPositiveMarginBottom() - block->maxNegativeMarginBottom();
-    return m_marginBottom;
+    return maxMarginBottom(true) - maxMarginBottom(false);
 }
 
 } // namespace htmlbook
