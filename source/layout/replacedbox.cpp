@@ -8,7 +8,6 @@ namespace htmlbook {
 ReplacedBox::ReplacedBox(Node* node, const RefPtr<BoxStyle>& style)
     : BoxFrame(node, style)
 {
-    setReplaced(true);
 }
 
 void ReplacedBox::updateIntrinsicSize() const
@@ -330,11 +329,6 @@ float ReplacedBox::computeReplacedHeight() const
 
 void ReplacedBox::computeWidth(float& x, float& width, float& marginLeft, float& marginRight) const
 {
-    if(hasOverrideWidth()) {
-        width = overrideWidth();
-        return;
-    }
-
     if(isPositioned()) {
         computePositionedReplacedWidth(x, width, marginLeft, marginRight);
         return;
@@ -351,11 +345,6 @@ void ReplacedBox::computeWidth(float& x, float& width, float& marginLeft, float&
 
 void ReplacedBox::computeHeight(float& y, float& height, float& marginTop, float& marginBottom) const
 {
-    if(hasOverrideHeight()) {
-        height = overrideHeight();
-        return;
-    }
-
     if(isPositioned()) {
         computePositionedReplacedHeight(y, height, marginTop, marginBottom);
         return;

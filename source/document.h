@@ -260,6 +260,11 @@ inline bool Node::isRootNode() const
     return this == m_document->rootElement();
 }
 
+inline Heap* Node::heap() const
+{
+    return m_document->heap();
+}
+
 template<>
 struct is_a<Document> {
     static bool check(const Node& value) { return value.isDocumentNode(); }

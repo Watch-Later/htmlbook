@@ -7,18 +7,6 @@ namespace htmlbook {
 BlockBox::BlockBox(Node* node, const RefPtr<BoxStyle>& style)
     : BoxFrame(node, style)
 {
-    switch(style->display()) {
-    case Display::Inline:
-    case Display::InlineBlock:
-    case Display::InlineFlex:
-    case Display::InlineTable:
-        setReplaced(true);
-        break;
-    default:
-        setReplaced(false);
-        break;
-    }
-
     switch(style->overflow()) {
     case Overflow::Visible:
         setOverflowHidden(false);
@@ -80,46 +68,6 @@ void BlockBox::layoutPositionedBoxes()
             box->layout();
         }
     }
-}
-
-void BlockBox::addBox(Box* box)
-{
-    if(isChildrenInline() && !box->isInline() && !box->isFloatingOrPositioned()) {
-        for(auto child = firstBox(); child; child = child->nextBox()) {
-            if(child->isFloatingOrPositioned())
-                continue;
-            auto newBlock = createAnonymousBlock(style());
-            moveChildrenTo(newBlock);
-            appendChild(newBlock);
-            break;
-        }
-
-        setChildrenInline(false);
-    } else if(!isChildrenInline() && (box->isInline() || box->isFloatingOrPositioned())) {
-        auto lastChild = lastBox();
-        if(lastChild && lastChild->isAnonymous() && lastChild->isBlockBox()) {
-            lastChild->addBox(box);
-            return;
-        }
-
-        if(box->isInline()) {
-            auto newBlock = createAnonymousBlock(style());
-            appendChild(newBlock);
-
-            auto child = newBlock->prevBox();
-            while(child && child->isFloatingOrPositioned()) {
-                auto prevBox = child->prevBox();
-                removeChild(child);
-                newBlock->insertChild(child, newBlock->firstBox());
-                child = prevBox;
-            }
-
-            newBlock->addBox(box);
-            return;
-        }
-    }
-
-    BoxFrame::addBox(box);
 }
 
 float BlockBox::availableHeight() const
@@ -190,7 +138,7 @@ float BlockBox::shrinkWidthToAvoidFloats(float marginLeft, float marginRight, co
     return availableWidth;
 }
 
-static bool isStretchingFlexItem(const BoxFrame* child)
+static bool isStretchingFlexItem(const BlockBox* child)
 {
     auto childStyle = child->style();
     auto parentStyle = child->parentBox()->style();
@@ -628,7 +576,7 @@ BlockFlowBox::BlockFlowBox(Node* node, const RefPtr<BoxStyle>& style)
 
 bool BlockFlowBox::avoidsFloats() const
 {
-    return isInline() || isFloatingOrPositioned() || isOverflowHidden() || isRootBox() || isFlexItem();
+    return isInline() || isFloating() || isPositioned() || isOverflowHidden() || isRootBox() || isFlexItem();
 }
 
 bool BlockFlowBox::isSelfCollapsingBlock() const
@@ -964,7 +912,7 @@ void BlockFlowBox::buildIntrudingFloats()
 {
     if(m_floatingBoxes)
         m_floatingBoxes->clear();
-    if(isFloatingOrPositioned() || avoidsFloats())
+    if(isFloating() || isPositioned() || avoidsFloats())
         return;
 
     auto parentBlock = to<BlockFlowBox>(parentBox());
@@ -1335,6 +1283,41 @@ void BlockFlowBox::addBox(Box* box)
     if(m_continuation) {
         m_continuation->addBox(box);
         return;
+    }
+
+    if(isChildrenInline() && !box->isInline() && !box->isFloatingOrPositioned()) {
+        for(auto child = firstBox(); child; child = child->nextBox()) {
+            if(child->isFloatingOrPositioned())
+                continue;
+            auto newBlock = createAnonymousBlock(style());
+            moveChildrenTo(newBlock);
+            appendChild(newBlock);
+            break;
+        }
+
+        setChildrenInline(false);
+    } else if(!isChildrenInline() && (box->isInline() || box->isFloatingOrPositioned())) {
+        auto lastChild = lastBox();
+        if(lastChild && lastChild->isAnonymous() && lastChild->isBlockBox()) {
+            lastChild->addBox(box);
+            return;
+        }
+
+        if(box->isInline()) {
+            auto newBlock = createAnonymousBlock(style());
+            appendChild(newBlock);
+
+            auto child = newBlock->prevBox();
+            while(child && child->isFloatingOrPositioned()) {
+                auto prevBox = child->prevBox();
+                removeChild(child);
+                newBlock->insertChild(child, newBlock->firstBox());
+                child = prevBox;
+            }
+
+            newBlock->addBox(box);
+            return;
+        }
     }
 
     BlockBox::addBox(box);

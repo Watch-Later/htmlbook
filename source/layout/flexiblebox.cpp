@@ -98,6 +98,24 @@ void FlexibleBox::computePreferredWidths(float& minWidth, float& maxWidth) const
     maxWidth = std::max(minWidth, maxWidth);
 }
 
+void FlexibleBox::addBox(Box* box)
+{
+    if(box->isPositioned() || box->isBlockBox()) {
+        BlockBox::addBox(box);
+        return;
+    }
+
+    auto lastChild = lastBox();
+    if(lastChild && lastChild->isAnonymous() && lastChild->isBlockBox()) {
+        lastChild->addBox(box);
+        return;
+    }
+
+    auto newBlock = createAnonymousBlock(style());
+    appendChild(newBlock);
+    newBlock->addBox(box);
+}
+
 void FlexibleBox::build(BoxLayer* layer)
 {
     for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {

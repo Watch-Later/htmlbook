@@ -1,8 +1,8 @@
 #include "box.h"
-#include "document.h"
 #include "flexiblebox.h"
 #include "listitembox.h"
 #include "tablebox.h"
+#include "document.h"
 
 namespace htmlbook {
 
@@ -199,7 +199,7 @@ BlockBox* Box::containingBlockForPosition(Position position) const
 {
     auto parent = parentBox();
     if(position == Position::Static || position == Position::Relative) {
-        while(parent && ((parent->isInline() && !parent->isReplaced()) || !parent->isBlockBox()))
+        while(parent && !parent->isBlockBox())
             parent = parent->parentBox();
         return to<BlockBox>(parent);
     }
@@ -506,12 +506,6 @@ float BoxFrame::maxPreferredWidth() const
     if(m_maxPreferredWidth < 0)
         updatePreferredWidths();
     return m_maxPreferredWidth;
-}
-
-void BoxFrame::clearOverrideSize()
-{
-    m_overrideWidth = -1;
-    m_overrideHeight = -1;
 }
 
 float BoxFrame::containingBlockWidthForPositioned(const BoxModel* containingBox) const

@@ -101,7 +101,6 @@ public:
     bool isAnonymous() const { return m_anonymous; }
     bool isChildrenInline() const { return m_childrenInline; }
     bool isInline() const { return m_inline; }
-    bool isReplaced() const { return m_replaced; }
     bool isFloating() const { return m_floating; }
     bool isPositioned() const { return m_positioned; }
     bool isFloatingOrPositioned() const { return m_floating || m_positioned; }
@@ -111,7 +110,6 @@ public:
     void setAnonymous(bool value) { m_anonymous = value; }
     void setChildrenInline(bool value) { m_childrenInline = value; }
     void setInline(bool value) { m_inline = value; }
-    void setReplaced(bool value) { m_replaced = value; }
     void setFloating(bool value) { m_floating = value; }
     void setPositioned(bool value) { m_positioned = value; }
     void setOverflowHidden(bool value) { m_overflowHidden = value; }
@@ -135,7 +133,6 @@ private:
     bool m_anonymous{false};
     bool m_childrenInline{true};
     bool m_inline{true};
-    bool m_replaced{false};
     bool m_floating{false};
     bool m_positioned{false};
     bool m_overflowHidden{false};
@@ -286,17 +283,6 @@ public:
     float minPreferredWidth() const;
     float maxPreferredWidth() const;
 
-    float overrideWidth() const { return m_overrideWidth; }
-    float overrideHeight() const { return m_overrideHeight; }
-
-    void setOverrideWidth(float width) { m_overrideWidth = width; }
-    void setOverrideHeight(float height) { m_overrideHeight = height; }
-
-    bool hasOverrideWidth() const { return m_overrideWidth >= 0; }
-    bool hasOverrideHeight() const { return m_overrideHeight >= 0; }
-
-    void clearOverrideSize();
-
     float containingBlockWidthForPositioned(const BoxModel* containingBox) const;
     float containingBlockHeightForPositioned(const BoxModel* containingBox) const;
 
@@ -331,9 +317,6 @@ private:
     float m_y{0};
     float m_width{0};
     float m_height{0};
-
-    float m_overrideWidth{-1};
-    float m_overrideHeight{-1};
 
 protected:
     mutable float m_minPreferredWidth{-1};

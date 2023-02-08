@@ -67,6 +67,7 @@ public:
 
     void computePreferredWidths(float& minWidth, float& maxWidth) const final;
 
+    void addBox(Box* box) final;
     void build(BoxLayer* layer) final;
 
     const char* name() const final { return "FlexibleBox"; }

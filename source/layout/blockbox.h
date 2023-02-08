@@ -33,7 +33,17 @@ public:
     void setOverflowLeft(float value) { m_overflowLeft = value; }
     void setOverflowRight(float value) { m_overflowRight = value; }
 
-    void addBox(Box* box) override;
+    float overrideWidth() const { return m_overrideWidth; }
+    float overrideHeight() const { return m_overrideHeight; }
+
+    void setOverrideWidth(float width) { m_overrideWidth = width; }
+    void setOverrideHeight(float height) { m_overrideHeight = height; }
+
+    bool hasOverrideWidth() const { return m_overrideWidth >= 0; }
+    bool hasOverrideHeight() const { return m_overrideHeight >= 0; }
+
+    void setOverrideSize(float width, float height) { m_overrideWidth = width; m_overrideHeight = height; }
+    void clearOverrideSize() { setOverrideSize(-1, -1); }
 
     float leftOffsetForContent() const { return borderLeft() + paddingLeft(); }
     float rightOffsetForContent() const { return leftOffsetForContent() + availableWidth(); }
@@ -81,6 +91,10 @@ protected:
     float m_overflowBottom{0};
     float m_overflowLeft{0};
     float m_overflowRight{0};
+
+private:
+    float m_overrideWidth{-1};
+    float m_overrideHeight{-1};
 };
 
 template<>

@@ -32,11 +32,6 @@ RefPtr<BoxStyle> Node::style() const
     return m_box ? m_box->style() : nullptr;
 }
 
-Heap* Node::heap() const
-{
-    return m_document->heap();
-}
-
 TextNode::TextNode(Document* document, const HeapString& data)
     : Node(document), m_data(data)
 {
