@@ -187,6 +187,9 @@ public:
     float marginLeft() const { return m_marginLeft; }
     float marginRight() const { return m_marginRight; }
 
+    float marginHeight() const { return m_marginTop + m_marginBottom; }
+    float marginWidth() const { return m_marginLeft + m_marginRight; }
+
     void setMarginTop(float value) { m_marginTop = value; }
     void setMarginBottom(float value) { m_marginBottom = value; }
     void setMarginLeft(float value) { m_marginLeft = value; }

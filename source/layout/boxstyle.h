@@ -563,9 +563,6 @@ public:
 
     bool isLeftToRightDirection() const { return m_direction == TextDirection::Ltr; }
     bool isRightToLeftDirection() const { return m_direction == TextDirection::Rtl; }
-    bool isRowFlexDirection() const { return flexDirection() == FlexDirection::Row || flexDirection() == FlexDirection::RowReverse; }
-    bool isColumnFlexDirection() const { return flexDirection() == FlexDirection::Column || flexDirection() == FlexDirection::ColumnReverse; }
-    bool isReverseFlexDirection() const { return flexDirection() == FlexDirection::RowReverse || flexDirection() == FlexDirection::ColumnReverse; }
     bool isClearLeft() const { return m_clear == Clear::Left || m_clear == Clear::Both; }
     bool isClearRight() const { return m_clear == Clear::Right || m_clear == Clear::Both; }
     bool hasTransform() const;

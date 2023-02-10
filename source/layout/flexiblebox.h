@@ -3,36 +3,54 @@
 
 #include "blockbox.h"
 
+#include <span>
+
 namespace htmlbook {
 
 class FlexLine;
 class FlexibleBox;
 
-class FlexItem : public HeapMember {
+class FlexItem {
 public:
-    static std::unique_ptr<FlexItem> create(BoxFrame* box);
+    FlexItem(BlockBox* box, int order);
 
-    BoxFrame* box() const { return m_box; }
-    const RefPtr<BoxStyle>& style() const { return m_box->style(); }
-    int order() const { return style()->order(); }
+    BlockBox* box() const { return m_box; }
+    int order() const { return m_order; }
 
-    FlexibleBox* parentBox() const;
-    const RefPtr<BoxStyle>& parentStyle() const;
+    float flexBaseSize() const { return m_flexBaseSize; }
+    float hypotheticalMainSize() const { return m_hypotheticalMainSize; }
+    float flexFactor() const { return m_flexFactor; }
 
-    FlexLine* line() const { return m_line; }
-    void setLine(FlexLine* line) { m_line = line; }
+    void setFlexBaseSize(float value) { m_flexBaseSize = value; }
+    void setHypotheticalMainSize(float value) { m_hypotheticalMainSize = value; }
+    void setFlexFactor(float value) { m_flexFactor = value; }
 
-    AlignItem alignSelf() const;
-    Length flexBasis() const;
+    size_t lineIndex() const { return m_lineIndex; }
+    void setLineIndex(size_t index) { m_lineIndex = index; }
+
+    void setMinViolation(bool value) { m_minViolation = value; }
+    void setMaxViolation(bool value) { m_maxViolation = value; }
+
+    bool minViolation() const { return m_minViolation; }
+    bool maxViolation() const { return m_maxViolation; }
 
 private:
-    FlexItem(BoxFrame* box);
-    BoxFrame* m_box;
-    FlexLine* m_line{nullptr};
+    BlockBox* m_box;
+
+    int m_order;
+
+    float m_flexBaseSize = 0;
+    float m_hypotheticalMainSize = 0;
+    float m_flexFactor = 0;
+
+    size_t m_lineIndex = 0;
+
+    bool m_minViolation = false;
+    bool m_maxViolation = false;
 };
 
-using FlexItemList = std::pmr::vector<std::unique_ptr<FlexItem>>;
-using FlexItemListView = std::pmr::vector<FlexItem*>;
+using FlexItemList = std::pmr::vector<FlexItem>;
+using FlexItemSpan = std::span<FlexItem>;
 
 enum class FlexSign {
     Positive,
@@ -41,23 +59,24 @@ enum class FlexSign {
 
 class FlexibleBox;
 
-class FlexLine : public HeapMember {
+class FlexLine {
 public:
-    static std::unique_ptr<FlexLine> create(FlexibleBox* box);
+    FlexLine(FlexibleBox* flexBox, const FlexItemSpan& items, float mainSize, float containerMainSize);
 
-    FlexibleBox* box() const { return m_box; }
-    const FlexItemListView& items() const { return m_items; }
+    FlexibleBox* flexBox() const { return m_flexBox; }
+    const FlexItemSpan& items() const { return m_items; }
+    float mainSize() const { return m_mainSize; }
+    float containerMainSize() const { return m_containerMainSize; }
     FlexSign flexSign() const;
 
-    void addItem(FlexItem* item);
-
 private:
-    FlexLine(FlexibleBox* box);
-    FlexibleBox* m_box;
-    FlexItemListView m_items;
+    FlexibleBox* m_flexBox;
+    FlexItemSpan m_items;
+    float m_mainSize;
+    float m_containerMainSize;
 };
 
-using FlexLineList = std::pmr::vector<std::unique_ptr<FlexLine>>;
+using FlexLineList = std::pmr::vector<FlexLine>;
 
 class FlexibleBox final : public BlockBox {
 public:
@@ -68,11 +87,28 @@ public:
     void computePreferredWidths(float& minWidth, float& maxWidth) const final;
 
     void addBox(Box* box) final;
-    void build(BoxLayer* layer) final;
+    void build(BoxLayer* layer);
+
+    float computeFlexBaseSize(const BlockBox* child) const;
+    float availableMainSize() const;
+
+    void layout() final;
+
+    FlexDirection flexDirection() const { return m_flexDirection; }
+    FlexWrap flexWrap() const { return m_flexWrap; }
+
+    bool isHorizontalFlow() const { return m_flexDirection == FlexDirection::Row || m_flexDirection == FlexDirection::RowReverse; }
+    bool isVerticalFlow() const { return m_flexDirection == FlexDirection::Column || m_flexDirection == FlexDirection::ColumnReverse; }
+    bool isMultiLine() const { return m_flexWrap == FlexWrap::Wrap || m_flexWrap == FlexWrap::WrapReverse; }
+
+    const FlexLineList& lines() const { return m_lines; }
+    FlexLineList& lines() { return m_lines; }
 
     const char* name() const final { return "FlexibleBox"; }
 
 private:
+    FlexDirection m_flexDirection;
+    FlexWrap m_flexWrap;
     FlexItemList m_items;
     FlexLineList m_lines;
 };

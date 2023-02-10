@@ -142,7 +142,7 @@ static bool isStretchingFlexItem(const BlockBox* child)
 {
     auto childStyle = child->style();
     auto parentStyle = child->parentBox()->style();
-    if(parentStyle->isRowFlexDirection() || parentStyle->flexWrap() != FlexWrap::Nowrap)
+    if(parentStyle->flexDirection() == FlexDirection::Row || parentStyle->flexDirection() == FlexDirection::RowReverse || parentStyle->flexWrap() != FlexWrap::Nowrap)
         return false;
     if(childStyle->marginLeft().isAuto() || childStyle->marginRight().isAuto())
         return false;
@@ -1330,7 +1330,7 @@ void BlockFlowBox::build(BoxLayer* layer)
         m_lineLayout->build();
     }
 
-    BoxFrame::build(layer);
+    BlockBox::build(layer);
 }
 
 } // namespace htmlbook
