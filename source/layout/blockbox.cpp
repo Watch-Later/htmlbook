@@ -94,7 +94,7 @@ float BlockBox::availableHeightUsing(const Length& heightLength) const
         float computedHeight = height();
         float marginTop = 0;
         float marginBottom = 0;
-        computeHeight(y, computedHeight, marginTop, marginBottom);
+        computePositionedHeight(y, computedHeight, marginTop, marginBottom);
         return adjustContentBoxHeight(computedHeight - borderAndPaddingHeight());
     }
 
@@ -198,7 +198,7 @@ std::optional<float> BlockBox::computePercentageHeight(const Length& heightLengt
         float computedHeight = container->height();
         float marginTop = 0;
         float marginBottom = 0;
-        container->computeHeight(y, computedHeight, marginTop, marginBottom);
+        container->computePositionedHeight(y, computedHeight, marginTop, marginBottom);
         availableHeight = computedHeight - container->borderAndPaddingHeight();
     } else if(containerStyleHeight.isPercent()) {
         auto computedHeight = container->computePercentageHeight(containerStyleHeight);

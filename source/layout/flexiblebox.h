@@ -7,26 +7,36 @@
 
 namespace htmlbook {
 
-class FlexLine;
-class FlexibleBox;
+enum class FlexSign {
+    Positive,
+    Negative
+};
 
 class FlexItem {
 public:
-    FlexItem(BlockBox* box, int order);
+    FlexItem(BlockBox* box, int order, float flexGrow, float flexShrink);
 
     BlockBox* box() const { return m_box; }
+
     int order() const { return m_order; }
+    float flexGrow() const { return m_flexGrow; }
+    float flexShrink() const { return m_flexShrink; }
+    float flexFactor(FlexSign sign) const { return sign == FlexSign::Positive ? m_flexGrow : m_flexShrink; }
 
     float flexBaseSize() const { return m_flexBaseSize; }
-    float hypotheticalMainSize() const { return m_hypotheticalMainSize; }
-    float flexFactor() const { return m_flexFactor; }
+    float hypotheticalMainSize() const { return constrainSizeByMinMax(m_flexBaseSize); }
+    float targetMainSize() const { return m_targetMainSize; }
 
     void setFlexBaseSize(float value) { m_flexBaseSize = value; }
-    void setHypotheticalMainSize(float value) { m_hypotheticalMainSize = value; }
-    void setFlexFactor(float value) { m_flexFactor = value; }
+    void setTargetMainSize(float value) { m_targetMainSize = value; }
 
-    size_t lineIndex() const { return m_lineIndex; }
-    void setLineIndex(size_t index) { m_lineIndex = index; }
+    void setMinMainSize(float value) { m_minMainSize = value; }
+    void setMaxMainSize(float value) { m_maxMainSize = value; }
+
+    float minMainSize() const { return m_minMainSize; }
+    float maxMainSize() const { return m_maxMainSize; }
+
+    float constrainSizeByMinMax(float size) const { return std::max(m_minMainSize, std::min(size, m_maxMainSize)); }
 
     void setMinViolation(bool value) { m_minViolation = value; }
     void setMaxViolation(bool value) { m_maxViolation = value; }
@@ -34,28 +44,30 @@ public:
     bool minViolation() const { return m_minViolation; }
     bool maxViolation() const { return m_maxViolation; }
 
+    void setLineIndex(size_t index) { m_lineIndex = index; }
+    size_t lineIndex() const { return m_lineIndex; }
+
 private:
     BlockBox* m_box;
 
     int m_order;
+    float m_flexGrow;
+    float m_flexShrink;
 
     float m_flexBaseSize = 0;
-    float m_hypotheticalMainSize = 0;
-    float m_flexFactor = 0;
+    float m_targetMainSize = 0;
 
-    size_t m_lineIndex = 0;
+    float m_minMainSize = 0;
+    float m_maxMainSize = 0;
 
     bool m_minViolation = false;
     bool m_maxViolation = false;
+
+    size_t m_lineIndex = 0;
 };
 
 using FlexItemList = std::pmr::vector<FlexItem>;
 using FlexItemSpan = std::span<FlexItem>;
-
-enum class FlexSign {
-    Positive,
-    Negative
-};
 
 class FlexibleBox;
 
@@ -67,7 +79,7 @@ public:
     const FlexItemSpan& items() const { return m_items; }
     float mainSize() const { return m_mainSize; }
     float containerMainSize() const { return m_containerMainSize; }
-    FlexSign flexSign() const;
+    FlexSign flexSign() const { return m_mainSize < m_containerMainSize ? FlexSign::Positive : FlexSign::Negative; }
 
 private:
     FlexibleBox* m_flexBox;
@@ -90,6 +102,8 @@ public:
     void build(BoxLayer* layer);
 
     float computeFlexBaseSize(const BlockBox* child) const;
+    float computeMinMainSize(const BlockBox* child) const;
+    float computeMaxMainSize(const BlockBox* child) const;
     float availableMainSize() const;
 
     void layout() final;

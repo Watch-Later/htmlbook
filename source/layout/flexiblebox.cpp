@@ -1,10 +1,14 @@
 #include "flexiblebox.h"
 
+#include <limits>
+
 namespace htmlbook {
 
-FlexItem::FlexItem(BlockBox* box, int order)
+FlexItem::FlexItem(BlockBox* box, int order, float flexGrow, float flexShrink)
     : m_box(box)
     , m_order(order)
+    , m_flexGrow(flexGrow)
+    , m_flexShrink(flexShrink)
 {
 }
 
@@ -84,10 +88,11 @@ void FlexibleBox::addBox(Box* box)
 void FlexibleBox::build(BoxLayer* layer)
 {
     for(auto box = firstBox(); box; box = box->nextBox()) {
-        auto child = to<BlockBox>(box);
-        if(child == nullptr || child->isPositioned())
+        if(box->isPositioned())
             continue;
-        m_items.emplace_back(child, child->style()->order());
+        auto child = to<BlockBox>(box);
+        auto childStyle = child->style();
+        m_items.emplace_back(child, childStyle->order(), childStyle->flexGrow(), childStyle->flexShrink());
     }
 
     auto compare = [](auto& a, auto& b) { return a.order() < b.order(); };
@@ -105,14 +110,46 @@ float FlexibleBox::computeFlexBaseSize(const BlockBox* child) const
             flexBasis = childStyle->width();
         if(flexBasis.isAuto())
             return child->width();
-        return child->computeWidthUsing(flexBasis, this, contentWidth());
+        return child->computeWidthUsing(flexBasis, this, availableWidth());
     }
 
     if(flexBasis.isAuto())
         flexBasis = childStyle->height();
-    if(auto height = computeHeightUsing(flexBasis))
-        return adjustBorderBoxHeight(*height);
+    if(auto height = child->computeHeightUsing(flexBasis))
+        return child->adjustBorderBoxHeight(*height);
     return child->height();
+}
+
+float FlexibleBox::computeMinMainSize(const BlockBox* child) const
+{
+    auto childStyle = child->style();
+    if(isHorizontalFlow()) {
+        auto minWidthLength = childStyle->minWidth();
+        if(minWidthLength.isAuto())
+            return 0;
+        return child->computeWidthUsing(minWidthLength, this, availableWidth());
+    }
+
+    if(auto height = child->computeHeightUsing(childStyle->minHeight()))
+        return child->adjustBorderBoxHeight(*height);
+    return 0;
+}
+
+float FlexibleBox::computeMaxMainSize(const BlockBox* child) const
+{
+    constexpr auto maxSize = std::numeric_limits<float>::max();
+
+    auto childStyle = child->style();
+    if(isHorizontalFlow()) {
+        auto maxWidthLength = childStyle->maxWidth();
+        if(maxWidthLength.isNone())
+            return maxSize;
+        return child->computeWidthUsing(maxWidthLength, this, availableWidth());
+    }
+
+    if(auto height = child->computeHeightUsing(childStyle->maxHeight()))
+        return child->adjustBorderBoxHeight(*height);
+    return maxSize;
 }
 
 float FlexibleBox::availableMainSize() const
@@ -128,14 +165,12 @@ void FlexibleBox::layout()
     for(auto& item : m_items) {
         auto child = item.box();
 
+        child->clearOverrideSize();
         child->layout();
 
-        auto flexBaseSize = computeFlexBaseSize(child);
-        if(isHorizontalFlow())
-            item.setHypotheticalMainSize(child->constrainWidthByMinMax(flexBaseSize, this, contentWidth()));
-        else
-            item.setHypotheticalMainSize(child->constrainBorderBoxHeightByMinMax(flexBaseSize));
-        item.setFlexBaseSize(flexBaseSize);
+        item.setFlexBaseSize(computeFlexBaseSize(child));
+        item.setMinMainSize(computeMinMainSize(child));
+        item.setMaxMainSize(computeMaxMainSize(child));
     }
 
     auto containerMainSize = availableMainSize();
@@ -155,7 +190,7 @@ void FlexibleBox::layout()
                 break;
 
             item.setLineIndex(m_lines.size());
-            item.setFlexFactor(0);
+            item.setTargetMainSize(0);
             item.setMinViolation(false);
             item.setMaxViolation(false);
             lineMainSize += itemMainSize;
@@ -163,6 +198,7 @@ void FlexibleBox::layout()
         }
 
         FlexItemSpan items(begin, it);
+        assert(!items.empty());
         m_lines.emplace_back(this, items, lineMainSize, containerMainSize);
     }
 }

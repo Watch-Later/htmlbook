@@ -84,17 +84,17 @@ public:
 
     const char* name() const override { return "BlockBox"; }
 
-protected:
+private:
     std::unique_ptr<PositionedBoxList> m_positionedBoxes;
 
+    float m_overrideWidth{-1};
+    float m_overrideHeight{-1};
+
+protected:
     float m_overflowTop{0};
     float m_overflowBottom{0};
     float m_overflowLeft{0};
     float m_overflowRight{0};
-
-private:
-    float m_overrideWidth{-1};
-    float m_overrideHeight{-1};
 };
 
 template<>
