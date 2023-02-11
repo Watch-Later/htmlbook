@@ -12,12 +12,14 @@ enum class FlexSign {
     Negative
 };
 
+class FlexibleBox;
+class FlexLine;
+
 class FlexItem {
 public:
     FlexItem(BlockBox* box, int order, float flexGrow, float flexShrink);
 
     BlockBox* box() const { return m_box; }
-
     int order() const { return m_order; }
     float flexGrow() const { return m_flexGrow; }
     float flexShrink() const { return m_flexShrink; }
@@ -47,9 +49,14 @@ public:
     void setLineIndex(size_t index) { m_lineIndex = index; }
     size_t lineIndex() const { return m_lineIndex; }
 
+    FlexibleBox& flexBox() const;
+    FlexLine& flexLine() const;
+
+    float marginBoxMainSize() const;
+    float marginBoxCrossSize() const;
+
 private:
     BlockBox* m_box;
-
     int m_order;
     float m_flexGrow;
     float m_flexShrink;
@@ -69,8 +76,6 @@ private:
 using FlexItemList = std::pmr::vector<FlexItem>;
 using FlexItemSpan = std::span<FlexItem>;
 
-class FlexibleBox;
-
 class FlexLine {
 public:
     FlexLine(FlexibleBox* flexBox, const FlexItemSpan& items, float mainSize, float containerMainSize);
@@ -79,7 +84,8 @@ public:
     const FlexItemSpan& items() const { return m_items; }
     float mainSize() const { return m_mainSize; }
     float containerMainSize() const { return m_containerMainSize; }
-    FlexSign flexSign() const { return m_mainSize < m_containerMainSize ? FlexSign::Positive : FlexSign::Negative; }
+
+    void resolveFlexibleLengths();
 
 private:
     FlexibleBox* m_flexBox;
