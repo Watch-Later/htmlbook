@@ -4,11 +4,12 @@
 
 namespace htmlbook {
 
-FlexItem::FlexItem(BlockBox* box, int order, float flexGrow, float flexShrink)
+FlexItem::FlexItem(BlockBox* box, int order, float flexGrow, float flexShrink, AlignItem alignSelf)
     : m_box(box)
     , m_order(order)
     , m_flexGrow(flexGrow)
     , m_flexShrink(flexShrink)
+    , m_alignSelf(alignSelf)
 {
 }
 
@@ -50,7 +51,7 @@ void FlexLine::resolveFlexibleLengths()
     float unfrozenSpace = 0;
     std::list<FlexItem*> unfrozenItems;
 
-    const auto sign = m_mainSize < m_containerMainSize ? FlexSign::Positive : FlexSign::Negative;;
+    const auto sign = m_mainSize < m_containerMainSize ? FlexSign::Positive : FlexSign::Negative;
     for(auto& item : m_items) {
         if(item.flexFactor(sign) == 0 || (sign == FlexSign::Positive && item.flexBaseSize() > item.hypotheticalMainSize())
             || (sign == FlexSign::Negative && item.flexBaseSize() < item.hypotheticalMainSize())) {
@@ -71,18 +72,18 @@ void FlexLine::resolveFlexibleLengths()
         }
 
         auto remainingFreeSpace = m_containerMainSize - frozenSpace - unfrozenSpace;
-        if(totalFlexFactor > 0.f && totalFlexFactor < 1.f) {
-            auto freeSpaceMagnitude = initialFreeSpace * totalFlexFactor;
-            if(freeSpaceMagnitude < remainingFreeSpace) {
-                remainingFreeSpace = freeSpaceMagnitude;
+        if(totalFlexFactor < 1.f) {
+            auto scaledInitialFreeSpace = initialFreeSpace * totalFlexFactor;
+            if(std::abs(scaledInitialFreeSpace) < std::abs(remainingFreeSpace)) {
+                remainingFreeSpace = scaledInitialFreeSpace;
             }
         }
 
         if(remainingFreeSpace != 0.f) {
             if(sign == FlexSign::Positive) {
                 for(auto& item : unfrozenItems) {
-                    auto ratio = item->flexGrow() / totalFlexFactor;
-                    item->setTargetMainSize(item->flexBaseSize() + remainingFreeSpace * ratio);
+                    auto distributeRatio = item->flexGrow() / totalFlexFactor;
+                    item->setTargetMainSize(item->flexBaseSize() + remainingFreeSpace * distributeRatio);
                 }
             } else {
                 float totalScaledFlexShrinkFactor = 0;
@@ -90,35 +91,34 @@ void FlexLine::resolveFlexibleLengths()
                     totalScaledFlexShrinkFactor += item->flexBaseSize() * item->flexShrink();
                 for(auto& item : unfrozenItems) {
                     auto scaledFlexShrinkFactor = item->flexBaseSize() * item->flexShrink();
-                    auto ratio = scaledFlexShrinkFactor / totalScaledFlexShrinkFactor;
-                    item->setTargetMainSize(item->flexBaseSize() + remainingFreeSpace * ratio);
+                    auto distributeRatio = scaledFlexShrinkFactor / totalScaledFlexShrinkFactor;
+                    item->setTargetMainSize(item->flexBaseSize() + remainingFreeSpace * distributeRatio);
                 }
             }
         }
 
-        float totalUnclampedSize = 0;
-        float totalClampedSize = 0;
+        float totalViolation = 0;
         for(auto& item : unfrozenItems) {
             auto unclampedSize = item->targetMainSize();
             auto clampedSize = item->constrainSizeByMinMax(unclampedSize);
 
             auto violation = clampedSize - unclampedSize;
             if(violation > 0.f) {
-                item->setMinViolation(true);
+                item->setViolation(FlexItem::Violation::Min);
             } else if(violation < 0.f){
-                item->setMaxViolation(true);
+                item->setViolation(FlexItem::Violation::Max);
+            } else {
+                item->setViolation(FlexItem::Violation::None);
             }
 
             item->setTargetMainSize(clampedSize);
-            totalUnclampedSize += unclampedSize;
-            totalClampedSize += clampedSize;
+            totalViolation += violation;
         }
 
-        auto freezeAllViolations = totalClampedSize == totalUnclampedSize;
-        auto freezeMinViolations = totalClampedSize > totalUnclampedSize;
-        auto freezeMaxViolations = totalClampedSize < totalUnclampedSize;
-        if(!freezeAllViolations && !freezeMinViolations && !freezeMaxViolations)
-            return;
+        auto freezeMinViolations = totalViolation > 0.f;
+        auto freezeMaxViolations = totalViolation < 0.f;
+        auto freezeAllViolations = totalViolation == 0.f;
+
         auto itemIterator = unfrozenItems.begin();
         while(itemIterator != unfrozenItems.end()) {
             auto currentIterator = itemIterator++;
@@ -136,6 +136,8 @@ FlexibleBox::FlexibleBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
     , m_flexDirection(style->flexDirection())
     , m_flexWrap(style->flexWrap())
+    , m_justifyContent(style->justifyContent())
+    , m_alignContent(style->alignContent())
     , m_items(style->heap())
     , m_lines(style->heap())
 {
@@ -199,12 +201,19 @@ void FlexibleBox::addBox(Box* box)
 
 void FlexibleBox::build(BoxLayer* layer)
 {
+    auto alignItems = style()->alignItems();
     for(auto box = firstBox(); box; box = box->nextBox()) {
         if(box->isPositioned())
             continue;
         auto child = to<BlockBox>(box);
         auto childStyle = child->style();
-        m_items.emplace_back(child, childStyle->order(), childStyle->flexGrow(), childStyle->flexShrink());
+        auto order = childStyle->order();
+        auto flexGlow = childStyle->flexGrow();
+        auto flexShrink = childStyle->flexGrow();
+        auto alignSelf = childStyle->alignSelf();
+        if(alignSelf == AlignItem::Auto)
+            alignSelf = alignItems;
+        m_items.emplace_back(child, order, flexGlow, flexShrink, alignSelf);
     }
 
     auto compare = [](auto& a, auto& b) { return a.order() < b.order(); };
@@ -297,8 +306,6 @@ void FlexibleBox::layout()
                 break;
 
             item.setLineIndex(m_lines.size());
-            item.setMinViolation(false);
-            item.setMaxViolation(false);
             lineMainSize += itemMainSize;
             it += 1;
         }

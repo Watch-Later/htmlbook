@@ -17,19 +17,32 @@ class FlexLine;
 
 class FlexItem {
 public:
-    FlexItem(BlockBox* box, int order, float flexGrow, float flexShrink);
+    enum class Violation : uint8_t {
+        None,
+        Min,
+        Max
+    };
+
+    FlexItem(BlockBox* box, int order, float flexGrow, float flexShrink, AlignItem alignSelf);
 
     BlockBox* box() const { return m_box; }
     int order() const { return m_order; }
     float flexGrow() const { return m_flexGrow; }
     float flexShrink() const { return m_flexShrink; }
     float flexFactor(FlexSign sign) const { return sign == FlexSign::Positive ? m_flexGrow : m_flexShrink; }
+    AlignItem alignSelf() const { return m_alignSelf; }
+
+    Violation violation() const { return m_violation; }
+    void setViolation(Violation violation) { m_violation = violation; }
+
+    bool minViolation() const { return m_violation == Violation::Min; }
+    bool maxViolation() const { return m_violation == Violation::Max; }
 
     float flexBaseSize() const { return m_flexBaseSize; }
-    float hypotheticalMainSize() const { return constrainSizeByMinMax(m_flexBaseSize); }
-    float targetMainSize() const { return m_targetMainSize; }
-
     void setFlexBaseSize(float value) { m_flexBaseSize = value; }
+    float hypotheticalMainSize() const { return constrainSizeByMinMax(m_flexBaseSize); }
+
+    float targetMainSize() const { return m_targetMainSize; }
     void setTargetMainSize(float value) { m_targetMainSize = value; }
 
     void setMinMainSize(float value) { m_minMainSize = value; }
@@ -37,17 +50,10 @@ public:
 
     float minMainSize() const { return m_minMainSize; }
     float maxMainSize() const { return m_maxMainSize; }
-
     float constrainSizeByMinMax(float size) const { return std::max(m_minMainSize, std::min(size, m_maxMainSize)); }
 
-    void setMinViolation(bool value) { m_minViolation = value; }
-    void setMaxViolation(bool value) { m_maxViolation = value; }
-
-    bool minViolation() const { return m_minViolation; }
-    bool maxViolation() const { return m_maxViolation; }
-
-    void setLineIndex(size_t index) { m_lineIndex = index; }
     size_t lineIndex() const { return m_lineIndex; }
+    void setLineIndex(size_t index) { m_lineIndex = index; }
 
     FlexibleBox& flexBox() const;
     FlexLine& flexLine() const;
@@ -57,18 +63,21 @@ public:
 
 private:
     BlockBox* m_box;
+
     int m_order;
+
     float m_flexGrow;
     float m_flexShrink;
+
+    AlignItem m_alignSelf;
+
+    Violation m_violation = Violation::None;
 
     float m_flexBaseSize = 0;
     float m_targetMainSize = 0;
 
     float m_minMainSize = 0;
     float m_maxMainSize = 0;
-
-    bool m_minViolation = false;
-    bool m_maxViolation = false;
 
     size_t m_lineIndex = 0;
 };
@@ -116,6 +125,8 @@ public:
 
     FlexDirection flexDirection() const { return m_flexDirection; }
     FlexWrap flexWrap() const { return m_flexWrap; }
+    AlignContent justifyContent() const { return m_justifyContent; }
+    AlignContent alignContent() const { return m_alignContent; }
 
     bool isHorizontalFlow() const { return m_flexDirection == FlexDirection::Row || m_flexDirection == FlexDirection::RowReverse; }
     bool isVerticalFlow() const { return m_flexDirection == FlexDirection::Column || m_flexDirection == FlexDirection::ColumnReverse; }
@@ -129,6 +140,8 @@ public:
 private:
     FlexDirection m_flexDirection;
     FlexWrap m_flexWrap;
+    AlignContent m_justifyContent;
+    AlignContent m_alignContent;
     FlexItemList m_items;
     FlexLineList m_lines;
 };
