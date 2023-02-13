@@ -138,17 +138,6 @@ float BlockBox::shrinkWidthToAvoidFloats(float marginLeft, float marginRight, co
     return availableWidth;
 }
 
-static bool isStretchingFlexItem(const BlockBox* child)
-{
-    auto childStyle = child->style();
-    auto parentStyle = child->parentBox()->style();
-    if(parentStyle->flexDirection() == FlexDirection::Row || parentStyle->flexDirection() == FlexDirection::RowReverse || parentStyle->flexWrap() != FlexWrap::Nowrap)
-        return false;
-    if(childStyle->marginLeft().isAuto() || childStyle->marginRight().isAuto())
-        return false;
-    return childStyle->alignSelf() == AlignItem::Stretch || (childStyle->alignSelf() == AlignItem::Auto && parentStyle->alignItems() == AlignItem::Stretch);
-}
-
 float BlockBox::computeWidthUsing(const Length& widthLength, const BlockBox* container, float containerWidth) const
 {
     if(!widthLength.isAuto())
@@ -159,7 +148,7 @@ float BlockBox::computeWidthUsing(const Length& widthLength, const BlockBox* con
     auto containerFlow = to<BlockFlowBox>(container);
     if(containerFlow && containerFlow->containsFloats() && shrinkToAvoidFloats())
         computedWidth = std::min(computedWidth, shrinkWidthToAvoidFloats(marginLeft, marginRight, containerFlow));
-    if(isFloating() || isInline() || (isFlexItem() && !isStretchingFlexItem(this))) {
+    if(isFloating() || isInline() || isFlexItem()) {
         computedWidth = std::min(computedWidth, maxPreferredWidth());
         computedWidth = std::max(computedWidth, minPreferredWidth());
     }

@@ -39,18 +39,15 @@ public:
     bool maxViolation() const { return m_violation == Violation::Max; }
 
     float flexBaseSize() const { return m_flexBaseSize; }
-    void setFlexBaseSize(float value) { m_flexBaseSize = value; }
-    float hypotheticalMainSize() const { return constrainSizeByMinMax(m_flexBaseSize); }
-
+    float hypotheticalMainSize() const { return m_hypotheticalMainSize; }
     float targetMainSize() const { return m_targetMainSize; }
+
+    void setFlexBaseSize(float value) { m_flexBaseSize = value; }
+    void setHypotheticalMainSize(float value) { m_hypotheticalMainSize = value; }
     void setTargetMainSize(float value) { m_targetMainSize = value; }
 
-    void setMinMainSize(float value) { m_minMainSize = value; }
-    void setMaxMainSize(float value) { m_maxMainSize = value; }
-
-    float minMainSize() const { return m_minMainSize; }
-    float maxMainSize() const { return m_maxMainSize; }
-    float constrainSizeByMinMax(float size) const { return std::max(m_minMainSize, std::min(size, m_maxMainSize)); }
+    float constrainMainSizeByMinMax(float size) const;
+    float constrainCrossSizeByMinMax(float size) const;
 
     size_t lineIndex() const { return m_lineIndex; }
     void setLineIndex(size_t index) { m_lineIndex = index; }
@@ -60,6 +57,12 @@ public:
 
     float marginBoxMainSize() const;
     float marginBoxCrossSize() const;
+
+    float borderBoxMainSize() const;
+    float borderBoxCrossSize() const;
+
+    bool isHorizontalFlow() const;
+    bool isVerticalFlow() const;
 
 private:
     BlockBox* m_box;
@@ -75,9 +78,7 @@ private:
 
     float m_flexBaseSize = 0;
     float m_targetMainSize = 0;
-
-    float m_minMainSize = 0;
-    float m_maxMainSize = 0;
+    float m_hypotheticalMainSize = 0;
 
     size_t m_lineIndex = 0;
 };
@@ -87,20 +88,20 @@ using FlexItemSpan = std::span<FlexItem>;
 
 class FlexLine {
 public:
-    FlexLine(FlexibleBox* flexBox, const FlexItemSpan& items, float mainSize, float containerMainSize);
+    FlexLine(const FlexItemSpan& items, float mainSize, float mainOffset, float crossSize, float crossOffset);
 
-    FlexibleBox* flexBox() const { return m_flexBox; }
     const FlexItemSpan& items() const { return m_items; }
     float mainSize() const { return m_mainSize; }
-    float containerMainSize() const { return m_containerMainSize; }
-
-    void resolveFlexibleLengths();
+    float mainOffset() const { return m_mainOffset; }
+    float crossSize() const { return m_crossSize; }
+    float crossOffset() const { return m_crossOffset; }
 
 private:
-    FlexibleBox* m_flexBox;
     FlexItemSpan m_items;
     float m_mainSize;
-    float m_containerMainSize;
+    float m_mainOffset;
+    float m_crossSize;
+    float m_crossOffset;
 };
 
 using FlexLineList = std::pmr::vector<FlexLine>;
@@ -116,10 +117,25 @@ public:
     void addBox(Box* box) final;
     void build(BoxLayer* layer);
 
-    float computeFlexBaseSize(const BlockBox* child) const;
-    float computeMinMainSize(const BlockBox* child) const;
-    float computeMaxMainSize(const BlockBox* child) const;
+    float computeFlexBaseSize(BlockBox* child) const;
+
+    std::optional<float> computeMinMainSize(const BlockBox* child) const;
+    std::optional<float> computeMaxMainSize(const BlockBox* child) const;
+
+    std::optional<float> computeMinCrossSize(const BlockBox* child) const;
+    std::optional<float> computeMaxCrossSize(const BlockBox* child) const;
+
     float availableMainSize() const;
+
+    float borderStart() const;
+    float borderEnd() const;
+    float borderBefore() const;
+    float borderAfter() const;
+
+    float paddingStart() const;
+    float paddingEnd() const;
+    float paddingBefore() const;
+    float paddingAfter() const;
 
     void layout() final;
 
