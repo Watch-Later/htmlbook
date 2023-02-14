@@ -39,12 +39,10 @@ public:
     bool maxViolation() const { return m_violation == Violation::Max; }
 
     float flexBaseSize() const { return m_flexBaseSize; }
-    float hypotheticalMainSize() const { return m_hypotheticalMainSize; }
-    float targetMainSize() const { return m_targetMainSize; }
+    float contentBaseSize() const { return m_contentBaseSize; }
 
     void setFlexBaseSize(float value) { m_flexBaseSize = value; }
-    void setHypotheticalMainSize(float value) { m_hypotheticalMainSize = value; }
-    void setTargetMainSize(float value) { m_targetMainSize = value; }
+    void setContentBaseSize(float value) { m_contentBaseSize = value; }
 
     float constrainMainSizeByMinMax(float size) const;
     float constrainCrossSizeByMinMax(float size) const;
@@ -55,14 +53,22 @@ public:
     FlexibleBox& flexBox() const;
     FlexLine& flexLine() const;
 
+    bool isHorizontalFlow() const;
+    bool isVerticalFlow() const;
+
+    float flexBaseMarginBoxSize() const;
+    float flexBaseBorderBoxSize() const;
+
     float marginBoxMainSize() const;
     float marginBoxCrossSize() const;
 
     float borderBoxMainSize() const;
     float borderBoxCrossSize() const;
 
-    bool isHorizontalFlow() const;
-    bool isVerticalFlow() const;
+    float marginStart() const;
+    float marginEnd() const;
+    float marginBefore() const;
+    float marginAfter() const;
 
 private:
     BlockBox* m_box;
@@ -77,8 +83,7 @@ private:
     Violation m_violation = Violation::None;
 
     float m_flexBaseSize = 0;
-    float m_targetMainSize = 0;
-    float m_hypotheticalMainSize = 0;
+    float m_contentBaseSize = 0;
 
     size_t m_lineIndex = 0;
 };
@@ -166,6 +171,26 @@ template<>
 struct is_a<FlexibleBox> {
     static bool check(const Box& box) { return box.isOfType(Box::Type::Flexible); }
 };
+
+inline FlexibleBox& FlexItem::flexBox() const
+{
+    return to<FlexibleBox>(*m_box->parentBox());
+}
+
+inline FlexLine& FlexItem::flexLine() const
+{
+    return flexBox().lines()[m_lineIndex];
+}
+
+inline bool FlexItem::isHorizontalFlow() const
+{
+    return flexBox().isHorizontalFlow();
+}
+
+inline bool FlexItem::isVerticalFlow() const
+{
+    return flexBox().isVerticalFlow();
+}
 
 } // namespace htmlbook
 
