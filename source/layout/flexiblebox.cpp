@@ -432,21 +432,43 @@ void FlexibleBox::layout()
             }
         }
 
-        auto mainOffset = borderStart() + paddingStart();
         auto availableSpace = containerMainSize - frozenSpace;
+
+        size_t autoMarginCount = 0;
+        for(auto& item : items) {
+            auto child = item.box();
+            auto childStyle = child->style();
+            if(isHorizontalFlow()) {
+                if(childStyle->marginLeft().isAuto())
+                    ++autoMarginCount;
+                if(childStyle->marginRight().isAuto()) {
+                    ++autoMarginCount;
+                }
+            } else {
+                if(childStyle->marginTop().isAuto())
+                    ++autoMarginCount;
+                if(childStyle->marginBottom().isAuto()) {
+                    ++autoMarginCount;
+                }
+            }
+        }
+
+        float autoMarginOffset = 0;
+        if(autoMarginCount > 0) {
+            autoMarginOffset = availableSpace / autoMarginCount;
+            availableSpace = 0.f;
+        }
+
+        auto mainOffset = borderStart() + paddingStart();
         switch(m_justifyContent) {
-        case AlignContent::Center:
-            mainOffset += availableSpace / 2.f;
-            break;
         case AlignContent::FlexEnd:
             mainOffset += availableSpace;
             break;
-        case AlignContent::SpaceAround:
-            if(availableSpace > 0 && !items.empty())
-                mainOffset += availableSpace / (2.f * items.size());
-            else
-                mainOffset += availableSpace / 2.f;
+        case AlignContent::Center:
+            mainOffset += availableSpace / 2.f;
             break;
+        case AlignContent::SpaceAround:
+            mainOffset += availableSpace / (2.f * items.size());
         default:
             break;
         }
@@ -455,6 +477,7 @@ void FlexibleBox::layout()
         for(size_t index = 0; index < items.size(); ++index) {
             FlexItem& item = items[index];
             auto child = item.box();
+            auto childStyle = child->style();
             if(isHorizontalFlow())
                 child->setOverrideWidth(item.borderBoxMainSize());
             else
@@ -462,17 +485,33 @@ void FlexibleBox::layout()
 
             child->layout();
 
+            if(autoMarginCount > 0) {
+                if(isHorizontalFlow()) {
+                    if(childStyle->marginLeft().isAuto())
+                        child->setMarginLeft(autoMarginOffset);
+                    if(childStyle->marginRight().isAuto()) {
+                        child->setMarginRight(autoMarginOffset);
+                    }
+                } else {
+                    if(childStyle->marginTop().isAuto())
+                        child->setMarginTop(autoMarginOffset);
+                    if(childStyle->marginBottom().isAuto()) {
+                        child->setMarginBottom(autoMarginOffset);
+                    }
+                }
+            }
+
             mainOffset += item.borderBoxMainSize();
 
             crossSize = std::max(crossSize, item.borderBoxCrossSize());
             if(index != items.size() - 1) {
                 switch(m_justifyContent) {
+                case AlignContent::Stretch:
+                case AlignContent::SpaceAround:
+                    mainOffset += availableSpace / items.size();
+                    break;
                 case AlignContent::SpaceBetween:
                     mainOffset += availableSpace / (items.size() - 1);
-                    break;
-                case AlignContent::SpaceAround:
-                case AlignContent::Stretch:
-                    mainOffset += availableSpace / items.size();
                     break;
                 default:
                     break;
@@ -480,10 +519,12 @@ void FlexibleBox::layout()
             }
         }
 
+        float lineHeight = 0;
         if(isHorizontalFlow())
-            setHeight(std::max(height(), crossSize + crossOffset + borderAfter() + paddingAfter()));
+            lineHeight += crossSize + crossOffset + borderAfter() + paddingAfter();
         else
-            setHeight(std::max(height(), mainOffset + borderEnd() + paddingEnd()));
+            lineHeight += mainOffset + borderEnd() + paddingEnd();
+        setHeight(std::max(lineHeight, height()));
 
         FlexLine line(items, mainSize, mainOffset, crossSize, crossOffset);
         crossOffset += crossSize;
