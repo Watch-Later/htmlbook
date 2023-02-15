@@ -569,8 +569,9 @@ void FlexibleBox::layout()
             }
         }
 
+        mainOffset += borderEnd() + paddingEnd();
         if(isVerticalFlow())
-            setHeight(std::max(height(), mainOffset + borderEnd() + paddingEnd()));
+            setHeight(std::max(mainOffset, height()));
         m_lines.emplace_back(items, mainOffset);
     }
 }
