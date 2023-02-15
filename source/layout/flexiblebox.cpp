@@ -89,24 +89,21 @@ float FlexItem::marginEnd() const
 
 float FlexItem::marginBefore() const
 {
-    if(isVerticalFlow())
-        return m_box->marginLeft();
-    return m_box->marginTop();
+    if(isHorizontalFlow())
+        return m_box->marginTop();
+    return m_box->marginLeft();
 }
 
 float FlexItem::marginAfter() const
 {
-    if(isVerticalFlow())
-        return m_box->marginRight();
-    return m_box->marginBottom();
+    if(isHorizontalFlow())
+        return m_box->marginBottom();
+    return m_box->marginRight();
 }
 
-FlexLine::FlexLine(const FlexItemSpan& items, float mainSize, float mainOffset, float crossSize, float crossOffset)
+FlexLine::FlexLine(const FlexItemSpan& items, float mainSize)
     : m_items(items)
     , m_mainSize(mainSize)
-    , m_mainOffset(mainOffset)
-    , m_crossSize(crossSize)
-    , m_crossOffset(crossOffset)
 {
 }
 
@@ -289,6 +286,13 @@ float FlexibleBox::availableMainSize() const
     return availableHeight();
 }
 
+float FlexibleBox::availableCrossSize() const
+{
+    if(isHorizontalFlow())
+        return availableHeight();
+    return availableWidth();
+}
+
 float FlexibleBox::borderStart() const
 {
     if(isHorizontalFlow())
@@ -305,16 +309,16 @@ float FlexibleBox::borderEnd() const
 
 float FlexibleBox::borderBefore() const
 {
-    if(isVerticalFlow())
-        return borderLeft();
-    return borderTop();
+    if(isHorizontalFlow())
+        return borderTop();
+    return borderLeft();
 }
 
 float FlexibleBox::borderAfter() const
 {
-    if(isVerticalFlow())
-        return borderRight();
-    return borderBottom();
+    if(isHorizontalFlow())
+        return borderBottom();
+    return borderRight();
 }
 
 float FlexibleBox::paddingStart() const
@@ -333,16 +337,16 @@ float FlexibleBox::paddingEnd() const
 
 float FlexibleBox::paddingBefore() const
 {
-    if(isVerticalFlow())
-        return paddingLeft();
-    return paddingTop();
+    if(isHorizontalFlow())
+        return paddingTop();
+    return paddingLeft();
 }
 
 float FlexibleBox::paddingAfter() const
 {
-    if(isVerticalFlow())
-        return paddingRight();
-    return paddingBottom();
+    if(isHorizontalFlow())
+        return paddingBottom();
+    return paddingRight();
 }
 
 void FlexibleBox::layout()
@@ -361,7 +365,6 @@ void FlexibleBox::layout()
         item.setContentBaseSize(item.constrainMainSizeByMinMax(item.flexBaseSize()));
     }
 
-    auto crossOffset = borderBefore() + paddingBefore();
     auto containerMainSize = availableMainSize();
     for(auto it = m_items.begin(); it != m_items.end(); ++it) {
         float mainSize = 0;
@@ -499,14 +502,16 @@ void FlexibleBox::layout()
             mainOffset += availableSpace / 2.f;
             break;
         case AlignContent::SpaceAround:
-            mainOffset += availableSpace / (2.f * items.size());
+            if(availableSpace > 0)
+                mainOffset += availableSpace / (2.f * items.size());
+            else
+                mainOffset += availableSpace / 2.f;
+            break;
         default:
             break;
         }
 
-        float crossSize = 0;
-        for(size_t index = 0; index < items.size(); ++index) {
-            FlexItem& item = items[index];
+        for(auto& item : items) {
             auto child = item.box();
             auto childStyle = child->style();
             if(isHorizontalFlow())
@@ -533,18 +538,30 @@ void FlexibleBox::layout()
             }
 
             mainOffset += item.marginStart();
+            if(isHorizontalFlow()) {
+                if(isReverseDirection()) {
+                    child->setX(containerMainSize - mainOffset - item.borderBoxMainSize());
+                } else {
+                    child->setX(mainOffset);
+                }
+            } else {
+                if(isReverseDirection()) {
+                    child->setY(containerMainSize - mainOffset - item.borderBoxMainSize());
+                } else {
+                    child->setY(mainOffset);
+                }
+            }
+
             mainOffset += item.borderBoxMainSize();
             mainOffset += item.marginEnd();
-
-            crossSize = std::max(crossSize, item.marginBoxCrossSize());
-            if(index != items.size() - 1) {
+            if(availableSpace > 0) {
                 switch(m_justifyContent) {
-                case AlignContent::Stretch:
                 case AlignContent::SpaceAround:
                     mainOffset += availableSpace / items.size();
                     break;
                 case AlignContent::SpaceBetween:
-                    mainOffset += availableSpace / (items.size() - 1);
+                    if(items.size() > 1)
+                        mainOffset += availableSpace / (items.size() - 1);
                     break;
                 default:
                     break;
@@ -552,16 +569,9 @@ void FlexibleBox::layout()
             }
         }
 
-        float lineHeight = 0;
-        if(isHorizontalFlow())
-            lineHeight += crossSize + crossOffset + borderAfter() + paddingAfter();
-        else
-            lineHeight += mainOffset + borderEnd() + paddingEnd();
-        setHeight(std::max(lineHeight, height()));
-
-        FlexLine line(items, mainSize, mainOffset, crossSize, crossOffset);
-        crossOffset += crossSize;
-        m_lines.push_back(line);
+        if(isVerticalFlow())
+            setHeight(std::max(height(), mainOffset + borderEnd() + paddingEnd()));
+        m_lines.emplace_back(items, mainOffset);
     }
 }
 
