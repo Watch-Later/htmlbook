@@ -45,32 +45,46 @@ float FlexItem::flexBaseBorderBoxSize() const
     return m_flexBaseSize + m_box->borderAndPaddingHeight();
 }
 
+float FlexItem::targetMainMarginBoxSize() const
+{
+    if(isHorizontalFlow())
+        return m_targetMainSize + m_box->marginWidth() + m_box->borderAndPaddingWidth();
+    return m_targetMainSize + m_box->marginHeight() + m_box->borderAndPaddingHeight();
+}
+
+float FlexItem::targetMainBorderBoxSize() const
+{
+    if(isHorizontalFlow())
+        return m_targetMainSize + m_box->marginWidth() + m_box->borderAndPaddingWidth();
+    return m_targetMainSize + m_box->marginHeight() + m_box->borderAndPaddingHeight();
+}
+
 float FlexItem::marginBoxMainSize() const
 {
     if(isHorizontalFlow())
-        return m_contentBaseSize + m_box->marginWidth() + m_box->borderAndPaddingWidth();
-    return m_contentBaseSize + m_box->marginHeight() + m_box->borderAndPaddingHeight();
+        return m_box->width() + m_box->marginWidth();
+    return m_box->height() + m_box->marginHeight();
 }
 
 float FlexItem::marginBoxCrossSize() const
 {
     if(isHorizontalFlow())
-        return m_contentBaseSize + m_box->marginHeight() + m_box->borderAndPaddingHeight();
-    return m_contentBaseSize + m_box->marginWidth() + m_box->borderAndPaddingWidth();
+        return m_box->height() + m_box->marginHeight();
+    return m_box->width() + m_box->marginWidth();
 }
 
 float FlexItem::borderBoxMainSize() const
 {
     if(isHorizontalFlow())
-        return m_contentBaseSize + m_box->borderAndPaddingWidth();
-    return m_contentBaseSize + m_box->borderAndPaddingHeight();
+        return m_box->width();
+    return m_box->height();
 }
 
 float FlexItem::borderBoxCrossSize() const
 {
     if(isHorizontalFlow())
-        return m_contentBaseSize + m_box->borderAndPaddingHeight();
-    return m_contentBaseSize + m_box->borderAndPaddingWidth();
+        return m_box->height();
+    return m_box->width();
 }
 
 float FlexItem::marginStart() const
@@ -99,12 +113,6 @@ float FlexItem::marginAfter() const
     if(isHorizontalFlow())
         return m_box->marginBottom();
     return m_box->marginRight();
-}
-
-FlexLine::FlexLine(const FlexItemSpan& items, float mainSize)
-    : m_items(items)
-    , m_mainSize(mainSize)
-{
 }
 
 FlexibleBox::FlexibleBox(Node* node, const RefPtr<BoxStyle>& style)
@@ -282,14 +290,14 @@ std::optional<float> FlexibleBox::computeMaxCrossSize(const BlockBox* child) con
 float FlexibleBox::availableMainSize() const
 {
     if(isHorizontalFlow())
-        return availableWidth();
+        return contentWidth();
     return availableHeight();
 }
 
 float FlexibleBox::availableCrossSize() const
 {
     if(isHorizontalFlow())
-        return availableHeight();
+        return contentHeight();
     return availableWidth();
 }
 
@@ -362,7 +370,7 @@ void FlexibleBox::layout()
         child->updateMarginWidths();
 
         item.setFlexBaseSize(computeFlexBaseSize(child));
-        item.setContentBaseSize(item.constrainMainSizeByMinMax(item.flexBaseSize()));
+        item.setTargetMainSize(item.constrainMainSizeByMinMax(item.flexBaseSize()));
     }
 
     auto containerMainSize = availableMainSize();
@@ -372,13 +380,11 @@ void FlexibleBox::layout()
         auto begin = it;
         while(it != m_items.end()) {
             FlexItem& item = *it;
-            auto itemMainSize = item.marginBoxMainSize();
-            if(isMultiLine() && it > begin && itemMainSize + mainSize > containerMainSize)
+            auto itemMainSize = item.targetMainMarginBoxSize();
+            if(isMultiLine() && it != begin && itemMainSize + mainSize > containerMainSize)
                 break;
-
-            item.setLineIndex(m_lines.size());
             mainSize += itemMainSize;
-            it += 1;
+            ++it;
         }
 
         const auto sign = mainSize < containerMainSize ? FlexSign::Positive : FlexSign::Negative;
@@ -389,11 +395,11 @@ void FlexibleBox::layout()
 
         FlexItemSpan items(begin, it);
         for(auto& item : items) {
-            if(item.flexFactor(sign) == 0 || (sign == FlexSign::Positive && item.flexBaseSize() > item.contentBaseSize())
-                || (sign == FlexSign::Negative && item.flexBaseSize() < item.contentBaseSize())) {
-                frozenSpace += item.marginBoxMainSize();
+            if(item.flexFactor(sign) == 0 || (sign == FlexSign::Positive && item.flexBaseSize() > item.targetMainSize())
+                || (sign == FlexSign::Negative && item.flexBaseSize() < item.targetMainSize())) {
+                frozenSpace += item.targetMainMarginBoxSize();
             } else {
-                item.setContentBaseSize(item.flexBaseSize());
+                item.setTargetMainSize(item.flexBaseSize());
                 unfrozenSpace += item.flexBaseMarginBoxSize();
                 unfrozenItems.push_back(&item);
             }
@@ -418,7 +424,7 @@ void FlexibleBox::layout()
                 if(sign == FlexSign::Positive) {
                     for(auto& item : unfrozenItems) {
                         auto distributeRatio = item->flexGrow() / totalFlexFactor;
-                        item->setContentBaseSize(item->flexBaseSize() + remainingFreeSpace * distributeRatio);
+                        item->setTargetMainSize(item->flexBaseSize() + remainingFreeSpace * distributeRatio);
                     }
                 } else {
                     float totalScaledFlexShrinkFactor = 0;
@@ -427,14 +433,14 @@ void FlexibleBox::layout()
                     for(auto& item : unfrozenItems) {
                         auto scaledFlexShrinkFactor = item->flexBaseSize() * item->flexShrink();
                         auto distributeRatio = scaledFlexShrinkFactor / totalScaledFlexShrinkFactor;
-                        item->setContentBaseSize(item->flexBaseSize() + remainingFreeSpace * distributeRatio);
+                        item->setTargetMainSize(item->flexBaseSize() + remainingFreeSpace * distributeRatio);
                     }
                 }
             }
 
             float totalViolation = 0;
             for(auto& item : unfrozenItems) {
-                auto unclampedSize = item->contentBaseSize();
+                auto unclampedSize = item->targetMainSize();
                 auto clampedSize = item->constrainMainSizeByMinMax(unclampedSize);
 
                 auto violation = clampedSize - unclampedSize;
@@ -446,7 +452,7 @@ void FlexibleBox::layout()
                     item->setViolation(FlexItem::Violation::None);
                 }
 
-                item->setContentBaseSize(clampedSize);
+                item->setTargetMainSize(clampedSize);
                 totalViolation += violation;
             }
 
@@ -459,14 +465,14 @@ void FlexibleBox::layout()
                 auto currentIterator = itemIterator++;
                 auto item = *currentIterator;
                 if(freezeAllViolations || (freezeMinViolations && item->minViolation()) || (freezeMaxViolations && item->maxViolation())) {
-                    frozenSpace += item->marginBoxMainSize();
+                    frozenSpace += item->targetMainMarginBoxSize();
                     unfrozenSpace -= item->flexBaseMarginBoxSize();
                     unfrozenItems.erase(currentIterator);
                 }
             }
         }
 
-        auto availableSpace = containerMainSize - frozenSpace;
+        FlexLine line(items);
 
         size_t autoMarginCount = 0;
         for(auto& item : items) {
@@ -487,6 +493,8 @@ void FlexibleBox::layout()
             }
         }
 
+        auto availableSpace = containerMainSize - frozenSpace;
+
         float autoMarginOffset = 0;
         if(autoMarginCount > 0) {
             autoMarginOffset = availableSpace / autoMarginCount;
@@ -494,6 +502,8 @@ void FlexibleBox::layout()
         }
 
         auto mainOffset = borderStart() + paddingStart();
+
+        line.setMainOffset(mainOffset);
         switch(m_justifyContent) {
         case AlignContent::FlexEnd:
             mainOffset += availableSpace;
@@ -515,9 +525,9 @@ void FlexibleBox::layout()
             auto child = item.box();
             auto childStyle = child->style();
             if(isHorizontalFlow())
-                child->setOverrideWidth(item.borderBoxMainSize());
+                child->setOverrideWidth(item.targetMainBorderBoxSize());
             else
-                child->setOverrideHeight(item.borderBoxMainSize());
+                child->setOverrideHeight(item.targetMainBorderBoxSize());
 
             child->layout();
 
@@ -569,11 +579,28 @@ void FlexibleBox::layout()
             }
         }
 
+        line.setMainSize(mainOffset);
+
         mainOffset += borderEnd() + paddingEnd();
         if(isVerticalFlow())
             setHeight(std::max(mainOffset, height()));
-        m_lines.emplace_back(items, mainOffset);
+        m_lines.push_back(line);
     }
+
+    auto crossOffset = borderBefore() + paddingBefore();
+    for(auto& line : m_lines) {
+        float crossSize = 0;
+        for(auto& item : line.items())
+            crossSize = std::max(crossSize, item.marginBoxCrossSize());
+        line.setCrossOffset(crossOffset);
+        line.setCrossSize(crossSize);
+        crossOffset += crossSize;
+    }
+
+    crossOffset += borderAfter() + paddingAfter();
+    if(isHorizontalFlow())
+        setHeight(std::max(crossOffset, height()));
+    updateHeight();
 }
 
 } // namespace htmlbook

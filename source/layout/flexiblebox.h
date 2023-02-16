@@ -39,25 +39,24 @@ public:
     bool maxViolation() const { return m_violation == Violation::Max; }
 
     float flexBaseSize() const { return m_flexBaseSize; }
-    float contentBaseSize() const { return m_contentBaseSize; }
+    float targetMainSize() const { return m_targetMainSize; }
 
     void setFlexBaseSize(float value) { m_flexBaseSize = value; }
-    void setContentBaseSize(float value) { m_contentBaseSize = value; }
+    void setTargetMainSize(float value) { m_targetMainSize = value; }
 
     float constrainMainSizeByMinMax(float size) const;
     float constrainCrossSizeByMinMax(float size) const;
 
-    size_t lineIndex() const { return m_lineIndex; }
-    void setLineIndex(size_t index) { m_lineIndex = index; }
-
     FlexibleBox& flexBox() const;
-    FlexLine& flexLine() const;
 
     bool isHorizontalFlow() const;
     bool isVerticalFlow() const;
 
     float flexBaseMarginBoxSize() const;
     float flexBaseBorderBoxSize() const;
+
+    float targetMainMarginBoxSize() const;
+    float targetMainBorderBoxSize() const;
 
     float marginBoxMainSize() const;
     float marginBoxCrossSize() const;
@@ -79,13 +78,10 @@ private:
     float m_flexShrink;
 
     AlignItem m_alignSelf;
-
     Violation m_violation = Violation::None;
 
     float m_flexBaseSize = 0;
-    float m_contentBaseSize = 0;
-
-    size_t m_lineIndex = 0;
+    float m_targetMainSize = 0;
 };
 
 using FlexItemList = std::pmr::vector<FlexItem>;
@@ -93,16 +89,31 @@ using FlexItemSpan = std::span<FlexItem>;
 
 class FlexLine {
 public:
-    FlexLine(const FlexItemSpan& items, float mainSize);
+    explicit FlexLine(const FlexItemSpan& items)
+        : m_items(items)
+    {}
 
     const FlexItemSpan& items() const { return m_items; }
 
+    float mainOffset() const { return m_mainOffset; }
+    float mainSize() const { return m_mainSize; }
+
+    void setMainOffset(float size) { m_mainOffset = size; }
+    void setMainSize(float size) { m_mainSize = size; }
+
+    float crossOffset() const { return m_crossOffset; }
     float crossSize() const { return m_crossSize; }
+
+    void setCrossOffset(float size) { m_crossOffset = size; }
     void setCrossSize(float size) { m_crossSize = size; }
 
 private:
     FlexItemSpan m_items;
-    float m_mainSize;
+
+    float m_mainOffset = 0;
+    float m_mainSize = 0;
+
+    float m_crossOffset = 0;
     float m_crossSize = 0;
 };
 
@@ -152,8 +163,8 @@ public:
     bool isReverseDirection() const { return m_flexDirection == FlexDirection::RowReverse || m_flexDirection == FlexDirection::ColumnReverse; }
     bool isMultiLine() const { return m_flexWrap == FlexWrap::Wrap || m_flexWrap == FlexWrap::WrapReverse; }
 
+    const FlexItemList& items() { return m_items; }
     const FlexLineList& lines() const { return m_lines; }
-    FlexLineList& lines() { return m_lines; }
 
     const char* name() const final { return "FlexibleBox"; }
 
@@ -174,11 +185,6 @@ struct is_a<FlexibleBox> {
 inline FlexibleBox& FlexItem::flexBox() const
 {
     return to<FlexibleBox>(*m_box->parentBox());
-}
-
-inline FlexLine& FlexItem::flexLine() const
-{
-    return flexBox().lines()[m_lineIndex];
 }
 
 inline bool FlexItem::isHorizontalFlow() const
