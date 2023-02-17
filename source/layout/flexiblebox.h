@@ -95,12 +95,6 @@ public:
 
     const FlexItemSpan& items() const { return m_items; }
 
-    float mainOffset() const { return m_mainOffset; }
-    float mainSize() const { return m_mainSize; }
-
-    void setMainOffset(float size) { m_mainOffset = size; }
-    void setMainSize(float size) { m_mainSize = size; }
-
     float crossOffset() const { return m_crossOffset; }
     float crossSize() const { return m_crossSize; }
 
@@ -109,9 +103,6 @@ public:
 
 private:
     FlexItemSpan m_items;
-
-    float m_mainOffset = 0;
-    float m_mainSize = 0;
 
     float m_crossOffset = 0;
     float m_crossSize = 0;

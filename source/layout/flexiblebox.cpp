@@ -472,8 +472,6 @@ void FlexibleBox::layout()
             }
         }
 
-        FlexLine line(items);
-
         size_t autoMarginCount = 0;
         for(auto& item : items) {
             auto child = item.box();
@@ -502,8 +500,6 @@ void FlexibleBox::layout()
         }
 
         auto mainOffset = borderStart() + paddingStart();
-
-        line.setMainOffset(mainOffset);
         switch(m_justifyContent) {
         case AlignContent::FlexEnd:
             mainOffset += availableSpace;
@@ -578,12 +574,10 @@ void FlexibleBox::layout()
             }
         }
 
-        line.setMainSize(mainOffset);
-
         mainOffset += borderEnd() + paddingEnd();
         if(isVerticalFlow())
             setHeight(std::max(mainOffset, height()));
-        m_lines.push_back(line);
+        m_lines.emplace_back(items);
     }
 
     auto crossOffset = borderBefore() + paddingBefore();
