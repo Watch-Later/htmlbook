@@ -564,14 +564,13 @@ void FlexibleBox::layout()
 
             mainOffset += item.borderBoxMainSize();
             mainOffset += item.marginEnd();
-            if(availableSpace > 0) {
+            if(availableSpace > 0 && items.size() > 1) {
                 switch(m_justifyContent) {
                 case AlignContent::SpaceAround:
                     mainOffset += availableSpace / items.size();
                     break;
                 case AlignContent::SpaceBetween:
-                    if(items.size() > 1)
-                        mainOffset += availableSpace / (items.size() - 1);
+                    mainOffset += availableSpace / (items.size() - 1);
                     break;
                 default:
                     break;
@@ -590,8 +589,15 @@ void FlexibleBox::layout()
     auto crossOffset = borderBefore() + paddingBefore();
     for(auto& line : m_lines) {
         float crossSize = 0;
-        for(auto& item : line.items())
+        for(auto& item : line.items()) {
+            auto child = item.box();
+            if(isHorizontalFlow())
+                child->setY(crossOffset + item.marginBefore());
+            else
+                child->setX(crossOffset + item.marginBefore());
             crossSize = std::max(crossSize, item.marginBoxCrossSize());
+        }
+
         line.setCrossOffset(crossOffset);
         line.setCrossSize(crossSize);
         crossOffset += crossSize;
@@ -601,6 +607,64 @@ void FlexibleBox::layout()
     if(isHorizontalFlow())
         setHeight(std::max(crossOffset, height()));
     updateHeight();
+
+    if(!isMultiLine() && !m_lines.empty())
+        m_lines.front().setCrossSize(availableCrossSize());
+
+    if(isMultiLine() && !m_lines.empty()) {
+        auto availableSpace = availableCrossSize();
+        for(auto& line : m_lines) 
+            availableSpace -= line.crossSize();
+
+        float lineOffset = 0;
+        switch(m_alignContent) {
+        case AlignContent::FlexEnd:
+            lineOffset += availableSpace;
+            break;
+        case AlignContent::Center:
+            lineOffset += availableSpace / 2.f;
+            break;
+        case AlignContent::SpaceAround:
+            if(availableSpace > 0)
+                lineOffset += availableSpace / (2.f * m_lines.size());
+            else
+                lineOffset += availableSpace / 2.f;
+            break;
+        default:
+            break;
+        }
+
+        for(auto& line : m_lines) {
+            line.setCrossOffset(lineOffset + line.crossOffset());
+            for(auto& item : line.items()) {
+                auto child = item.box();
+                if(isHorizontalFlow())
+                    child->setY(lineOffset + child->y());
+                else {
+                    child->setX(lineOffset + child->x());
+                }
+            }
+
+            if(m_alignContent == AlignContent::Stretch && availableSpace > 0) {
+                auto lineSize = availableSpace / m_lines.size();
+                line.setCrossSize(lineSize + line.crossSize());
+                lineOffset += lineSize;
+            }
+
+            if(availableSpace > 0 && m_lines.size() > 1) {
+                switch(m_alignContent) {
+                case AlignContent::SpaceAround:
+                    lineOffset += availableSpace / m_lines.size();
+                    break;
+                case AlignContent::SpaceBetween:
+                    lineOffset += availableSpace / (m_lines.size() - 1);
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    }
 }
 
 } // namespace htmlbook
