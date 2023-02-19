@@ -1302,8 +1302,14 @@ RefPtr<BoxStyle> CSSStyleBuilder::build()
     }
 
     if(m_properties.empty()) {
-        if(m_pseudoType == PseudoType::None)
+        if(m_pseudoType == PseudoType::None) {
+            if(m_parentStyle->isDisplayFlex())
+                return BoxStyle::create(m_parentStyle, Display::Block);
             return BoxStyle::create(m_parentStyle, Display::Inline);
+        }
+
+        if(m_pseudoType == PseudoType::Marker)
+            return BoxStyle::create(m_parentStyle, PseudoType::Marker, Display::Inline);
         return nullptr;
     }
 
@@ -1322,6 +1328,44 @@ RefPtr<BoxStyle> CSSStyleBuilder::build()
         newStyle->set(id, std::move(value));
     }
 
+    if(m_pseudoType == PseudoType::FirstLetter) {
+        newStyle->setPosition(Position::Static);
+        if(newStyle->isFloating())
+            newStyle->setDisplay(Display::Block);
+        else {
+            newStyle->setDisplay(Display::Inline);
+        }
+    }
+
+    if(newStyle->isFloating() || newStyle->isPositioned() || m_element->isRootNode() || m_parentStyle->isDisplayFlex()) {
+        switch(newStyle->display()) {
+        case Display::Inline:
+        case Display::InlineBlock:
+            newStyle->setDisplay(Display::Block);
+            break;
+        case Display::InlineTable:
+            newStyle->setDisplay(Display::Table);
+            break;
+        case Display::InlineFlex:
+            newStyle->setDisplay(Display::Flex);
+            break;
+        case Display::TableCaption:
+        case Display::TableCell:
+        case Display::TableColumn:
+        case Display::TableColumnGroup:
+        case Display::TableFooterGroup:
+        case Display::TableHeaderGroup:
+        case Display::TableRow:
+        case Display::TableRowGroup:
+            newStyle->setDisplay(Display::Block);
+            break;
+        default:
+            break;
+        }
+    }
+
+    if(newStyle->isPositioned() || m_parentStyle->isDisplayFlex())
+        newStyle->setFloating(Float::None);
     return newStyle;
 }
 

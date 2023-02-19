@@ -30,11 +30,16 @@ RefPtr<BoxStyle> BoxStyle::create(Node* node, PseudoType pseudoType, Display dis
     return adoptPtr(new (node->heap()) BoxStyle(node, pseudoType, display));
 }
 
-RefPtr<BoxStyle> BoxStyle::create(const RefPtr<BoxStyle>& parentStyle, Display display)
+RefPtr<BoxStyle> BoxStyle::create(const RefPtr<BoxStyle>& parentStyle, PseudoType pseudoType, Display display)
 {
-    auto newStyle = create(parentStyle->node(), PseudoType::None, display);
+    auto newStyle = create(parentStyle->node(), pseudoType, display);
     newStyle->inheritFrom(*parentStyle);
     return newStyle;
+}
+
+RefPtr<BoxStyle> BoxStyle::create(const RefPtr<BoxStyle>& parentStyle, Display display)
+{
+    return create(parentStyle, PseudoType::None, display);
 }
 
 Document* BoxStyle::document() const
@@ -74,39 +79,6 @@ RefPtr<FontFace> BoxStyle::fontFace() const
     static const std::string family("sans-serif");
     m_fontFace = document()->getFontFace(family, italic, smallCaps, m_fontWeight);
     return m_fontFace;
-}
-
-Display BoxStyle::display() const
-{
-    if(m_floating == Float::None && (m_position == Position::Static || m_position == Position::Relative))
-        return m_display;
-    switch(m_display) {
-    case Display::Inline:
-    case Display::InlineBlock:
-        return Display::Block;
-    case Display::InlineTable:
-        return Display::Table;
-    case Display::InlineFlex:
-        return Display::Flex;
-    case Display::TableCaption:
-    case Display::TableCell:
-    case Display::TableColumn:
-    case Display::TableColumnGroup:
-    case Display::TableFooterGroup:
-    case Display::TableHeaderGroup:
-    case Display::TableRow:
-    case Display::TableRowGroup:
-        return Display::Block;
-    default:
-        return m_display;
-    }
-}
-
-Float BoxStyle::floating() const
-{
-    if(m_position == Position::Static || m_position == Position::Relative)
-        return m_floating;
-    return Float::None;
 }
 
 Length BoxStyle::left() const

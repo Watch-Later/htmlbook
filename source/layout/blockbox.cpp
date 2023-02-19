@@ -164,7 +164,7 @@ float BlockBox::constrainWidthByMinMax(float width, const BlockBox* container, f
     if(!maxWidthLength.isNone())
         width = std::min(width, computeWidthUsing(maxWidthLength, container, containerWidth));
     if(minWidthLength.isAuto())
-        std::max(width, adjustBorderBoxWidth(0));
+        return std::max(width, adjustBorderBoxWidth(0));
     return std::max(width, computeWidthUsing(minWidthLength, container, containerWidth));
 }
 

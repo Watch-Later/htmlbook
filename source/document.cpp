@@ -464,10 +464,6 @@ void Document::buildBox(Counters& counters, Box* parent)
 {
     assert(parent == nullptr);
     auto style = BoxStyle::create(this, PseudoType::None, Display::Block);
-    style->set(CSSPropertyID::Display, CSSIdentValue::create(CSSValueID::Block));
-    style->set(CSSPropertyID::Position, CSSIdentValue::create(CSSValueID::Absolute));
-    style->set(CSSPropertyID::ZIndex, CSSIntegerValue::create(m_heap, 0));
-
     auto box = createBox(style);
     ContainerNode::buildBox(counters, box);
     box->build(nullptr);

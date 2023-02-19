@@ -430,6 +430,7 @@ class Node;
 class BoxStyle : public HeapMember, public RefCounted<BoxStyle> {
 public:
     static RefPtr<BoxStyle> create(Node* node, PseudoType pseudoType, Display display);
+    static RefPtr<BoxStyle> create(const RefPtr<BoxStyle>& parentStyle, PseudoType pseudoType, Display display);
     static RefPtr<BoxStyle> create(const RefPtr<BoxStyle>& parentStyle, Display display);
 
     Document* document() const;
@@ -445,9 +446,13 @@ public:
     FontStyle fontStyle() const { return m_fontStyle; }
     FontVariant fontVariant() const { return m_fontVariant; }
 
-    Display display() const;
-    Float floating() const;
+    void setDisplay(Display display) { m_display = display; }
+    void setPosition(Position position) { m_position = position; }
+    void setFloating(Float floating) { m_floating = floating; }
+
+    Display display() const { return m_display; }
     Position position() const { return m_position; }
+    Float floating() const { return m_floating; }
     Clear clear() const { return m_clear; }
     Overflow overflow() const { return m_overflow; }
     Visibility visibility() const { return m_visibility; }
@@ -561,6 +566,9 @@ public:
     int widows() const;
     int orphans() const;
 
+    bool isDisplayFlex() const { return m_display == Display::Flex || m_display == Display::InlineFlex; }
+    bool isFloating() const { return m_floating == Float::Left || m_floating == Float::Right; }
+    bool isPositioned() const { return m_position == Position::Absolute || m_position == Position::Fixed; }
     bool isLeftToRightDirection() const { return m_direction == TextDirection::Ltr; }
     bool isRightToLeftDirection() const { return m_direction == TextDirection::Rtl; }
     bool isClearLeft() const { return m_clear == Clear::Left || m_clear == Clear::Both; }
