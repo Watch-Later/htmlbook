@@ -95,17 +95,17 @@ public:
 
     const FlexItemSpan& items() const { return m_items; }
 
-    float crossOffset() const { return m_crossOffset; }
     float crossSize() const { return m_crossSize; }
+    float maxAscent() const { return m_maxAscent; }
 
-    void setCrossOffset(float size) { m_crossOffset = size; }
     void setCrossSize(float size) { m_crossSize = size; }
+    void setMaxAscent(float ascent) { m_maxAscent = ascent; }
 
 private:
     FlexItemSpan m_items;
 
-    float m_crossOffset = 0;
     float m_crossSize = 0;
+    float m_maxAscent = 0;
 };
 
 using FlexLineList = std::pmr::vector<FlexLine>;
@@ -129,7 +129,7 @@ public:
     std::optional<float> computeMinCrossSize(const BlockBox* child) const;
     std::optional<float> computeMaxCrossSize(const BlockBox* child) const;
 
-    float availableMainSize() const;
+    float availableMainSize(float hypotheticalMainSize) const;
     float availableCrossSize() const;
 
     float borderStart() const;
@@ -151,7 +151,6 @@ public:
 
     bool isHorizontalFlow() const { return m_flexDirection == FlexDirection::Row || m_flexDirection == FlexDirection::RowReverse; }
     bool isVerticalFlow() const { return m_flexDirection == FlexDirection::Column || m_flexDirection == FlexDirection::ColumnReverse; }
-    bool isReverseDirection() const { return m_flexDirection == FlexDirection::RowReverse || m_flexDirection == FlexDirection::ColumnReverse; }
     bool isMultiLine() const { return m_flexWrap == FlexWrap::Wrap || m_flexWrap == FlexWrap::WrapReverse; }
 
     const FlexItemList& items() { return m_items; }

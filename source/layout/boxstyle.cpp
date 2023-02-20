@@ -851,7 +851,7 @@ float BoxStyle::flexGrow() const
 {
     auto value = get(CSSPropertyID::FlexGrow);
     if(value == nullptr)
-        return 1.0;
+        return 0.0;
     return convertNumber(*value);
 }
 
@@ -859,7 +859,7 @@ float BoxStyle::flexShrink() const
 {
     auto value = get(CSSPropertyID::FlexShrink);
     if(value == nullptr)
-        return 0.0;
+        return 1.0;
     return convertNumber(*value);
 }
 
