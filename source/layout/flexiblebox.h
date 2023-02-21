@@ -48,6 +48,7 @@ public:
     float constrainCrossSizeByMinMax(float size) const;
 
     FlexibleBox& flexBox() const;
+    FlexDirection flexDirection() const;
 
     bool isHorizontalFlow() const;
     bool isVerticalFlow() const;
@@ -119,7 +120,7 @@ public:
     void computePreferredWidths(float& minWidth, float& maxWidth) const final;
 
     void addBox(Box* box) final;
-    void build(BoxLayer* layer);
+    void build(BoxLayer* layer) final;
 
     float computeFlexBaseSize(BlockBox* child) const;
 
@@ -129,7 +130,7 @@ public:
     std::optional<float> computeMinCrossSize(const BlockBox* child) const;
     std::optional<float> computeMaxCrossSize(const BlockBox* child) const;
 
-    float availableMainSize(float hypotheticalMainSize) const;
+    float computeMainSize(float contentHeight) const;
     float availableCrossSize() const;
 
     float borderStart() const;
@@ -175,6 +176,11 @@ struct is_a<FlexibleBox> {
 inline FlexibleBox& FlexItem::flexBox() const
 {
     return to<FlexibleBox>(*m_box->parentBox());
+}
+
+inline FlexDirection FlexItem::flexDirection() const
+{
+    return flexBox().flexDirection();
 }
 
 inline bool FlexItem::isHorizontalFlow() const
