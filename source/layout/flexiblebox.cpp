@@ -800,6 +800,17 @@ void FlexibleBox::layout()
             }
         }
     }
+
+    for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
+        if(child->isPositioned()) {
+            auto childLayer = child->layer();
+            childLayer->setStaticLeft(borderStart() + paddingStart());
+            childLayer->setStaticTop(borderBefore() + paddingBefore());
+            child->containingBlock()->insertPositonedBox(child);
+        }
+    }
+
+    layoutPositionedBoxes();
 }
 
 } // namespace htmlbook
