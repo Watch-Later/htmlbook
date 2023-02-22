@@ -45,7 +45,6 @@ public:
     void setTargetMainSize(float value) { m_targetMainSize = value; }
 
     float constrainMainSizeByMinMax(float size) const;
-    float constrainCrossSizeByMinMax(float size) const;
 
     FlexibleBox& flexBox() const;
     FlexDirection flexDirection() const;
@@ -96,17 +95,17 @@ public:
 
     const FlexItemSpan& items() const { return m_items; }
 
+    float crossOffset() const { return m_crossOffset; }
     float crossSize() const { return m_crossSize; }
-    float maxAscent() const { return m_maxAscent; }
 
+    void setCrossOffset(float offset) { m_crossOffset = offset; }
     void setCrossSize(float size) { m_crossSize = size; }
-    void setMaxAscent(float ascent) { m_maxAscent = ascent; }
 
 private:
     FlexItemSpan m_items;
 
+    float m_crossOffset = 0;
     float m_crossSize = 0;
-    float m_maxAscent = 0;
 };
 
 using FlexLineList = std::pmr::vector<FlexLine>;
@@ -126,9 +125,6 @@ public:
 
     std::optional<float> computeMinMainSize(const BlockBox* child) const;
     std::optional<float> computeMaxMainSize(const BlockBox* child) const;
-
-    std::optional<float> computeMinCrossSize(const BlockBox* child) const;
-    std::optional<float> computeMaxCrossSize(const BlockBox* child) const;
 
     float computeMainSize(float contentHeight) const;
     float availableCrossSize() const;
