@@ -98,7 +98,11 @@ float FlexItem::marginStart() const
         return m_box->marginTop();
     case FlexDirection::ColumnReverse:
         return m_box->marginBottom();
+    default:
+        assert(false);
     }
+
+    return m_box->marginLeft();
 }
 
 float FlexItem::marginEnd() const
@@ -112,31 +116,25 @@ float FlexItem::marginEnd() const
         return m_box->marginBottom();
     case FlexDirection::ColumnReverse:
         return m_box->marginTop();
+    default:
+        assert(false);
     }
+
+    return m_box->marginRight();
 }
 
 float FlexItem::marginBefore() const
 {
-    switch(flexDirection()) {
-    case FlexDirection::Row:
-    case FlexDirection::RowReverse:
+    if(isHorizontalFlow())
         return m_box->marginTop();
-    case FlexDirection::Column:
-    case FlexDirection::ColumnReverse:
-        return m_box->marginLeft();
-    }
+    return m_box->marginLeft();
 }
 
 float FlexItem::marginAfter() const
 {
-    switch(flexDirection()) {
-    case FlexDirection::Row:
-    case FlexDirection::RowReverse:
+    if(isHorizontalFlow())
         return m_box->marginBottom();
-    case FlexDirection::Column:
-    case FlexDirection::ColumnReverse:
-        return m_box->marginRight();
-    }
+    return m_box->marginRight();
 }
 
 FlexibleBox::FlexibleBox(Node* node, const RefPtr<BoxStyle>& style)
@@ -341,7 +339,11 @@ float FlexibleBox::borderStart() const
         return borderTop();
     case FlexDirection::ColumnReverse:
         return borderBottom();
+    default:
+        assert(false);
     }
+
+    return borderLeft();
 }
 
 float FlexibleBox::borderEnd() const
@@ -355,31 +357,25 @@ float FlexibleBox::borderEnd() const
         return borderBottom();
     case FlexDirection::ColumnReverse:
         return borderTop();
+    default:
+        assert(false);
     }
+
+    return borderRight();
 }
 
 float FlexibleBox::borderBefore() const
 {
-    switch(m_flexDirection) {
-    case FlexDirection::Row:
-    case FlexDirection::RowReverse:
+    if(isHorizontalFlow())
         return borderTop();
-    case FlexDirection::Column:
-    case FlexDirection::ColumnReverse:
-        return borderLeft();
-    }
+    return borderLeft();
 }
 
 float FlexibleBox::borderAfter() const
 {
-    switch(m_flexDirection) {
-    case FlexDirection::Row:
-    case FlexDirection::RowReverse:
+    if(isHorizontalFlow())
         return borderBottom();
-    case FlexDirection::Column:
-    case FlexDirection::ColumnReverse:
-        return borderRight();
-    }
+    return borderRight();
 }
 
 float FlexibleBox::paddingStart() const
@@ -393,7 +389,11 @@ float FlexibleBox::paddingStart() const
         return paddingTop();
     case FlexDirection::ColumnReverse:
         return paddingBottom();
+    default:
+        assert(false);
     }
+
+    return paddingLeft();
 }
 
 float FlexibleBox::paddingEnd() const
@@ -407,31 +407,25 @@ float FlexibleBox::paddingEnd() const
         return paddingBottom();
     case FlexDirection::ColumnReverse:
         return paddingTop();
+    default:
+        assert(false);
     }
+
+    return paddingRight();
 }
 
 float FlexibleBox::paddingBefore() const
 {
-    switch(m_flexDirection) {
-    case FlexDirection::Row:
-    case FlexDirection::RowReverse:
+    if(isHorizontalFlow())
         return paddingTop();
-    case FlexDirection::Column:
-    case FlexDirection::ColumnReverse:
-        return paddingLeft();
-    }
+    return paddingLeft();
 }
 
 float FlexibleBox::paddingAfter() const
 {
-    switch(m_flexDirection) {
-    case FlexDirection::Row:
-    case FlexDirection::RowReverse:
+    if(isHorizontalFlow())
         return paddingBottom();
-    case FlexDirection::Column:
-    case FlexDirection::ColumnReverse:
-        return paddingRight();
-    }
+    return paddingRight();
 }
 
 void FlexibleBox::layout()
