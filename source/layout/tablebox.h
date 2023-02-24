@@ -5,9 +5,56 @@
 
 namespace htmlbook {
 
-class TableCaptionBox;
-class TableSectionBox;
+class TableCellBox;
 class TableColumnBox;
+class TableRowBox;
+
+class TableCell {
+public:
+    TableCell(TableCellBox* box, bool inColSpan, bool inRowSpan)
+        : m_box(box), m_inColSpan(inColSpan), m_inRowSpan(inRowSpan)
+    {}
+
+    TableCellBox* box() const { return m_box; }
+    bool inColSpan() const { return m_inColSpan; }
+    bool inRowSpan() const { return m_inRowSpan; }
+
+private:
+    TableCellBox* m_box;
+    bool m_inColSpan;
+    bool m_inRowSpan;
+};
+
+using TableCellMap = std::pmr::map<size_t, TableCell>;
+
+class TableColumn {
+public:
+    explicit TableColumn(const TableColumnBox* box)
+        : m_box(box)
+    {}
+
+    const TableColumnBox* box() const { return m_box; }
+
+private:
+    const TableColumnBox* m_box;
+};
+
+using TableColumnList = std::pmr::vector<TableColumn>;
+
+class TableRow {
+public:
+    explicit TableRow(TableRowBox* box)
+        : m_box(box)
+    {}
+
+    TableRowBox* box() const { return m_box; }
+    TableCellMap& cells() const;
+
+private:
+    TableRowBox* m_box;
+};
+
+using TableRowList = std::pmr::vector<TableRow>;
 
 class TableBox final : public BlockBox {
 public:
@@ -17,73 +64,23 @@ public:
 
     void computePreferredWidths(float& minWidth, float& maxWidth) const final;
 
-    TableSectionBox* header() const { return m_header; }
-    TableSectionBox* footer() const { return m_footer; }
-    const std::vector<TableCaptionBox*>& captions() const { return m_captions; }
-    const std::vector<TableSectionBox*>& sections() const { return m_sections; }
-    const std::vector<TableColumnBox*>& columns() const { return m_columns; }
+    const TableRowList& rows() const { return m_rows; }
+    const TableColumnList& columns() const { return m_columns; }
 
     void addBox(Box* box) final;
     void build(BoxLayer* layer) final;
+    void layout() final;
 
     const char* name() const final { return "TableBox"; }
 
 private:
-    TableSectionBox* m_header{nullptr};
-    TableSectionBox* m_footer{nullptr};
-    std::vector<TableCaptionBox*> m_captions;
-    std::vector<TableSectionBox*> m_sections;
-    std::vector<TableColumnBox*> m_columns;
+    TableRowList m_rows;
+    TableColumnList m_columns;
 };
 
 template<>
 struct is_a<TableBox> {
     static bool check(const Box& box) { return box.isOfType(Box::Type::Table); }
-};
-
-class TableCellBox final : public BlockFlowBox {
-public:
-    TableCellBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    bool isOfType(Type type) const final { return type == Type::TableCell || BlockFlowBox::isOfType(type); }
-    bool avoidsFloats() const final { return true; }
-
-    int colSpan() const { return m_colSpan; }
-    int rowSpan() const { return m_rowSpan; }
-
-    void setColSpan(int span) { m_colSpan = span; }
-    void setRowSpan(int span) { m_rowSpan = span; }
-
-    const char* name() const final { return "TableCellBox"; }
-
-private:
-    int m_colSpan{1};
-    int m_rowSpan{1};
-};
-
-template<>
-struct is_a<TableCellBox> {
-    static bool check(const Box& box) { return box.isOfType(Box::Type::TableCell); }
-};
-
-class TableCaptionBox final : public BlockFlowBox {
-public:
-    TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    bool isOfType(Type type) const final { return type == Type::TableCaption || BlockFlowBox::isOfType(type); }
-    bool avoidsFloats() const final { return true; }
-
-    CaptionSide captionSide() const { return m_captionSide; }
-
-    const char* name() const final { return "TableCaptionBox"; }
-
-private:
-    CaptionSide m_captionSide;
-};
-
-template<>
-struct is_a<TableCaptionBox> {
-    static bool check(const Box& box) { return box.isOfType(Box::Type::TableCaption); }
 };
 
 class TableSectionBox final : public Box {
@@ -111,12 +108,23 @@ public:
     void addBox(Box* box) final;
 
     const char* name() const final { return "TableRowBox"; }
+
+    const TableCellMap& cells() const { return m_cells; }
+    TableCellMap& cells()  { return m_cells; }
+
+private:
+    TableCellMap m_cells;
 };
 
 template<>
 struct is_a<TableRowBox> {
     static bool check(const Box& box) { return box.isOfType(Box::Type::TableRow); }
 };
+
+inline TableCellMap& TableRow::cells() const
+{
+    return m_box->cells();
+}
 
 class TableColumnBox : public Box {
 public:
@@ -152,6 +160,51 @@ public:
 template<>
 struct is_a<TableColumnGroupBox> {
     static bool check(const Box& box) { return box.isOfType(Box::Type::TableColumnGroup); }
+};
+
+class TableCellBox final : public BlockFlowBox {
+public:
+    TableCellBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isOfType(Type type) const final { return type == Type::TableCell || BlockFlowBox::isOfType(type); }
+    bool avoidsFloats() const final { return true; }
+
+    size_t colSpan() const { return m_colSpan; }
+    size_t rowSpan() const { return m_rowSpan; }
+
+    void setColSpan(int span) { m_colSpan = span; }
+    void setRowSpan(int span) { m_rowSpan = span; }
+
+    const char* name() const final { return "TableCellBox"; }
+
+private:
+    int m_colSpan{1};
+    int m_rowSpan{1};
+};
+
+template<>
+struct is_a<TableCellBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::TableCell); }
+};
+
+class TableCaptionBox final : public BlockFlowBox {
+public:
+    TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isOfType(Type type) const final { return type == Type::TableCaption || BlockFlowBox::isOfType(type); }
+    bool avoidsFloats() const final { return true; }
+
+    CaptionSide captionSide() const { return m_captionSide; }
+
+    const char* name() const final { return "TableCaptionBox"; }
+
+private:
+    CaptionSide m_captionSide;
+};
+
+template<>
+struct is_a<TableCaptionBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::TableCaption); }
 };
 
 } // namespace htmlbook
