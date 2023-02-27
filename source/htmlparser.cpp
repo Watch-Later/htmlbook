@@ -3132,8 +3132,7 @@ bool HTMLParser::parse()
             continue;
         }
 
-        if(m_skipLeadingNewline
-            && token.type() == HTMLToken::Type::SpaceCharacter) {
+        if(m_skipLeadingNewline && token.type() == HTMLToken::Type::SpaceCharacter) {
             token.skipLeadingNewLine();
         }
 

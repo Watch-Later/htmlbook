@@ -67,6 +67,8 @@ public:
     const HeapString& data() const { return m_data; }
     void setData(const HeapString& data) { m_data = data; }
 
+    bool containsOnlyWhitespace() const;
+
     Box* createBox(const RefPtr<BoxStyle>& style) final;
     void buildBox(Counters& counters, Box* parent) final;
     void serialize(std::ostream& o) const final;

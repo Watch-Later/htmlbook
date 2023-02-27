@@ -13,10 +13,9 @@ FlexItem::FlexItem(BlockBox* box, int order, float flexGrow, float flexShrink, A
 
 float FlexItem::constrainMainSizeByMinMax(float size) const
 {
-    const auto& block = flexBox();
-    if(auto maxSize = block.computeMaxMainSize(m_box))
+    if(auto maxSize = flexBox()->computeMaxMainSize(m_box))
         size = std::min(size, *maxSize);
-    if(auto minSize = block.computeMinMainSize(m_box))
+    if(auto minSize = flexBox()->computeMinMainSize(m_box))
         size = std::max(size, *minSize);
     return size;
 }

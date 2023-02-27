@@ -136,13 +136,13 @@ public:
     /**
      * @brief loadFont
      * @param family
-     * @param italic
-     * @param smallCaps
+     * @param width
      * @param weight
+     * @param slope
      * @param data
      * @return
      */
-    virtual bool loadFont(const std::string_view& family, bool italic, bool smallCaps, int weight, std::vector<char>& data) = 0;
+    virtual bool loadFont(const std::string_view& family, float width, float weight, float slope, std::vector<char>& data) = 0;
 };
 
 using Heap = std::pmr::monotonic_buffer_resource;

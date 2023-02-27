@@ -333,12 +333,12 @@ struct is_a<BoxFrame> {
 
 inline BoxFrame* BoxFrame::firstBoxFrame() const
 {
-    return to<BoxFrame>(firstBox());
+    return static_cast<BoxFrame*>(firstBox());
 }
 
 inline BoxFrame* BoxFrame::nextBoxFrame() const
 {
-    return to<BoxFrame>(nextBox());
+    return static_cast<BoxFrame*>(nextBox());
 }
 
 } // namespace htmlbook

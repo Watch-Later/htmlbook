@@ -37,10 +37,19 @@ TextNode::TextNode(Document* document, const HeapString& data)
 {
 }
 
+bool TextNode::containsOnlyWhitespace() const
+{
+    for(auto cc : m_data) {
+        if(!isspace(cc)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
 {
-    if(m_data.empty())
-        return nullptr;
     auto box = new (heap()) TextBox(this, style);
     box->setText(m_data);
     return box;
@@ -48,6 +57,16 @@ Box* TextNode::createBox(const RefPtr<BoxStyle>& style)
 
 void TextNode::buildBox(Counters& counters, Box* parent)
 {
+    if(m_data.empty())
+        return;
+    if(containsOnlyWhitespace()) {
+        if(parent->isFlexibleBox() || parent->isTableBox()
+            || parent->isTableSectionBox() || parent->isTableRowBox()
+            || parent->isTableColumnBox()) {
+            return;
+        }
+    }
+
     auto box = createBox(parent->style());
     if(box == nullptr)
         return;
@@ -215,8 +234,9 @@ const HeapString& Element::getAttribute(const GlobalString& name) const
 
 void Element::setAttributeList(const AttributeList& attributes)
 {
-    for(auto& attribute : attributes)
+    for(auto& attribute : attributes) {
         setAttribute(attribute);
+    }
 }
 
 void Element::setAttribute(const Attribute& attribute)
@@ -462,7 +482,6 @@ Box* Document::createBox(const RefPtr<BoxStyle>& style)
 
 void Document::buildBox(Counters& counters, Box* parent)
 {
-    assert(parent == nullptr);
     auto style = BoxStyle::create(this, PseudoType::None, Display::Block);
     auto box = createBox(style);
     ContainerNode::buildBox(counters, box);

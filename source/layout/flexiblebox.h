@@ -46,7 +46,7 @@ public:
 
     float constrainMainSizeByMinMax(float size) const;
 
-    FlexibleBox& flexBox() const;
+    FlexibleBox* flexBox() const;
     FlexDirection flexDirection() const;
 
     bool isHorizontalFlow() const;
@@ -169,24 +169,24 @@ struct is_a<FlexibleBox> {
     static bool check(const Box& box) { return box.isOfType(Box::Type::Flexible); }
 };
 
-inline FlexibleBox& FlexItem::flexBox() const
+inline FlexibleBox* FlexItem::flexBox() const
 {
-    return to<FlexibleBox>(*m_box->parentBox());
+    return static_cast<FlexibleBox*>(m_box->parentBox());
 }
 
 inline FlexDirection FlexItem::flexDirection() const
 {
-    return flexBox().flexDirection();
+    return flexBox()->flexDirection();
 }
 
 inline bool FlexItem::isHorizontalFlow() const
 {
-    return flexBox().isHorizontalFlow();
+    return flexBox()->isHorizontalFlow();
 }
 
 inline bool FlexItem::isVerticalFlow() const
 {
-    return flexBox().isVerticalFlow();
+    return flexBox()->isVerticalFlow();
 }
 
 } // namespace htmlbook
