@@ -98,6 +98,7 @@ void TableSectionBox::build(BoxLayer* layer)
     for(auto box = firstBox(); box; box = box->nextBox()) {
         assert(box->isTableRowBox());
         auto rowBox = to<TableRowBox>(box);
+        rowBox->setRowIndex(m_rows.size());
         m_rows.emplace_back(rowBox);
     }
 
@@ -117,6 +118,7 @@ void TableSectionBox::build(BoxLayer* layer)
                 ++columnIndex;
             }
 
+            cellBox->setColumnIndex(columnIndex);
             if(cellBox->rowSpan() == 0) {
                 cellBox->setRowSpan(rowCount - rowIndex);
             } else {

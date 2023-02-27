@@ -47,6 +47,8 @@ public:
     virtual void build(BoxLayer* layer);
     virtual void layout();
 
+    virtual bool requiresLayer() const { return false; }
+
     void insertChild(Box* box, Box* nextBox);
     void appendChild(Box* box);
     void removeChild(Box* box);
@@ -67,6 +69,8 @@ public:
     void setParentBox(Box* box) { m_parentBox = box; }
     void setPrevBox(Box* box) { m_prevBox = box; }
     void setNextBox(Box* box) { m_nextBox = box; }
+
+    BoxLayer* layer() const { return m_layer.get(); }
 
     static Box* create(Node* node, const RefPtr<BoxStyle>& style);
     static Box* createAnonymous(const RefPtr<BoxStyle>& parentStyle, Display display);
@@ -123,6 +127,8 @@ public:
     virtual const char* name() const { return "Box"; }
 
 private:
+    std::unique_ptr<BoxLayer> m_layer;
+
     Node* m_node;
     RefPtr<BoxStyle> m_style;
     Box* m_parentBox{nullptr};
@@ -139,15 +145,14 @@ private:
     bool m_hasTransform{false};
 };
 
-class BoxModel;
-
 class BoxLayer : public HeapMember {
 public:
-    static std::unique_ptr<BoxLayer> create(BoxModel* box, BoxLayer* parent);
+    static std::unique_ptr<BoxLayer> create(Box* box, BoxLayer* parent);
+
+    Box* box() const { return m_box; }
+    BoxLayer* parent() const { return m_parent; }
 
     int index() const { return m_index; }
-    BoxModel* box() const { return m_box; }
-    BoxLayer* parent() const { return m_parent; }
 
     float staticTop() const { return m_staticTop; }
     float staticLeft() const { return m_staticLeft; }
@@ -156,11 +161,12 @@ public:
     void setStaticLeft(float left) { m_staticLeft = left; }
 
 private:
-    BoxLayer(BoxModel* box, BoxLayer* parent);
-    int m_index;
-    BoxModel* m_box;
+    BoxLayer(Box* box, BoxLayer* parent);
+    Box* m_box;
     BoxLayer* m_parent;
     std::pmr::list<BoxLayer*> m_children;
+
+    int m_index;
 
     float m_staticTop{0};
     float m_staticLeft{0};
@@ -173,9 +179,6 @@ public:
     bool isBoxModel() const final { return true; }
 
     void addBox(Box* box) override;
-    void build(BoxLayer* layer) override;
-
-    virtual bool requiresLayer() const { return false; }
 
     float containingBlockWidthForContent() const;
     float containingBlockHeightForContent() const;
@@ -222,13 +225,9 @@ public:
     float borderAndPaddingWidth() const { return borderWidth() + paddingWidth(); }
     float borderAndPaddingHeight() const { return borderHeight() + paddingHeight(); }
 
-    BoxLayer* layer() const { return m_layer.get(); }
-
     const char* name() const override { return "BoxModel"; }
 
 protected:
-    std::unique_ptr<BoxLayer> m_layer;
-
     float m_marginTop{0};
     float m_marginBottom{0};
     float m_marginLeft{0};

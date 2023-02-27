@@ -35,6 +35,11 @@ Box::~Box()
 
 void Box::build(BoxLayer* layer)
 {
+    if(layer == nullptr || requiresLayer()) {
+        m_layer = BoxLayer::create(this, layer);
+        layer = m_layer.get();
+    }
+
     auto child = m_firstBox;
     while(child) {
         child->build(layer);
@@ -263,12 +268,12 @@ bool Box::isFlexItem() const
     return m_parentBox && m_parentBox->isFlexibleBox();
 }
 
-std::unique_ptr<BoxLayer> BoxLayer::create(BoxModel* box, BoxLayer* parent)
+std::unique_ptr<BoxLayer> BoxLayer::create(Box* box, BoxLayer* parent)
 {
     return std::unique_ptr<BoxLayer>(new (box->heap()) BoxLayer(box, parent));
 }
 
-BoxLayer::BoxLayer(BoxModel* box, BoxLayer* parent)
+BoxLayer::BoxLayer(Box* box, BoxLayer* parent)
     : m_box(box), m_parent(parent), m_children(box->heap())
 {
     m_index = box->style()->zIndex().value_or(0);
@@ -293,16 +298,6 @@ BoxModel::BoxModel(Node* node, const RefPtr<BoxStyle>& style)
         setInline(false);
         break;
     }
-}
-
-void BoxModel::build(BoxLayer* layer)
-{
-    if(layer == nullptr || requiresLayer()) {
-        m_layer = BoxLayer::create(this, layer);
-        layer = m_layer.get();
-    }
-
-    Box::build(layer);
 }
 
 void BoxModel::addBox(Box* box)

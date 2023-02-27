@@ -6,8 +6,8 @@
 namespace htmlbook {
 
 class TableCellBox;
-class TableColumnBox;
 class TableRowBox;
+class TableColumnBox;
 
 class TableCell {
 public:
@@ -126,10 +126,15 @@ public:
     const TableCellMap& cells() const { return m_cells; }
     TableCellMap& cells()  { return m_cells; }
 
+    size_t rowIndex() const { return m_rowIndex; }
+    void setRowIndex(size_t rowIndex) { m_rowIndex = rowIndex; }
+
     const char* name() const final { return "TableRowBox"; }
 
 private:
     TableCellMap m_cells;
+
+    size_t m_rowIndex{0};
 };
 
 template<>
@@ -196,15 +201,22 @@ public:
     void setColSpan(int span) { m_colSpan = span; }
     void setRowSpan(int span) { m_rowSpan = span; }
 
+    size_t columnIndex() const { return m_columnIndex; }
+    void setColumnIndex(size_t columnIndex) { m_columnIndex = columnIndex; }
+
     TableRowBox* row() const;
     TableSectionBox* section() const { return row()->section(); }
     TableBox* table() const { return section()->table(); }
+
+    size_t rowIndex() const { return row()->rowIndex(); }
 
     const char* name() const final { return "TableCellBox"; }
 
 private:
     int m_colSpan{1};
     int m_rowSpan{1};
+
+    size_t m_columnIndex{0};
 };
 
 template<>
