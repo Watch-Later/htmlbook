@@ -35,7 +35,7 @@ Box::~Box()
 
 void Box::build(BoxLayer* layer)
 {
-    if(layer == nullptr || requiresLayer()) {
+    if(requiresLayer()) {
         m_layer = BoxLayer::create(this, layer);
         layer = m_layer.get();
     }

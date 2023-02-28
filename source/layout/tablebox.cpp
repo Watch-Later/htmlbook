@@ -73,6 +73,7 @@ TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
     : Box(node, style)
     , m_rows(style->heap())
 {
+    setHasTransform(style->hasTransform());
 }
 
 void TableSectionBox::addBox(Box* box)
@@ -146,6 +147,7 @@ TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
     : Box(node, style)
     , m_cells(style->heap())
 {
+    setHasTransform(style->hasTransform());
 }
 
 void TableRowBox::addBox(Box* box)
