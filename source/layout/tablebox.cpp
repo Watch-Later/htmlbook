@@ -69,11 +69,16 @@ void TableBox::addBox(Box* box)
     newSection->addBox(box);
 }
 
-TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
+TableBoxFrame::TableBoxFrame(Node* node, const RefPtr<BoxStyle>& style)
     : Box(node, style)
-    , m_rows(style->heap())
 {
     setHasTransform(style->hasTransform());
+}
+
+TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
+    : TableBoxFrame(node, style)
+    , m_rows(style->heap())
+{
 }
 
 void TableSectionBox::addBox(Box* box)
@@ -144,10 +149,9 @@ void TableSectionBox::build(BoxLayer* layer)
 }
 
 TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
-    : Box(node, style)
+    : TableBoxFrame(node, style)
     , m_cells(style->heap())
 {
-    setHasTransform(style->hasTransform());
 }
 
 void TableRowBox::addBox(Box* box)

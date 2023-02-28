@@ -82,7 +82,28 @@ struct is_a<TableBox> {
     static bool check(const Box& box) { return box.isOfType(Box::Type::Table); }
 };
 
-class TableSectionBox final : public Box {
+class TableBoxFrame : public Box {
+public:
+    TableBoxFrame(Node* node, const RefPtr<BoxStyle>& style);
+
+    float x() const { return m_x; }
+    float y() const { return m_y; }
+    float width() const { return m_width; }
+    float height() const { return m_height; }
+
+    void setX(float x) { m_x = x; }
+    void setY(float y) { m_y = y; }
+    void setWidth(float width) { m_width = width; }
+    void setHeight(float height) { m_height = height; }
+
+private:
+    float m_x{0};
+    float m_y{0};
+    float m_width{0};
+    float m_height{0};
+};
+
+class TableSectionBox final : public TableBoxFrame {
 public:
     TableSectionBox(Node* node, const RefPtr<BoxStyle>& style);
 
@@ -112,7 +133,7 @@ inline TableBox* TableSectionBox::table() const
     return static_cast<TableBox*>(parentBox());
 }
 
-class TableRowBox final : public Box {
+class TableRowBox final : public TableBoxFrame {
 public:
     TableRowBox(Node* node, const RefPtr<BoxStyle>& style);
 
