@@ -163,16 +163,11 @@ TableLayoutAlgorithmAuto::TableLayoutAlgorithmAuto(TableBox* table)
 {
 }
 
-TableBoxFrame::TableBoxFrame(Node* node, const RefPtr<BoxStyle>& style)
-    : Box(node, style)
-{
-    setHasTransform(style->hasTransform());
-}
-
 TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
-    : TableBoxFrame(node, style)
+    : Box(node, style)
     , m_rows(style->heap())
 {
+    setHasTransform(style->hasTransform());
 }
 
 void TableSectionBox::addBox(Box* box)
@@ -243,9 +238,10 @@ void TableSectionBox::build(BoxLayer* layer)
 }
 
 TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
-    : TableBoxFrame(node, style)
+    : Box(node, style)
     , m_cells(style->heap())
 {
+    setHasTransform(style->hasTransform());
 }
 
 void TableRowBox::addBox(Box* box)

@@ -114,32 +114,11 @@ private:
     std::pmr::vector<Length> m_widths;
 };
 
-class TableBoxFrame : public Box {
-public:
-    TableBoxFrame(Node* node, const RefPtr<BoxStyle>& style);
-
-    float x() const { return m_x; }
-    float y() const { return m_y; }
-    float width() const { return m_width; }
-    float height() const { return m_height; }
-
-    void setX(float x) { m_x = x; }
-    void setY(float y) { m_y = y; }
-    void setWidth(float width) { m_width = width; }
-    void setHeight(float height) { m_height = height; }
-
-private:
-    float m_x{0};
-    float m_y{0};
-    float m_width{0};
-    float m_height{0};
-};
-
 class TableRowBox;
 
 using TableRowBoxList = std::pmr::vector<TableRowBox*>;
 
-class TableSectionBox final : public TableBoxFrame {
+class TableSectionBox final : public Box {
 public:
     TableSectionBox(Node* node, const RefPtr<BoxStyle>& style);
 
@@ -153,10 +132,25 @@ public:
     const TableRowBoxList& rows() const { return m_rows; }
     TableRowBoxList& rows() { return m_rows; }
 
+    float x() const { return m_x; }
+    float y() const { return m_y; }
+    float width() const { return m_width; }
+    float height() const { return m_height; }
+
+    void setX(float x) { m_x = x; }
+    void setY(float y) { m_y = y; }
+    void setWidth(float width) { m_width = width; }
+    void setHeight(float height) { m_height = height; }
+
     const char* name() const final { return "TableSectionBox"; }
 
 private:
     TableRowBoxList m_rows;
+
+    float m_x{0};
+    float m_y{0};
+    float m_width{0};
+    float m_height{0};
 };
 
 template<>
@@ -189,7 +183,7 @@ private:
 
 using TableCellMap = std::pmr::multimap<uint32_t, TableCell>;
 
-class TableRowBox final : public TableBoxFrame {
+class TableRowBox final : public Box {
 public:
     TableRowBox(Node* node, const RefPtr<BoxStyle>& style);
 
@@ -206,6 +200,12 @@ public:
     uint32_t rowIndex() const { return m_rowIndex; }
     void setRowIndex(uint32_t rowIndex) { m_rowIndex = rowIndex; }
 
+    float y() const { return m_y; }
+    float height() const { return m_height; }
+
+    void setY(float y) { m_y = y; }
+    void setHeight(float height) { m_height = height; }
+
     float rowBaseline() const { return m_rowBaseline; }
     void setRowBaseline(float baseline) { m_rowBaseline = baseline; }
 
@@ -214,6 +214,9 @@ public:
 private:
     TableCellMap m_cells;
     uint32_t m_rowIndex{0};
+
+    float m_y{0};
+    float m_height{0};
     float m_rowBaseline{0};
 };
 
