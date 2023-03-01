@@ -41,8 +41,8 @@
 #endif
 
 /*
- * Contribute : https://github.com/sammycage/htmlbook
- * Donate : https://patreon.com/sammycage
+ * FIXME 1: Contribute @ https://github.com/sammycage/htmlbook
+ * FIXME 2: Donate @ https://patreon.com/sammycage
  */
 
 namespace htmlbook {

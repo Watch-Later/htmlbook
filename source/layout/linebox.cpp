@@ -78,9 +78,9 @@ void LineLayout::layout()
 {
 }
 
-LineLayout::LineLayout(BlockFlowBox* box)
-    : m_box(box)
-    , m_lines(box->heap())
+LineLayout::LineLayout(BlockFlowBox* block)
+    : m_block(block)
+    , m_lines(block->heap())
 {
 }
 

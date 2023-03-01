@@ -4,18 +4,16 @@ namespace htmlbook {
 
 TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
-    , m_tableLayout(style->tableLayout())
-    , m_borderCollapse(style->borderCollapse())
     , m_sections(style->heap())
     , m_columns(style->heap())
+    , m_borderCollapse(style->borderCollapse())
 {
     setChildrenInline(false);
 }
 
 void TableBox::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
-    minWidth = 0;
-    maxWidth = 0;
+    m_tableLayout->computePreferredWidths(minWidth, maxWidth);
 }
 
 void TableBox::build(BoxLayer* layer)
@@ -74,9 +72,14 @@ void TableBox::build(BoxLayer* layer)
 
     if(headerSection)
         m_sections.push_front(headerSection);
-    if(footerSection)
+    if(footerSection) {
         m_sections.push_back(footerSection);
+    }
+
     BlockBox::build(layer);
+
+    m_tableLayout = TableLayoutAlgorithm::create(this);
+    m_tableLayout->build();
 }
 
 void TableBox::layout()
@@ -100,6 +103,64 @@ void TableBox::addBox(Box* box)
     auto newSection = createAnonymous(style(), Display::TableRowGroup);
     appendChild(newSection);
     newSection->addBox(box);
+}
+
+std::unique_ptr<TableLayoutAlgorithm> TableLayoutAlgorithm::create(TableBox* table)
+{
+    const auto& tableStyle = table->style();
+    if(tableStyle->tableLayout() == TableLayout::Fixed && !tableStyle->width().isAuto())
+        return TableLayoutAlgorithmFixed::create(table);
+    return TableLayoutAlgorithmAuto::create(table);
+}
+
+std::unique_ptr<TableLayoutAlgorithmFixed> TableLayoutAlgorithmFixed::create(TableBox* table)
+{
+    return std::unique_ptr<TableLayoutAlgorithmFixed>(new (table->heap()) TableLayoutAlgorithmFixed(table));
+}
+
+void TableLayoutAlgorithmFixed::computePreferredWidths(float& minWidth, float& maxWidth) const
+{
+    minWidth = 0;
+    maxWidth = 0;
+}
+
+void TableLayoutAlgorithmFixed::build()
+{
+}
+
+void TableLayoutAlgorithmFixed::layout()
+{
+}
+
+TableLayoutAlgorithmFixed::TableLayoutAlgorithmFixed(TableBox* table)
+    : TableLayoutAlgorithm(table)
+    , m_widths(table->heap())
+{
+}
+
+std::unique_ptr<TableLayoutAlgorithmAuto> TableLayoutAlgorithmAuto::create(TableBox* table)
+{
+    return std::unique_ptr<TableLayoutAlgorithmAuto>(new (table->heap()) TableLayoutAlgorithmAuto(table));
+}
+
+void TableLayoutAlgorithmAuto::computePreferredWidths(float& minWidth, float& maxWidth) const
+{
+    minWidth = 0;
+    maxWidth = 0;
+}
+
+void TableLayoutAlgorithmAuto::build()
+{
+}
+
+void TableLayoutAlgorithmAuto::layout()
+{
+}
+
+TableLayoutAlgorithmAuto::TableLayoutAlgorithmAuto(TableBox* table)
+    : TableLayoutAlgorithm(table)
+    , m_widths(table->heap())
+{
 }
 
 TableBoxFrame::TableBoxFrame(Node* node, const RefPtr<BoxStyle>& style)

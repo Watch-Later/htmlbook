@@ -138,9 +138,9 @@ using RootLineBoxList = std::pmr::vector<std::unique_ptr<RootLineBox>>;
 
 class LineLayout : public HeapMember {
 public:
-    static std::unique_ptr<LineLayout> create(BlockFlowBox* box);
+    static std::unique_ptr<LineLayout> create(BlockFlowBox* block);
 
-    BlockFlowBox* box() const { return m_box; }
+    BlockFlowBox* block() const { return m_block; }
     const RootLineBoxList& lines() const { return m_lines; }
     bool empty() const { return m_lines.empty(); }
 
@@ -150,8 +150,8 @@ public:
     void layout();
 
 private:
-    LineLayout(BlockFlowBox* box);
-    BlockFlowBox* m_box;
+    LineLayout(BlockFlowBox* block);
+    BlockFlowBox* m_block;
     RootLineBoxList m_lines;
 };
 

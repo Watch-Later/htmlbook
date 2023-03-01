@@ -18,11 +18,22 @@ public:
 
     const TableColumnBox* box() const { return m_box; }
 
+    float x() const { return m_x; }
+    float width() const { return m_width; }
+
+    void setX(float x) { m_x = x; }
+    void setWidth(float width) { m_width = width; }
+
 private:
     const TableColumnBox* m_box;
+
+    float m_x{0};
+    float m_width{0};
 };
 
 using TableColumnList = std::pmr::vector<TableColumn>;
+
+class TableLayoutAlgorithm;
 
 class TableBox final : public BlockBox {
 public:
@@ -36,12 +47,11 @@ public:
     void build(BoxLayer* layer) final;
     void layout() final;
 
-    TableLayout tableLayout() const { return m_tableLayout; }
-    BorderCollapse borderCollapse() const { return m_borderCollapse; }
-
     const TableSectionBoxList& sections() const { return m_sections; }
     const TableColumnList& columns() const { return m_columns; }
     TableColumnList& columns() { return m_columns; }
+
+    BorderCollapse borderCollapse() const { return m_borderCollapse; }
 
     float horizontalBorderSpacing() const { return m_horizontalBorderSpacing; }
     float verticalBorderSpacing() const { return m_verticalBorderSpacing; }
@@ -49,10 +59,11 @@ public:
     const char* name() const final { return "TableBox"; }
 
 private:
-    TableLayout m_tableLayout;
-    BorderCollapse m_borderCollapse;
+    std::unique_ptr<TableLayoutAlgorithm> m_tableLayout;
     TableSectionBoxList m_sections;
     TableColumnList m_columns;
+
+    BorderCollapse m_borderCollapse;
 
     float m_horizontalBorderSpacing{0};
     float m_verticalBorderSpacing{0};
@@ -61,6 +72,46 @@ private:
 template<>
 struct is_a<TableBox> {
     static bool check(const Box& box) { return box.isOfType(Box::Type::Table); }
+};
+
+class TableLayoutAlgorithm : public HeapMember {
+public:
+    static std::unique_ptr<TableLayoutAlgorithm> create(TableBox* table);
+
+    virtual ~TableLayoutAlgorithm() = default;
+    virtual void computePreferredWidths(float& minWidth, float& maxWidth) const = 0;
+    virtual void build() = 0;
+    virtual void layout() = 0;
+
+protected:
+    TableLayoutAlgorithm(TableBox* table) : m_table(table) {}
+    TableBox* m_table;
+};
+
+class TableLayoutAlgorithmFixed final : public TableLayoutAlgorithm {
+public:
+    static std::unique_ptr<TableLayoutAlgorithmFixed> create(TableBox* table);
+
+    void computePreferredWidths(float& minWidth, float& maxWidth) const final;
+    void build()  final;
+    void layout() final;
+
+private:
+    TableLayoutAlgorithmFixed(TableBox* table);
+    std::pmr::vector<Length> m_widths;
+};
+
+class TableLayoutAlgorithmAuto final : public TableLayoutAlgorithm {
+public:
+    static std::unique_ptr<TableLayoutAlgorithmAuto> create(TableBox* table);
+
+    void computePreferredWidths(float& minWidth, float& maxWidth) const final;
+    void build()  final;
+    void layout() final;
+
+private:
+    TableLayoutAlgorithmAuto(TableBox* table);
+    std::pmr::vector<Length> m_widths;
 };
 
 class TableBoxFrame : public Box {
