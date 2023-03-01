@@ -5,42 +5,10 @@
 
 namespace htmlbook {
 
-class TableCellBox;
-class TableRowBox;
+class TableSectionBox;
 class TableColumnBox;
 
-class TableCell {
-public:
-    TableCell(TableCellBox* box, bool inRowSpan, bool inColSpan)
-        : m_box(box), m_inRowSpan(inRowSpan), m_inColSpan(inColSpan)
-    {}
-
-    TableCellBox* box() const { return m_box; }
-    bool inRowSpan() const { return m_inRowSpan; }
-    bool inColSpan() const { return m_inColSpan; }
-
-private:
-    TableCellBox* m_box;
-    bool m_inRowSpan;
-    bool m_inColSpan;
-};
-
-using TableCellMap = std::pmr::multimap<size_t, TableCell>;
-
-class TableRow {
-public:
-    explicit TableRow(TableRowBox* box)
-        : m_box(box)
-    {}
-
-    TableRowBox* box() const { return m_box; }
-    TableCellMap& cells() const;
-
-private:
-    TableRowBox* m_box;
-};
-
-using TableRowList = std::pmr::vector<TableRow>;
+using TableSectionBoxList = std::pmr::list<TableSectionBox*>;
 
 class TableColumn {
 public:
@@ -68,13 +36,26 @@ public:
     void build(BoxLayer* layer) final;
     void layout() final;
 
+    TableLayout tableLayout() const { return m_tableLayout; }
+    BorderCollapse borderCollapse() const { return m_borderCollapse; }
+
+    const TableSectionBoxList& sections() const { return m_sections; }
     const TableColumnList& columns() const { return m_columns; }
     TableColumnList& columns() { return m_columns; }
+
+    float horizontalBorderSpacing() const { return m_horizontalBorderSpacing; }
+    float verticalBorderSpacing() const { return m_verticalBorderSpacing; }
 
     const char* name() const final { return "TableBox"; }
 
 private:
+    TableLayout m_tableLayout;
+    BorderCollapse m_borderCollapse;
+    TableSectionBoxList m_sections;
     TableColumnList m_columns;
+
+    float m_horizontalBorderSpacing{0};
+    float m_verticalBorderSpacing{0};
 };
 
 template<>
@@ -103,6 +84,10 @@ private:
     float m_height{0};
 };
 
+class TableRowBox;
+
+using TableRowBoxList = std::pmr::vector<TableRowBox*>;
+
 class TableSectionBox final : public TableBoxFrame {
 public:
     TableSectionBox(Node* node, const RefPtr<BoxStyle>& style);
@@ -114,13 +99,13 @@ public:
 
     TableBox* table() const;
 
-    const TableRowList& rows() const { return m_rows; }
-    TableRowList& rows() { return m_rows; }
+    const TableRowBoxList& rows() const { return m_rows; }
+    TableRowBoxList& rows() { return m_rows; }
 
     const char* name() const final { return "TableSectionBox"; }
 
 private:
-    TableRowList m_rows;
+    TableRowBoxList m_rows;
 };
 
 template<>
@@ -132,6 +117,26 @@ inline TableBox* TableSectionBox::table() const
 {
     return static_cast<TableBox*>(parentBox());
 }
+
+class TableCellBox;
+
+class TableCell {
+public:
+    TableCell(TableCellBox* box, bool inRowSpan, bool inColSpan)
+        : m_box(box), m_inRowSpan(inRowSpan), m_inColSpan(inColSpan)
+    {}
+
+    TableCellBox* box() const { return m_box; }
+    bool inRowSpan() const { return m_inRowSpan; }
+    bool inColSpan() const { return m_inColSpan; }
+
+private:
+    TableCellBox* m_box;
+    bool m_inRowSpan;
+    bool m_inColSpan;
+};
+
+using TableCellMap = std::pmr::multimap<uint32_t, TableCell>;
 
 class TableRowBox final : public TableBoxFrame {
 public:
@@ -147,15 +152,18 @@ public:
     const TableCellMap& cells() const { return m_cells; }
     TableCellMap& cells()  { return m_cells; }
 
-    size_t rowIndex() const { return m_rowIndex; }
-    void setRowIndex(size_t rowIndex) { m_rowIndex = rowIndex; }
+    uint32_t rowIndex() const { return m_rowIndex; }
+    void setRowIndex(uint32_t rowIndex) { m_rowIndex = rowIndex; }
+
+    float rowBaseline() const { return m_rowBaseline; }
+    void setRowBaseline(float baseline) { m_rowBaseline = baseline; }
 
     const char* name() const final { return "TableRowBox"; }
 
 private:
     TableCellMap m_cells;
-
-    size_t m_rowIndex{0};
+    uint32_t m_rowIndex{0};
+    float m_rowBaseline{0};
 };
 
 template<>
@@ -168,24 +176,19 @@ inline TableSectionBox* TableRowBox::section() const
     return static_cast<TableSectionBox*>(parentBox());
 }
 
-inline TableCellMap& TableRow::cells() const
-{
-    return m_box->cells();
-}
-
 class TableColumnBox : public Box {
 public:
     TableColumnBox(Node* node, const RefPtr<BoxStyle>& style);
 
     bool isOfType(Type type) const override { return type == Type::TableColumn || Box::isOfType(type); }
 
-    int span() const { return m_span; }
-    void setSpan(int span) { m_span = span; }
+    uint32_t span() const { return m_span; }
+    void setSpan(uint32_t span) { m_span = span; }
 
     const char* name() const override { return "TableColumnBox"; }
 
 private:
-    int m_span{1};
+    uint32_t m_span{1};
 };
 
 template<>
@@ -216,28 +219,28 @@ public:
     bool isOfType(Type type) const final { return type == Type::TableCell || BlockFlowBox::isOfType(type); }
     bool avoidsFloats() const final { return true; }
 
-    size_t colSpan() const { return m_colSpan; }
-    size_t rowSpan() const { return m_rowSpan; }
+    uint32_t colSpan() const { return m_colSpan; }
+    uint32_t rowSpan() const { return m_rowSpan; }
 
-    void setColSpan(int span) { m_colSpan = span; }
-    void setRowSpan(int span) { m_rowSpan = span; }
+    void setColSpan(uint32_t span) { m_colSpan = span; }
+    void setRowSpan(uint32_t span) { m_rowSpan = span; }
 
-    size_t columnIndex() const { return m_columnIndex; }
-    void setColumnIndex(size_t columnIndex) { m_columnIndex = columnIndex; }
+    uint32_t columnIndex() const { return m_columnIndex; }
+    void setColumnIndex(uint32_t columnIndex) { m_columnIndex = columnIndex; }
 
     TableRowBox* row() const;
     TableSectionBox* section() const { return row()->section(); }
     TableBox* table() const { return section()->table(); }
 
-    size_t rowIndex() const { return row()->rowIndex(); }
+    uint32_t rowIndex() const { return row()->rowIndex(); }
 
     const char* name() const final { return "TableCellBox"; }
 
 private:
-    int m_colSpan{1};
-    int m_rowSpan{1};
+    uint32_t m_colSpan{1};
+    uint32_t m_rowSpan{1};
 
-    size_t m_columnIndex{0};
+    uint32_t m_columnIndex{0};
 };
 
 template<>

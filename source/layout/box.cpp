@@ -200,16 +200,16 @@ BlockFlowBox* Box::createAnonymousBlock(const RefPtr<BoxStyle>& parentStyle)
     return newBlock;
 }
 
-BlockBox* Box::containingBlockForPosition(Position position) const
+BlockBox* Box::containingBlock() const
 {
     auto parent = parentBox();
-    if(position == Position::Static || position == Position::Relative) {
+    if(position() == Position::Static || position() == Position::Relative || isTextBox()) {
         while(parent && !parent->isBlockBox())
             parent = parent->parentBox();
         return to<BlockBox>(parent);
     }
 
-    if(position == Position::Fixed) {
+    if(position() == Position::Fixed) {
         while(parent && !(parent->isBoxView() || (parent->hasTransform() && parent->isBlockBox())))
             parent = parent->parentBox();
         return to<BlockBox>(parent);
@@ -228,20 +228,17 @@ BlockBox* Box::containingBlockForPosition(Position position) const
     return to<BlockBox>(parent);
 }
 
-BlockBox* Box::containingBlock() const
-{
-    if(isTextBox())
-        return containingBlockForPosition(Position::Static);
-    return containingBlockForPosition(position());
-}
-
 BoxModel* Box::containingBox() const
 {
     auto parent = parentBox();
     if(!isTextBox()) {
-        if(position() == Position::Fixed)
-            return containingBlockForPosition(Position::Fixed);
-        if(position() == Position::Absolute) {
+        if(position() == Position::Fixed) {
+            while(parent && !parent->isBoxView()) {
+                if(parent->hasTransform() && parent->isBlockBox())
+                    break;
+                parent = parent->parentBox();
+            }
+        } else if(position() == Position::Absolute) {
             while(parent && parent->position() == Position::Static) {
                 if(parent->hasTransform() && parent->isBlockBox())
                     break;

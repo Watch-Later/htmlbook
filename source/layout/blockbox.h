@@ -143,7 +143,7 @@ private:
     float m_height{0};
 };
 
-using FloatingBoxList = std::pmr::list<FloatingBox>;
+using FloatingBoxList = std::pmr::vector<FloatingBox>;
 
 class MarginInfo;
 

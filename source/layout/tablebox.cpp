@@ -4,6 +4,9 @@ namespace htmlbook {
 
 TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
+    , m_tableLayout(style->tableLayout())
+    , m_borderCollapse(style->borderCollapse())
+    , m_sections(style->heap())
     , m_columns(style->heap())
 {
     setChildrenInline(false);
@@ -19,8 +22,7 @@ void TableBox::build(BoxLayer* layer)
 {
     auto addColumn = [this](TableColumnBox* column) {
         auto columnSpanCount = column->span();
-        assert(columnSpanCount > 0);
-        while(--columnSpanCount) {
+        while(columnSpanCount--) {
             m_columns.emplace_back(column);
         }
     };
@@ -43,6 +45,37 @@ void TableBox::build(BoxLayer* layer)
         }
     }
 
+    if(m_borderCollapse == BorderCollapse::Separate) {
+        m_horizontalBorderSpacing = style()->borderHorizontalSpacing();
+        m_verticalBorderSpacing = style()->borderVerticalSpacing();
+    }
+
+    TableSectionBox* headerSection = nullptr;
+    TableSectionBox* footerSection = nullptr;
+    for(auto box = firstBox(); box; box = box->nextBox()) {
+        if(auto section = to<TableSectionBox>(box)) {
+            switch(section->display()) {
+            case Display::TableHeaderGroup:
+                if(!headerSection)
+                    headerSection = section;
+                break;
+            case Display::TableFooterGroup:
+                if(!footerSection)
+                    footerSection = section;
+                break;
+            case Display::TableRowGroup:
+                m_sections.push_back(section);
+                break;
+            default:
+                assert(false);
+            }
+        }
+    }
+
+    if(headerSection)
+        m_sections.push_front(headerSection);
+    if(footerSection)
+        m_sections.push_back(footerSection);
     BlockBox::build(layer);
 }
 
@@ -105,14 +138,14 @@ void TableSectionBox::build(BoxLayer* layer)
         assert(box->isTableRowBox());
         auto rowBox = to<TableRowBox>(box);
         rowBox->setRowIndex(m_rows.size());
-        m_rows.emplace_back(rowBox);
+        m_rows.push_back(rowBox);
     }
 
-    const auto rowCount = m_rows.size();
-    for(size_t rowIndex = 0; rowIndex < rowCount; ++rowIndex) {
-        auto rowBox = m_rows[rowIndex].box();
+    const uint32_t rowCount = m_rows.size();
+    for(uint32_t rowIndex = 0; rowIndex < rowCount; ++rowIndex) {
+        const auto rowBox = m_rows[rowIndex];
 
-        size_t columnIndex = 0;
+        uint32_t columnIndex = 0;
         for(auto box = rowBox->firstBox(); box; box = box->nextBox()) {
             assert(box->isTableCellBox());
             auto cellBox = to<TableCellBox>(box);
@@ -131,9 +164,9 @@ void TableSectionBox::build(BoxLayer* layer)
                 cellBox->setRowSpan(std::min(rowCount - rowIndex, cellBox->rowSpan()));
             }
 
-            for(size_t row = 0; row < cellBox->rowSpan(); ++row) {
-                auto& cells = m_rows[row + rowIndex].cells();
-                for(size_t col = 0; col < cellBox->colSpan(); ++col) {
+            for(uint32_t row = 0; row < cellBox->rowSpan(); ++row) {
+                auto& cells = m_rows[row + rowIndex]->cells();
+                for(uint32_t col = 0; col < cellBox->colSpan(); ++col) {
                     cells.emplace(col + columnIndex, TableCell(cellBox, row > 0, col > 0));
                 }
             }
@@ -193,7 +226,8 @@ TableCellBox::TableCellBox(Node* node, const RefPtr<BoxStyle>& style)
 }
 
 TableCaptionBox::TableCaptionBox(Node* node, const RefPtr<BoxStyle>& style)
-    : BlockFlowBox(node, style), m_captionSide(style->captionSide())
+    : BlockFlowBox(node, style)
+    , m_captionSide(style->captionSide())
 {
 }
 
