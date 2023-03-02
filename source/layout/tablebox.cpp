@@ -121,8 +121,10 @@ std::unique_ptr<FixedTableLayoutAlgorithm> FixedTableLayoutAlgorithm::create(Tab
 void FixedTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
     for(auto& width : m_widths) {
-        minWidth += width.value();
-        maxWidth += width.value();
+        if(width.isFixed()) {
+            minWidth += width.value();
+            maxWidth += width.value();
+        }
     }
 }
 
@@ -140,18 +142,27 @@ void FixedTableLayoutAlgorithm::build()
         }
     }
 
+    TableSectionBox* topSection = nullptr;
     for(auto section : m_table->sections()) {
-        for(auto row : section->rows()) {
-            for(auto& [columnIndex, cell] : row->cells()) {
-                if(!cell.inRowSpan() && !cell.inColSpan() && m_widths[columnIndex].isAuto()) {
-                    auto cellBox = cell.box();
-                    auto cellStyle = cellBox->style();
-                    auto cellStyleWidth = cellStyle->width();
-                    if(cellStyleWidth.isAuto())
-                        continue;
-                    for(size_t col = 0; col < cellBox->colSpan(); ++col) {
-                        m_widths[col + columnIndex] = cellStyleWidth;
-                    }
+        const auto& rows = section->rows();
+        if(!rows.empty()) {
+            topSection = section;
+            break;
+        }
+    }
+
+    if(topSection == nullptr)
+        return;
+    for(auto row : topSection->rows()) {
+        for(auto& [columnIndex, cell] : row->cells()) {
+            if(!cell.inRowSpan() && !cell.inColSpan() && m_widths[columnIndex].isAuto()) {
+                auto cellBox = cell.box();
+                auto cellStyle = cellBox->style();
+                auto cellStyleWidth = cellStyle->width();
+                if(cellStyleWidth.isAuto())
+                    continue;
+                for(size_t col = 0; col < cellBox->colSpan(); ++col) {
+                    m_widths[col + columnIndex] = cellStyleWidth;
                 }
             }
         }
