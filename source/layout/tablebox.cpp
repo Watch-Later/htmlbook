@@ -142,28 +142,26 @@ void FixedTableLayoutAlgorithm::build()
         }
     }
 
-    TableSectionBox* topSection = nullptr;
+    TableRowBox* firstRow = nullptr;
     for(auto section : m_table->sections()) {
         const auto& rows = section->rows();
         if(!rows.empty()) {
-            topSection = section;
+            firstRow = rows.front();
             break;
         }
     }
 
-    if(topSection == nullptr)
+    if(firstRow == nullptr)
         return;
-    for(auto row : topSection->rows()) {
-        for(auto& [columnIndex, cell] : row->cells()) {
-            if(!cell.inRowSpan() && !cell.inColSpan() && m_widths[columnIndex].isAuto()) {
-                auto cellBox = cell.box();
-                auto cellStyle = cellBox->style();
-                auto cellStyleWidth = cellStyle->width();
-                if(cellStyleWidth.isAuto())
-                    continue;
-                for(size_t col = 0; col < cellBox->colSpan(); ++col) {
-                    m_widths[col + columnIndex] = cellStyleWidth;
-                }
+    for(auto& [columnIndex, cell] : firstRow->cells()) {
+        if(!cell.inRowSpan() && !cell.inColSpan() && m_widths[columnIndex].isAuto()) {
+            auto cellBox = cell.box();
+            auto cellStyle = cellBox->style();
+            auto cellStyleWidth = cellStyle->width();
+            if(cellStyleWidth.isAuto())
+                continue;
+            for(size_t col = 0; col < cellBox->colSpan(); ++col) {
+                m_widths[col + columnIndex] = cellStyleWidth;
             }
         }
     }
@@ -171,6 +169,103 @@ void FixedTableLayoutAlgorithm::build()
 
 void FixedTableLayoutAlgorithm::layout()
 {
+    auto availableWidth = m_table->availableWidth();
+    auto borderSpacing = m_table->horizontalBorderSpacing();
+
+    float totalFixedWidth = 0;
+    float totalPercentWidth = 0;
+
+    size_t autoWidthCount = 0;
+
+    auto& columns = m_table->columns();
+    for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+        auto& column = columns[columnIndex];
+
+        auto& width = m_widths[columnIndex];
+        if(width.isFixed()) {
+            column.setWidth(width.value());
+            totalFixedWidth += column.width();
+        } else if(width.isPercent()) {
+            column.setWidth(width.calc(availableWidth));
+            totalPercentWidth += column.width();
+        } else if(width.isAuto()) {
+            column.setWidth(0);
+            autoWidthCount += 1;
+        }
+    }
+
+    auto totalWidth = totalFixedWidth + totalPercentWidth;
+    if(autoWidthCount == 0 || totalWidth > availableWidth) {
+        if(totalFixedWidth > 0 && totalWidth < availableWidth) {
+            auto availableFixedWidth = availableWidth - totalPercentWidth;
+
+            auto totalFixed = totalFixedWidth;
+
+            totalFixedWidth = 0;
+            for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+                auto& column = columns[columnIndex];
+
+                auto& width = m_widths[columnIndex];
+                if(width.isFixed()) {
+                    column.setWidth(width.value() * availableFixedWidth / totalFixed);
+                    totalFixedWidth += column.width();
+                }
+            }
+        }
+
+        if(totalPercentWidth > 0) {
+            auto availablePercentWidth = availableWidth - totalFixedWidth;
+
+            float totalPercent = 0;
+            for(auto& width : m_widths) {
+                if(width.isPercent()) {
+                    totalPercent += width.value();
+                }
+            }
+
+            totalPercentWidth = 0;
+            for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+                auto& column = columns[columnIndex];
+
+                auto& width = m_widths[columnIndex];
+                if(width.isPercent()) {
+                    column.setWidth(width.value() * availablePercentWidth / totalPercent);
+                    totalPercentWidth += column.width();
+                }
+            }
+        }
+
+        totalWidth = totalFixedWidth + totalPercentWidth;
+        if(totalWidth < availableWidth) {
+            auto remainingWidth = availableWidth - totalWidth;
+            auto columnCount = columns.size();
+            while(columnCount > 0) {
+                auto width = remainingWidth / columnCount;
+
+                auto& column = columns[--columnCount];
+                column.setWidth(width + column.width());
+                remainingWidth -= width;
+            }
+        }
+    } else {
+        auto remainingWidth = availableWidth - totalFixedWidth - totalPercentWidth - borderSpacing * autoWidthCount;
+        for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+            auto& column = columns[columnIndex];
+
+            auto& width = m_widths[columnIndex];
+            if(width.isAuto()) {
+                column.setWidth(remainingWidth / autoWidthCount);
+                remainingWidth -= column.width();
+                autoWidthCount -= 1;
+            }
+        }
+    }
+
+    float position = 0;
+    for(auto& column : columns) {
+        column.setX(position);
+        position += borderSpacing + column.width();
+    }
 }
 
 FixedTableLayoutAlgorithm::FixedTableLayoutAlgorithm(TableBox* table)
@@ -276,6 +371,8 @@ void TableSectionBox::build(BoxLayer* layer)
             }
         }
     }
+
+    Box::build(layer);
 }
 
 TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
