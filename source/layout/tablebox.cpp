@@ -108,56 +108,86 @@ void TableBox::addBox(Box* box)
 std::unique_ptr<TableLayoutAlgorithm> TableLayoutAlgorithm::create(TableBox* table)
 {
     const auto& tableStyle = table->style();
-    if(tableStyle->tableLayout() == TableLayout::Fixed && !tableStyle->width().isAuto())
-        return TableLayoutAlgorithmFixed::create(table);
-    return TableLayoutAlgorithmAuto::create(table);
+    if(tableStyle->tableLayout() == TableLayout::Auto || tableStyle->width().isAuto())
+        return AutoTableLayoutAlgorithm::create(table);
+    return FixedTableLayoutAlgorithm::create(table);
 }
 
-std::unique_ptr<TableLayoutAlgorithmFixed> TableLayoutAlgorithmFixed::create(TableBox* table)
+std::unique_ptr<FixedTableLayoutAlgorithm> FixedTableLayoutAlgorithm::create(TableBox* table)
 {
-    return std::unique_ptr<TableLayoutAlgorithmFixed>(new (table->heap()) TableLayoutAlgorithmFixed(table));
+    return std::unique_ptr<FixedTableLayoutAlgorithm>(new (table->heap()) FixedTableLayoutAlgorithm(table));
 }
 
-void TableLayoutAlgorithmFixed::computePreferredWidths(float& minWidth, float& maxWidth) const
+void FixedTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
-    minWidth = 0;
-    maxWidth = 0;
+    for(auto& width : m_widths) {
+        minWidth += width.value();
+        maxWidth += width.value();
+    }
 }
 
-void TableLayoutAlgorithmFixed::build()
+void FixedTableLayoutAlgorithm::build()
+{
+    const auto& columns = m_table->columns();
+
+    m_widths.reserve(columns.size());
+    for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+        auto columnBox = columns[columnIndex].box();
+        if(columnBox == nullptr) {
+            m_widths.push_back(Length::Auto);
+        } else {
+            m_widths.push_back(columnBox->style()->width());
+        }
+    }
+
+    for(auto section : m_table->sections()) {
+        for(auto row : section->rows()) {
+            for(auto& [columnIndex, cell] : row->cells()) {
+                if(!cell.inRowSpan() && !cell.inColSpan() && m_widths[columnIndex].isAuto()) {
+                    auto cellBox = cell.box();
+                    auto cellStyle = cellBox->style();
+                    auto cellStyleWidth = cellStyle->width();
+                    if(cellStyleWidth.isAuto())
+                        continue;
+                    for(size_t col = 0; col < cellBox->colSpan(); ++col) {
+                        m_widths[col + columnIndex] = cellStyleWidth;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void FixedTableLayoutAlgorithm::layout()
 {
 }
 
-void TableLayoutAlgorithmFixed::layout()
-{
-}
-
-TableLayoutAlgorithmFixed::TableLayoutAlgorithmFixed(TableBox* table)
+FixedTableLayoutAlgorithm::FixedTableLayoutAlgorithm(TableBox* table)
     : TableLayoutAlgorithm(table)
     , m_widths(table->heap())
 {
 }
 
-std::unique_ptr<TableLayoutAlgorithmAuto> TableLayoutAlgorithmAuto::create(TableBox* table)
+std::unique_ptr<AutoTableLayoutAlgorithm> AutoTableLayoutAlgorithm::create(TableBox* table)
 {
-    return std::unique_ptr<TableLayoutAlgorithmAuto>(new (table->heap()) TableLayoutAlgorithmAuto(table));
+    return std::unique_ptr<AutoTableLayoutAlgorithm>(new (table->heap()) AutoTableLayoutAlgorithm(table));
 }
 
-void TableLayoutAlgorithmAuto::computePreferredWidths(float& minWidth, float& maxWidth) const
+void AutoTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
     minWidth = 0;
     maxWidth = 0;
 }
 
-void TableLayoutAlgorithmAuto::build()
+void AutoTableLayoutAlgorithm::build()
 {
 }
 
-void TableLayoutAlgorithmAuto::layout()
+void AutoTableLayoutAlgorithm::layout()
 {
 }
 
-TableLayoutAlgorithmAuto::TableLayoutAlgorithmAuto(TableBox* table)
+AutoTableLayoutAlgorithm::AutoTableLayoutAlgorithm(TableBox* table)
     : TableLayoutAlgorithm(table)
     , m_widths(table->heap())
 {

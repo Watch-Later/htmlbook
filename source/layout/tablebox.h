@@ -88,30 +88,37 @@ protected:
     TableBox* m_table;
 };
 
-class TableLayoutAlgorithmFixed final : public TableLayoutAlgorithm {
+class FixedTableLayoutAlgorithm final : public TableLayoutAlgorithm {
 public:
-    static std::unique_ptr<TableLayoutAlgorithmFixed> create(TableBox* table);
+    static std::unique_ptr<FixedTableLayoutAlgorithm> create(TableBox* table);
 
     void computePreferredWidths(float& minWidth, float& maxWidth) const final;
     void build()  final;
     void layout() final;
 
 private:
-    TableLayoutAlgorithmFixed(TableBox* table);
+    FixedTableLayoutAlgorithm(TableBox* table);
     std::pmr::vector<Length> m_widths;
 };
 
-class TableLayoutAlgorithmAuto final : public TableLayoutAlgorithm {
+class AutoTableLayoutAlgorithm final : public TableLayoutAlgorithm {
 public:
-    static std::unique_ptr<TableLayoutAlgorithmAuto> create(TableBox* table);
+    static std::unique_ptr<AutoTableLayoutAlgorithm> create(TableBox* table);
 
     void computePreferredWidths(float& minWidth, float& maxWidth) const final;
     void build()  final;
     void layout() final;
 
 private:
-    TableLayoutAlgorithmAuto(TableBox* table);
-    std::pmr::vector<Length> m_widths;
+    AutoTableLayoutAlgorithm(TableBox* table);
+
+    struct LayoutWidth {
+        Length width = Length::Auto;
+        float minWidth = 0.f;
+        float maxWidth = 0.f;
+    };
+
+    std::pmr::vector<LayoutWidth> m_widths;
 };
 
 class TableRowBox;
