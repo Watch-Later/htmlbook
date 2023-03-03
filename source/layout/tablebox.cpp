@@ -213,6 +213,18 @@ void FixedTableLayoutAlgorithm::layout()
             }
         }
 
+        if(totalPercentWidth > 0 && totalFixedWidth >= availableWidth) {
+            totalPercentWidth = 0;
+            for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+                auto& column = columns[columnIndex];
+
+                auto& width = m_widths[columnIndex];
+                if(width.isPercent()) {
+                    column.setWidth(0);
+                }
+            }
+        }
+
         if(totalPercentWidth > 0) {
             auto availablePercentWidth = availableWidth - totalFixedWidth;
 
@@ -236,30 +248,22 @@ void FixedTableLayoutAlgorithm::layout()
         }
 
         totalWidth = totalFixedWidth + totalPercentWidth;
-        if(totalWidth < availableWidth) {
-            auto remainingWidth = availableWidth - totalWidth;
-            auto columnCount = columns.size();
-            while(columnCount > 0) {
-                auto width = remainingWidth / columnCount;
-
-                auto& column = columns[--columnCount];
-                column.setWidth(width + column.width());
-                remainingWidth -= width;
-            }
-        }
     } else {
-        auto remainingWidth = availableWidth - totalFixedWidth - totalPercentWidth - borderSpacing * autoWidthCount;
+        auto remainingWidth = availableWidth - totalFixedWidth - totalPercentWidth;
         for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
             auto& column = columns[columnIndex];
 
             auto& width = m_widths[columnIndex];
             if(width.isAuto()) {
                 column.setWidth(remainingWidth / autoWidthCount);
+                totalWidth += column.width();
                 remainingWidth -= column.width();
                 autoWidthCount -= 1;
             }
         }
     }
+
+    assert(totalWidth >= availableWidth);
 
     float position = 0;
     for(auto& column : columns) {
