@@ -121,8 +121,8 @@ void FixedTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& m
 {
     for(auto& width : m_widths) {
         if(width.isFixed()) {
-            minWidth += width.value();
-            maxWidth += width.value();
+            minWidth += width.value() + m_table->horizontalBorderSpacing();;
+            maxWidth += width.value() + m_table->horizontalBorderSpacing();;
         }
     }
 }
@@ -280,8 +280,8 @@ void AutoTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& ma
 
     const auto columnCount = columns.size();
 
-    std::vector<float> minWidths(columnCount, 0);
-    std::vector<float> maxWidths(columnCount, 0);
+    std::vector<float> minWidths(columnCount, 0.f);
+    std::vector<float> maxWidths(columnCount, 0.f);
 
     for(auto section : m_table->sections()) {
         for(auto row : section->rows()) {
@@ -303,9 +303,6 @@ void AutoTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& ma
             cellMaxWidth -= maxWidths[columnIndex];
         }
 
-        cellMinWidth -= m_table->horizontalBorderSpacing() * (cellBox->colSpan() - 1);
-        cellMaxWidth -= m_table->horizontalBorderSpacing() * (cellBox->colSpan() - 1);
-
         cellMinWidth = std::max(0.f, cellMinWidth / cellBox->colSpan());
         cellMaxWidth = std::max(0.f, cellMaxWidth / cellBox->colSpan());
         for(auto columnIndex = cellBox->columnBegin(); columnIndex < cellBox->columnEnd(); ++columnIndex) {
@@ -315,8 +312,8 @@ void AutoTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& ma
     }
 
     for(size_t columnIndex = 0; columnIndex < columnCount; ++columnIndex) {
-        minWidth += minWidths[columnIndex];
-        maxWidth += maxWidths[columnIndex];
+        minWidth += minWidths[columnIndex] + m_table->horizontalBorderSpacing();
+        maxWidth += maxWidths[columnIndex] + m_table->horizontalBorderSpacing();
     }
 }
 
@@ -374,8 +371,8 @@ void AutoTableLayoutAlgorithm::layout()
 
     std::vector<Length> widths(columnCount, Length::Auto);
 
-    std::vector<float> minWidths(columnCount, 0);
-    std::vector<float> maxWidths(columnCount, 0);
+    std::vector<float> minWidths(columnCount, 0.f);
+    std::vector<float> maxWidths(columnCount, 0.f);
 
     for(auto section : m_table->sections()) {
         for(auto row : section->rows()) {
