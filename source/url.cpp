@@ -24,7 +24,7 @@ Url::Url(const std::string_view& value)
         return value[index];
     };
 
-    int schemeEnd = 0;
+    int schemeEnd = 1;
     while(isSchemeChar(peek(schemeEnd)))
         ++schemeEnd;
 
@@ -113,7 +113,7 @@ Url::Url(const std::string_view& value)
         if(!isPathEndChar(peek(portEnd)))
             return;
         if(userBegin == portEnd && !(isHttp || isHttps || isFile)) {
-            userBegin = schemeEnd + 3;
+            userBegin = schemeEnd + 1;
             userEnd = userBegin;
             passwordBegin = userEnd;
             passwordEnd = passwordBegin;
@@ -161,7 +161,7 @@ Url::Url(const std::string_view& value)
         m_value += tolower(value[i]);
     m_schemeEnd = m_value.length();
     m_value += ':';
-    if(hostBegin != hostEnd || (isFile && pathBegin != pathEnd) || (userBegin != userEnd || passwordBegin != passwordEnd || hostEnd != portEnd)) {
+    if(userBegin != userEnd || passwordBegin != passwordEnd || hostBegin != hostEnd || hostEnd != portEnd || (isFile && pathBegin != pathEnd)) {
         m_value += '/';
         m_value += '/';
 
@@ -175,7 +175,7 @@ Url::Url(const std::string_view& value)
         }
 
         m_passwordEnd = m_value.length();
-        if(m_userBegin != m_value.length())
+        if(m_userBegin != m_passwordEnd)
             m_value += '@';
         for(int i = hostBegin; i < hostEnd; ++i)
             m_value += tolower(value[i]);
@@ -197,29 +197,13 @@ Url::Url(const std::string_view& value)
     if(pathBegin == pathEnd && hierarchical && (isHttp || isHttps || isFile))
         m_value += '/';
 
-    auto append = [&](auto begin, auto end) {
-        constexpr char hexdigits[] = "0123456789ABCDEF";
-        constexpr char unescaped[] = ";,/?@&=+$#-_.!~*'()";
-        for(auto i = begin; i < end; ++i) {
-            auto cc = value[i];
-            if(isalpha(cc) || isdigit(cc) || std::strchr(unescaped, cc)) {
-                m_value += cc;
-                continue;
-            }
-
-            m_value += '%';
-            m_value += hexdigits[cc >> 4];
-            m_value += hexdigits[cc & 0xF];
-        }
-    };
-
     if(!hierarchical) {
-        append(pathBegin, pathEnd);
+        m_value += value.substr(pathBegin, pathEnd - pathBegin);
     } else {
         auto begin = m_value.length();
         auto in = begin;
         auto out = begin;
-        append(pathBegin, pathEnd);
+        m_value += value.substr(pathBegin, pathEnd - pathBegin);
         auto end = m_value.length();
         auto peek = [&](auto index) {
             index += in;
@@ -265,11 +249,11 @@ Url::Url(const std::string_view& value)
     }
 
     m_pathEnd = m_value.length();
-    append(queryBegin, queryEnd);
+    m_value += value.substr(queryBegin, queryEnd - queryBegin);
     m_queryEnd = m_value.length();
     if(fragmentBegin != queryEnd) {
         m_value += '#';
-        append(fragmentBegin, fragmentEnd);
+        m_value += value.substr(fragmentBegin, fragmentEnd - fragmentBegin);
     }
 
     m_fragmentEnd = m_value.length();

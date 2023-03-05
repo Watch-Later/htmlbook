@@ -5,10 +5,7 @@
 
 namespace htmlbook {
 
-class TableSectionBox;
 class TableColumnBox;
-
-using TableSectionBoxList = std::pmr::list<TableSectionBox*>;
 
 class TableColumn {
 public:
@@ -32,6 +29,12 @@ private:
 };
 
 using TableColumnList = std::pmr::vector<TableColumn>;
+
+class TableCaptionBox;
+class TableSectionBox;
+
+using TableCaptionBoxList = std::pmr::list<TableCaptionBox*>;
+using TableSectionBoxList = std::pmr::list<TableSectionBox*>;
 
 class TableLayoutAlgorithm;
 
@@ -59,14 +62,15 @@ public:
     const char* name() const final { return "TableBox"; }
 
 private:
-    std::unique_ptr<TableLayoutAlgorithm> m_tableLayout;
+    TableCaptionBoxList m_captions;
     TableSectionBoxList m_sections;
     TableColumnList m_columns;
-
     BorderCollapse m_borderCollapse;
 
     float m_horizontalBorderSpacing{0};
     float m_verticalBorderSpacing{0};
+
+    std::unique_ptr<TableLayoutAlgorithm> m_tableLayout;
 };
 
 template<>
@@ -101,6 +105,8 @@ private:
     std::pmr::vector<Length> m_widths;
 };
 
+class TableCellBox;
+
 class AutoTableLayoutAlgorithm final : public TableLayoutAlgorithm {
 public:
     static std::unique_ptr<AutoTableLayoutAlgorithm> create(TableBox* table);
@@ -111,14 +117,9 @@ public:
 
 private:
     AutoTableLayoutAlgorithm(TableBox* table);
-
-    struct LayoutWidth {
-        Length width = Length::Auto;
-        float minWidth = 0.f;
-        float maxWidth = 0.f;
-    };
-
-    std::pmr::vector<LayoutWidth> m_widths;
+    std::pmr::vector<TableCellBox*> m_spanningCells;
+    std::pmr::vector<float> m_maxFixedWidths;
+    std::pmr::vector<float> m_maxPercentWidths;
 };
 
 class TableRowBox;
@@ -288,6 +289,9 @@ public:
 
     uint32_t columnIndex() const { return m_columnIndex; }
     void setColumnIndex(uint32_t columnIndex) { m_columnIndex = columnIndex; }
+
+    uint32_t columnBegin() const { return m_columnIndex; }
+    uint32_t columnEnd() const { return m_columnIndex + m_colSpan; }
 
     TableRowBox* row() const;
     TableSectionBox* section() const { return row()->section(); }

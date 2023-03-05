@@ -4,6 +4,7 @@ namespace htmlbook {
 
 TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
+    , m_captions(style->heap())
     , m_sections(style->heap())
     , m_columns(style->heap())
     , m_borderCollapse(style->borderCollapse())
@@ -25,33 +26,10 @@ void TableBox::build(BoxLayer* layer)
         }
     };
 
-    for(auto child = firstBox(); child; child = child->nextBox()) {
-        if(auto column = to<TableColumnBox>(child)) {
-            if(column->display() == Display::TableColumn) {
-                addColumn(column);
-            } else {
-                if(auto child = column->firstBox()) {
-                    do {
-                        if(auto column = to<TableColumnBox>(child))
-                            addColumn(column);
-                        child = child->nextBox();
-                    } while(child);
-                } else {
-                    addColumn(column);
-                }
-            }
-        }
-    }
-
-    if(m_borderCollapse == BorderCollapse::Separate) {
-        m_horizontalBorderSpacing = style()->borderHorizontalSpacing();
-        m_verticalBorderSpacing = style()->borderVerticalSpacing();
-    }
-
     TableSectionBox* headerSection = nullptr;
     TableSectionBox* footerSection = nullptr;
-    for(auto box = firstBox(); box; box = box->nextBox()) {
-        if(auto section = to<TableSectionBox>(box)) {
+    for(auto child = firstBox(); child; child = child->nextBox()) {
+        if(auto section = to<TableSectionBox>(child)) {
             switch(section->display()) {
             case Display::TableHeaderGroup:
                 if(!headerSection)
@@ -67,6 +45,22 @@ void TableBox::build(BoxLayer* layer)
             default:
                 assert(false);
             }
+        } else if(auto column = to<TableColumnBox>(child)) {
+            if(column->display() == Display::TableColumn) {
+                addColumn(column);
+            } else {
+                if(auto child = column->firstBox()) {
+                    do {
+                        if(auto column = to<TableColumnBox>(child))
+                            addColumn(column);
+                        child = child->nextBox();
+                    } while(child);
+                } else {
+                    addColumn(column);
+                }
+            }
+        } else if(auto caption = to<TableCaptionBox>(child)) {
+            m_captions.push_back(caption);
         }
     }
 
@@ -74,6 +68,11 @@ void TableBox::build(BoxLayer* layer)
         m_sections.push_front(headerSection);
     if(footerSection) {
         m_sections.push_back(footerSection);
+    }
+
+    if(m_borderCollapse == BorderCollapse::Separate) {
+        m_horizontalBorderSpacing = style()->borderHorizontalSpacing();
+        m_verticalBorderSpacing = style()->borderVerticalSpacing();
     }
 
     BlockBox::build(layer);
@@ -142,7 +141,7 @@ void FixedTableLayoutAlgorithm::build()
         }
     }
 
-    TableRowBox* firstRow = nullptr;
+    const TableRowBox* firstRow = nullptr;
     for(auto section : m_table->sections()) {
         const auto& rows = section->rows();
         if(!rows.empty()) {
@@ -170,7 +169,6 @@ void FixedTableLayoutAlgorithm::build()
 void FixedTableLayoutAlgorithm::layout()
 {
     auto availableWidth = m_table->availableWidth();
-    auto borderSpacing = m_table->horizontalBorderSpacing();
 
     float totalFixedWidth = 0;
     float totalPercentWidth = 0;
@@ -235,19 +233,15 @@ void FixedTableLayoutAlgorithm::layout()
                 }
             }
 
-            totalPercentWidth = 0;
             for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
                 auto& column = columns[columnIndex];
 
                 auto& width = m_widths[columnIndex];
                 if(width.isPercent()) {
                     column.setWidth(width.value() * availablePercentWidth / totalPercent);
-                    totalPercentWidth += column.width();
                 }
             }
         }
-
-        totalWidth = totalFixedWidth + totalPercentWidth;
     } else {
         auto remainingWidth = availableWidth - totalFixedWidth - totalPercentWidth;
         for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
@@ -256,19 +250,16 @@ void FixedTableLayoutAlgorithm::layout()
             auto& width = m_widths[columnIndex];
             if(width.isAuto()) {
                 column.setWidth(remainingWidth / autoWidthCount);
-                totalWidth += column.width();
                 remainingWidth -= column.width();
                 autoWidthCount -= 1;
             }
         }
     }
 
-    assert(totalWidth >= availableWidth);
-
-    float position = 0;
+    auto position = m_table->horizontalBorderSpacing();
     for(auto& column : columns) {
         column.setX(position);
-        position += borderSpacing + column.width();
+        position += column.width() + m_table->horizontalBorderSpacing();
     }
 }
 
@@ -285,21 +276,130 @@ std::unique_ptr<AutoTableLayoutAlgorithm> AutoTableLayoutAlgorithm::create(Table
 
 void AutoTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
-    minWidth = 0;
-    maxWidth = 0;
+    const auto& columns = m_table->columns();
+
+    const auto columnCount = columns.size();
+
+    std::vector<float> minWidths(columnCount, 0);
+    std::vector<float> maxWidths(columnCount, 0);
+
+    for(auto section : m_table->sections()) {
+        for(auto row : section->rows()) {
+            for(auto& [columnIndex, cell] : row->cells()) {
+                auto cellBox = cell.box();
+                if(!cell.inRowSpan() && !cell.inColSpan() && cellBox->colSpan() == 1) {
+                    minWidths[columnIndex] = std::max(minWidths[columnIndex], cellBox->minPreferredWidth());
+                    maxWidths[columnIndex] = std::max(maxWidths[columnIndex], std::max(m_maxFixedWidths[columnIndex], cellBox->maxPreferredWidth()));
+                }
+            }
+        }
+    }
+
+    for(auto cellBox : m_spanningCells) {
+        auto cellMinWidth = cellBox->minPreferredWidth();
+        auto cellMaxWidth = cellBox->maxPreferredWidth();
+        for(auto columnIndex = cellBox->columnBegin(); columnIndex < cellBox->columnEnd(); ++columnIndex) {
+            cellMinWidth -= minWidths[columnIndex];
+            cellMaxWidth -= maxWidths[columnIndex];
+        }
+
+        cellMinWidth -= m_table->horizontalBorderSpacing() * (cellBox->colSpan() - 1);
+        cellMaxWidth -= m_table->horizontalBorderSpacing() * (cellBox->colSpan() - 1);
+
+        cellMinWidth = std::max(0.f, cellMinWidth / cellBox->colSpan());
+        cellMaxWidth = std::max(0.f, cellMaxWidth / cellBox->colSpan());
+        for(auto columnIndex = cellBox->columnBegin(); columnIndex < cellBox->columnEnd(); ++columnIndex) {
+            minWidths[columnIndex] += cellMinWidth;
+            maxWidths[columnIndex] += cellMaxWidth;
+        }
+    }
+
+    for(size_t columnIndex = 0; columnIndex < columnCount; ++columnIndex) {
+        minWidth += minWidths[columnIndex];
+        maxWidth += maxWidths[columnIndex];
+    }
 }
 
 void AutoTableLayoutAlgorithm::build()
 {
+    const auto& columns = m_table->columns();
+
+    const auto columnCount = columns.size();
+
+    m_maxFixedWidths.resize(columnCount, -1.f);
+    m_maxPercentWidths.resize(columnCount, -1.f);
+    for(size_t columnIndex = 0; columnIndex < columnCount; ++columnIndex) {
+        auto columnBox = columns[columnIndex].box();
+        if(columnBox == nullptr)
+            continue;
+        auto columnStyle = columnBox->style();
+        auto columnStyleWidth = columnStyle->width();
+        if(columnStyleWidth.isFixed()) {
+            m_maxFixedWidths[columnIndex] = columnStyleWidth.value();
+        } else if(columnStyleWidth.isPercent()) {
+            m_maxPercentWidths[columnIndex] = columnStyleWidth.value();
+        }
+    }
+
+    for(auto section : m_table->sections()) {
+        for(auto row : section->rows()) {
+            for(auto& [columnIndex, cell] : row->cells()) {
+                if(cell.inRowSpan() || cell.inColSpan())
+                    continue;
+                auto cellBox = cell.box();
+                if(cellBox->colSpan() > 1) {
+                    m_spanningCells.push_back(cellBox);
+                    continue;
+                }
+
+                auto cellStyle = cellBox->style();
+                auto cellStyleWidth = cellStyle->width();
+                if(cellStyleWidth.isFixed()) {
+                    m_maxFixedWidths[columnIndex] = std::max(m_maxFixedWidths[columnIndex], cellStyleWidth.value());
+                } else if(cellStyleWidth.isPercent()) {
+                    m_maxPercentWidths[columnIndex] = std::max(m_maxPercentWidths[columnIndex], cellStyleWidth.value());
+                }
+            }
+        }
+    }
+
+    std::sort(m_spanningCells.begin(), m_spanningCells.end(), [](auto a, auto b) { return a->colSpan() < b->colSpan(); });
 }
 
 void AutoTableLayoutAlgorithm::layout()
 {
+    auto& columns = m_table->columns();
+
+    const auto columnCount = columns.size();
+
+    std::vector<Length> widths(columnCount, Length::Auto);
+
+    std::vector<float> minWidths(columnCount, 0);
+    std::vector<float> maxWidths(columnCount, 0);
+
+    for(auto section : m_table->sections()) {
+        for(auto row : section->rows()) {
+            for(auto& [columnIndex, cell] : row->cells()) {
+                auto cellBox = cell.box();
+                if(!cell.inRowSpan() && !cell.inColSpan() && cellBox->colSpan() == 1) {
+                    if(m_maxFixedWidths[columnIndex] >= 0)
+                        widths[columnIndex] = Length(Length::Type::Fixed, m_maxFixedWidths[columnIndex]);
+                    if(m_maxPercentWidths[columnIndex] >= 0)
+                        widths[columnIndex] = Length(Length::Type::Percent, m_maxPercentWidths[columnIndex]);
+
+                    minWidths[columnIndex] = std::max(minWidths[columnIndex], cellBox->minPreferredWidth());
+                    maxWidths[columnIndex] = std::max(maxWidths[columnIndex], std::max(m_maxFixedWidths[columnIndex], cellBox->maxPreferredWidth()));
+                }
+            }
+        }
+    }
 }
 
 AutoTableLayoutAlgorithm::AutoTableLayoutAlgorithm(TableBox* table)
     : TableLayoutAlgorithm(table)
-    , m_widths(table->heap())
+    , m_spanningCells(table->heap())
+    , m_maxFixedWidths(table->heap())
+    , m_maxPercentWidths(table->heap())
 {
 }
 
