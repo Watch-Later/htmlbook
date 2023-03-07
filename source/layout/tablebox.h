@@ -83,7 +83,7 @@ public:
     static std::unique_ptr<TableLayoutAlgorithm> create(TableBox* table);
 
     virtual ~TableLayoutAlgorithm() = default;
-    virtual void computePreferredWidths(float& minWidth, float& maxWidth) const = 0;
+    virtual void computePreferredWidths(float& minWidth, float& maxWidth) = 0;
     virtual void build() = 0;
     virtual void layout() = 0;
 
@@ -96,7 +96,7 @@ class FixedTableLayoutAlgorithm final : public TableLayoutAlgorithm {
 public:
     static std::unique_ptr<FixedTableLayoutAlgorithm> create(TableBox* table);
 
-    void computePreferredWidths(float& minWidth, float& maxWidth) const final;
+    void computePreferredWidths(float& minWidth, float& maxWidth) final;
     void build()  final;
     void layout() final;
 
@@ -105,21 +105,29 @@ private:
     std::pmr::vector<Length> m_widths;
 };
 
+struct TableColumnWidth {
+    Length width = Length::Auto;
+    float minWidth = 0.f;
+    float maxWidth = 0.f;
+
+    float maxFixedWidth = -1.f;
+    float maxPercentWidth = -1.f;
+};
+
 class TableCellBox;
 
 class AutoTableLayoutAlgorithm final : public TableLayoutAlgorithm {
 public:
     static std::unique_ptr<AutoTableLayoutAlgorithm> create(TableBox* table);
 
-    void computePreferredWidths(float& minWidth, float& maxWidth) const final;
+    void computePreferredWidths(float& minWidth, float& maxWidth) final;
     void build()  final;
     void layout() final;
 
 private:
     AutoTableLayoutAlgorithm(TableBox* table);
+    std::pmr::vector<TableColumnWidth> m_columnWidths;
     std::pmr::vector<TableCellBox*> m_spanningCells;
-    std::pmr::vector<float> m_maxFixedWidths;
-    std::pmr::vector<float> m_maxPercentWidths;
 };
 
 class TableRowBox;

@@ -1,5 +1,7 @@
 #include "tablebox.h"
 
+#include <span>
+
 namespace htmlbook {
 
 TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
@@ -83,6 +85,9 @@ void TableBox::build(BoxLayer* layer)
 
 void TableBox::layout()
 {
+    updateWidth();
+
+    m_tableLayout->layout();
 }
 
 void TableBox::addBox(Box* box)
@@ -117,7 +122,7 @@ std::unique_ptr<FixedTableLayoutAlgorithm> FixedTableLayoutAlgorithm::create(Tab
     return std::unique_ptr<FixedTableLayoutAlgorithm>(new (table->heap()) FixedTableLayoutAlgorithm(table));
 }
 
-void FixedTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& maxWidth) const
+void FixedTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& maxWidth)
 {
     for(auto& width : m_widths) {
         if(width.isFixed()) {
@@ -173,7 +178,7 @@ void FixedTableLayoutAlgorithm::layout()
     float totalFixedWidth = 0;
     float totalPercentWidth = 0;
 
-    size_t autoWidthCount = 0;
+    size_t autoColumnCount = 0;
 
     auto& columns = m_table->columns();
     for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
@@ -188,12 +193,12 @@ void FixedTableLayoutAlgorithm::layout()
             totalPercentWidth += column.width();
         } else if(width.isAuto()) {
             column.setWidth(0);
-            autoWidthCount += 1;
+            autoColumnCount++;
         }
     }
 
     auto totalWidth = totalFixedWidth + totalPercentWidth;
-    if(autoWidthCount == 0 || totalWidth > availableWidth) {
+    if(autoColumnCount == 0 || totalWidth > availableWidth) {
         if(totalFixedWidth > 0 && totalWidth < availableWidth) {
             auto availableFixedWidth = availableWidth - totalPercentWidth;
 
@@ -249,9 +254,9 @@ void FixedTableLayoutAlgorithm::layout()
 
             auto& width = m_widths[columnIndex];
             if(width.isAuto()) {
-                column.setWidth(remainingWidth / autoWidthCount);
+                column.setWidth(remainingWidth / autoColumnCount);
                 remainingWidth -= column.width();
-                autoWidthCount -= 1;
+                autoColumnCount--;
             }
         }
     }
@@ -274,46 +279,317 @@ std::unique_ptr<AutoTableLayoutAlgorithm> AutoTableLayoutAlgorithm::create(Table
     return std::unique_ptr<AutoTableLayoutAlgorithm>(new (table->heap()) AutoTableLayoutAlgorithm(table));
 }
 
-void AutoTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& maxWidth) const
+static std::vector<float> distributeWidthToColumns(float availableWidth, std::span<TableColumnWidth> columns)
 {
-    const auto& columns = m_table->columns();
+    size_t fixedColumnCount = 0;
+    size_t percentColumnCount = 0;
+    size_t autoColumnCount = 0;
 
-    const auto columnCount = columns.size();
+    float totalPercent = 0.f;
+    float totalFixedMaxWidth = 0.f;
+    float totalAutoMaxWidth = 0.f;
 
-    std::vector<float> minWidths(columnCount, 0.f);
-    std::vector<float> maxWidths(columnCount, 0.f);
+    enum { MinGuess, PercentageGuess, SpecifiedGuess, MaxGuess, AboveMax };
+
+    float guessSizes[AboveMax] = {0.f, 0.f, 0.f, 0.f};
+    float guessIncreases[AboveMax] = {0.f, 0.f, 0.f, 0.f};
+
+    for(const auto& column : columns) {
+        if(column.width.isPercent()) {
+            auto percentWidth = std::max(column.minWidth, column.width.calc(availableWidth));
+
+            guessSizes[MinGuess] += column.minWidth;
+            guessSizes[PercentageGuess] += percentWidth;
+            guessSizes[SpecifiedGuess] += percentWidth;
+            guessSizes[MaxGuess] += percentWidth;
+            guessIncreases[PercentageGuess] += percentWidth - column.minWidth;
+
+            totalPercent += column.width.value();
+            percentColumnCount++;
+        } else if(column.width.isFixed()) {
+            guessSizes[MinGuess] += column.minWidth;
+            guessSizes[PercentageGuess] += column.minWidth;
+            guessSizes[SpecifiedGuess] += column.maxWidth;
+            guessSizes[MaxGuess] += column.maxWidth;
+            guessIncreases[SpecifiedGuess] += column.maxWidth - column.minWidth;
+
+            totalFixedMaxWidth += column.maxWidth;
+            fixedColumnCount++;
+        } else {
+            guessSizes[MinGuess] += column.minWidth;
+            guessSizes[PercentageGuess] += column.minWidth;
+            guessSizes[SpecifiedGuess] += column.minWidth;
+            guessSizes[MaxGuess] += column.maxWidth;
+            guessIncreases[MaxGuess] += column.maxWidth - column.minWidth;
+
+            totalAutoMaxWidth += column.maxWidth;
+            autoColumnCount++;
+        }
+    }
+
+    availableWidth = std::max(availableWidth, guessSizes[MinGuess]);
+
+    auto startingGuess = AboveMax;
+
+    if(guessSizes[MinGuess] >= availableWidth) { startingGuess = MinGuess; }
+    else if(guessSizes[PercentageGuess] >= availableWidth) { startingGuess = PercentageGuess; }
+    else if(guessSizes[SpecifiedGuess] >= availableWidth) { startingGuess = SpecifiedGuess; }
+    else if(guessSizes[MaxGuess] >= availableWidth) { startingGuess = MaxGuess; }
+
+    std::vector<float> widths(columns.size());
+    if(startingGuess == MinGuess) {
+        for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+            widths[columnIndex] = columns[columnIndex].minWidth;
+        }
+    } else if(startingGuess == PercentageGuess) {
+        auto percentWidthIncrease = guessIncreases[PercentageGuess];
+        auto distributableWidth = availableWidth - guessSizes[MinGuess];
+        auto remainingDeficit = distributableWidth;
+
+        size_t lastPercentIndex = 0;
+        for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+            const auto& column = columns[columnIndex];
+            if(column.width.isPercent()) {
+                auto percentWidth = std::max(column.minWidth, column.width.calc(availableWidth));
+                auto columnWidthIncrease = percentWidth - column.minWidth;
+
+                float delta = 0.f;
+                if(percentWidthIncrease > 0.f) {
+                    delta = distributableWidth * columnWidthIncrease / percentWidthIncrease;
+                } else {
+                    delta = distributableWidth / percentColumnCount;
+                }
+
+                widths[columnIndex] = column.minWidth + delta;
+                remainingDeficit -= delta;
+                lastPercentIndex = columnIndex;
+            } else {
+                widths[columnIndex] = column.minWidth;
+            }
+        }
+
+        widths[lastPercentIndex] += remainingDeficit;
+    } else if(startingGuess == SpecifiedGuess) {
+        auto fixedWidthIncrease = guessIncreases[SpecifiedGuess];
+        auto distributableWidth = availableWidth - guessSizes[PercentageGuess];
+        auto remainingDeficit = distributableWidth;
+
+        size_t lastFixedIndex = 0;
+        for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+            const auto& column = columns[columnIndex];
+            if(column.width.isPercent()) {
+                widths[columnIndex] = std::max(column.minWidth, column.width.calc(availableWidth));
+            } else if(column.width.isFixed()) {
+                auto columnWidthIncrease = column.maxWidth - column.minWidth;
+
+                float delta = 0.f;
+                if(fixedWidthIncrease > 0.f) {
+                    delta = distributableWidth * columnWidthIncrease / fixedWidthIncrease;
+                } else {
+                    delta = distributableWidth / fixedColumnCount;
+                }
+
+                widths[columnIndex] = column.minWidth + delta;
+                remainingDeficit -= delta;
+                lastFixedIndex = columnIndex;
+            } else {
+                widths[columnIndex] = column.minWidth;
+            }
+        }
+
+        widths[lastFixedIndex] += remainingDeficit;
+    } else if(startingGuess == MaxGuess) {
+        auto autoWidthIncrease = guessIncreases[MaxGuess];
+        auto distributableWidth = availableWidth - guessSizes[SpecifiedGuess];
+        auto remainingDeficit = distributableWidth;
+
+        size_t lastAutoIndex = 0;
+        for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+            const auto& column = columns[columnIndex];
+            if(column.width.isPercent()) {
+                widths[columnIndex] = std::max(column.minWidth, column.width.calc(availableWidth));
+            } else if(column.width.isFixed()) {
+                widths[columnIndex] = column.maxWidth;
+            } else {
+                auto columnWidthIncrease = column.maxWidth - column.minWidth;
+
+                float delta = 0.f;
+                if(autoWidthIncrease > 0.f) {
+                    delta = distributableWidth * columnWidthIncrease / autoWidthIncrease;
+                } else {
+                    delta = distributableWidth / autoColumnCount;
+                }
+
+                widths[columnIndex] = column.minWidth + delta;
+                remainingDeficit -= delta;
+                lastAutoIndex = columnIndex;
+            }
+        }
+
+        widths[lastAutoIndex] += remainingDeficit;
+    } else if(startingGuess == AboveMax) {
+        auto distributableWidth = availableWidth - guessSizes[MaxGuess];
+        auto remainingDeficit = distributableWidth;
+        if(autoColumnCount > 0) {
+            size_t lastAutoIndex = 0;
+            for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+                const auto& column = columns[columnIndex];
+                if(column.width.isPercent()) {
+                    widths[columnIndex] = std::max(column.minWidth, column.width.calc(availableWidth));
+                } else if(column.width.isFixed()) {
+                    widths[columnIndex] = column.maxWidth;
+                } else {
+                    float delta = 0.f;
+                    if(totalAutoMaxWidth > 0.f) {
+                        delta = distributableWidth * column.maxWidth / totalAutoMaxWidth;
+                    } else {
+                        delta = distributableWidth / autoColumnCount;
+                    }
+
+                    widths[columnIndex] = column.maxWidth + delta;
+                    remainingDeficit -= delta;
+                    lastAutoIndex = columnIndex;
+                }
+            }
+
+            widths[lastAutoIndex] += remainingDeficit;
+        } else if(fixedColumnCount > 0) {
+            size_t lastFixedIndex = 0;
+            for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+                const auto& column = columns[columnIndex];
+                if(column.width.isPercent()) {
+                    widths[columnIndex] = std::max(column.minWidth, column.width.calc(availableWidth));
+                } else if(column.width.isFixed()) {
+                    float delta = 0.f;
+                    if(totalFixedMaxWidth > 0.f) {
+                        delta = distributableWidth * column.maxWidth / totalFixedMaxWidth;
+                    } else {
+                        delta = distributableWidth / fixedColumnCount;
+                    }
+
+                    widths[columnIndex] = column.maxWidth + delta;
+                    remainingDeficit -= delta;
+                    lastFixedIndex = columnIndex;
+                } else {
+                    assert(false);
+                }
+            }
+
+            widths[lastFixedIndex] += remainingDeficit;
+        } else if(percentColumnCount > 0) {
+            size_t lastPercentIndex = 0;
+            for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+                const auto& column = columns[columnIndex];
+                if(column.width.isPercent()) {
+                    auto percentWidth = std::max(column.minWidth, column.width.calc(availableWidth));
+
+                    float delta = 0.f;
+                    if(totalPercent > 0.f) {
+                        delta = distributableWidth * column.maxWidth / totalPercent;
+                    } else {
+                        delta = distributableWidth / percentColumnCount;
+                    }
+
+                    widths[columnIndex] = percentWidth + delta;
+                    remainingDeficit -= delta;
+                    lastPercentIndex = columnIndex;
+                }
+            }
+
+            widths[lastPercentIndex] += remainingDeficit;
+        }
+    }
+
+    return widths;
+}
+
+static void distributeSpanCellToColumns(const TableCellBox* cellBox, std::span<TableColumnWidth> allColumns, float borderSpacing)
+{
+    auto columns = allColumns.subspan(cellBox->columnIndex(), cellBox->colSpan());
+
+    auto cellStyle = cellBox->style();
+    auto cellStyleWidth = cellStyle->width();
+    if(cellStyleWidth.isPercent()) {
+        float totalPercent = 0.f;
+        float totalNonPercentMaxWidth = 0.f;
+
+        size_t percentColumnCount = 0;
+        size_t nonPercentColumnCount = 0;
+        for(const auto& column : columns) {
+            if(column.width.isPercent()) {
+                totalPercent += column.width.value();
+                percentColumnCount++;
+            } else {
+                totalNonPercentMaxWidth += column.maxWidth;
+                nonPercentColumnCount++;
+            }
+        }
+
+        auto surplusPercent = cellStyleWidth.value() - totalPercent;
+        if(surplusPercent > 0.f && nonPercentColumnCount > 0) {
+            for(auto& column : columns) {
+                if(column.width.isPercent())
+                    continue;
+
+                float delta = 0.f;
+                if(totalNonPercentMaxWidth > 0.f) {
+                    delta = surplusPercent * column.maxWidth / totalNonPercentMaxWidth;
+                } else {
+                    delta = surplusPercent / nonPercentColumnCount;
+                }
+
+                column.width = Length(Length::Type::Percent, delta);
+            }
+        }
+    }
+
+    auto cellMinWidth = std::max(0.f, cellBox->minPreferredWidth() - borderSpacing * (cellBox->colSpan() - 1));
+    auto cellMaxWidth = std::max(0.f, cellBox->maxPreferredWidth() - borderSpacing * (cellBox->colSpan() - 1));
+
+    const auto minWidths = distributeWidthToColumns(cellMinWidth, columns);
+    for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+        columns[columnIndex].minWidth = std::max(columns[columnIndex].minWidth, minWidths[columnIndex]);
+    }
+
+    const auto maxWidths = distributeWidthToColumns(cellMaxWidth, columns);
+    for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+        columns[columnIndex].maxWidth = std::max(columns[columnIndex].maxWidth, maxWidths[columnIndex]);
+    }
+}
+
+void AutoTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& maxWidth)
+{
+    for(auto& columnWidth : m_columnWidths) {
+        columnWidth.width = Length::Auto;
+        columnWidth.minWidth = 0.f;
+        columnWidth.maxWidth = 0.f;
+    }
 
     for(auto section : m_table->sections()) {
         for(auto row : section->rows()) {
             for(auto& [columnIndex, cell] : row->cells()) {
                 auto cellBox = cell.box();
                 if(!cell.inRowSpan() && !cell.inColSpan() && cellBox->colSpan() == 1) {
-                    minWidths[columnIndex] = std::max(minWidths[columnIndex], cellBox->minPreferredWidth());
-                    maxWidths[columnIndex] = std::max(maxWidths[columnIndex], std::max(m_maxFixedWidths[columnIndex], cellBox->maxPreferredWidth()));
+                    auto& columnWidth = m_columnWidths[columnIndex];
+                    if(columnWidth.maxFixedWidth >= 0.f)
+                        columnWidth.width = Length(Length::Type::Fixed, columnWidth.maxFixedWidth);
+                    if(columnWidth.maxPercentWidth > 0.f)
+                        columnWidth.width = Length(Length::Type::Percent, columnWidth.maxPercentWidth);
+
+                    columnWidth.minWidth = std::max(columnWidth.minWidth, cellBox->minPreferredWidth());
+                    columnWidth.maxWidth = std::max(columnWidth.maxWidth, std::max(columnWidth.maxFixedWidth, cellBox->maxPreferredWidth()));
                 }
             }
         }
     }
 
     for(auto cellBox : m_spanningCells) {
-        auto cellMinWidth = cellBox->minPreferredWidth();
-        auto cellMaxWidth = cellBox->maxPreferredWidth();
-        for(auto columnIndex = cellBox->columnBegin(); columnIndex < cellBox->columnEnd(); ++columnIndex) {
-            cellMinWidth -= minWidths[columnIndex];
-            cellMaxWidth -= maxWidths[columnIndex];
-        }
-
-        cellMinWidth = std::max(0.f, cellMinWidth / cellBox->colSpan());
-        cellMaxWidth = std::max(0.f, cellMaxWidth / cellBox->colSpan());
-        for(auto columnIndex = cellBox->columnBegin(); columnIndex < cellBox->columnEnd(); ++columnIndex) {
-            minWidths[columnIndex] += cellMinWidth;
-            maxWidths[columnIndex] += cellMaxWidth;
-        }
+        distributeSpanCellToColumns(cellBox, m_columnWidths, m_table->horizontalBorderSpacing());
     }
 
-    for(size_t columnIndex = 0; columnIndex < columnCount; ++columnIndex) {
-        minWidth += minWidths[columnIndex] + m_table->horizontalBorderSpacing();
-        maxWidth += maxWidths[columnIndex] + m_table->horizontalBorderSpacing();
+    for(auto& columnWidth : m_columnWidths) {
+        minWidth += columnWidth.minWidth + m_table->horizontalBorderSpacing();
+        maxWidth += columnWidth.maxWidth + m_table->horizontalBorderSpacing();
     }
 }
 
@@ -321,20 +597,19 @@ void AutoTableLayoutAlgorithm::build()
 {
     const auto& columns = m_table->columns();
 
-    const auto columnCount = columns.size();
-
-    m_maxFixedWidths.resize(columnCount, -1.f);
-    m_maxPercentWidths.resize(columnCount, -1.f);
-    for(size_t columnIndex = 0; columnIndex < columnCount; ++columnIndex) {
+    m_columnWidths.resize(columns.size());
+    for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
         auto columnBox = columns[columnIndex].box();
         if(columnBox == nullptr)
             continue;
         auto columnStyle = columnBox->style();
         auto columnStyleWidth = columnStyle->width();
+
+        auto& columnWidth = m_columnWidths[columnIndex];
         if(columnStyleWidth.isFixed()) {
-            m_maxFixedWidths[columnIndex] = columnStyleWidth.value();
+            columnWidth.maxFixedWidth = columnStyleWidth.value();
         } else if(columnStyleWidth.isPercent()) {
-            m_maxPercentWidths[columnIndex] = columnStyleWidth.value();
+            columnWidth.maxPercentWidth = columnStyleWidth.value();
         }
     }
 
@@ -351,10 +626,12 @@ void AutoTableLayoutAlgorithm::build()
 
                 auto cellStyle = cellBox->style();
                 auto cellStyleWidth = cellStyle->width();
+
+                auto& columnWidth = m_columnWidths[columnIndex];
                 if(cellStyleWidth.isFixed()) {
-                    m_maxFixedWidths[columnIndex] = std::max(m_maxFixedWidths[columnIndex], cellStyleWidth.value());
+                    columnWidth.maxFixedWidth = std::max(columnWidth.maxFixedWidth, cellStyleWidth.value());
                 } else if(cellStyleWidth.isPercent()) {
-                    m_maxPercentWidths[columnIndex] = std::max(m_maxPercentWidths[columnIndex], cellStyleWidth.value());
+                    columnWidth.maxPercentWidth = std::max(columnWidth.maxPercentWidth, cellStyleWidth.value());
                 }
             }
         }
@@ -365,38 +642,27 @@ void AutoTableLayoutAlgorithm::build()
 
 void AutoTableLayoutAlgorithm::layout()
 {
+    m_table->updatePreferredWidths();
+
+    const auto availableWidth = m_table->availableWidth();
+
     auto& columns = m_table->columns();
 
-    const auto columnCount = columns.size();
+    const auto widths = distributeWidthToColumns(availableWidth, m_columnWidths);
 
-    std::vector<Length> widths(columnCount, Length::Auto);
-
-    std::vector<float> minWidths(columnCount, 0.f);
-    std::vector<float> maxWidths(columnCount, 0.f);
-
-    for(auto section : m_table->sections()) {
-        for(auto row : section->rows()) {
-            for(auto& [columnIndex, cell] : row->cells()) {
-                auto cellBox = cell.box();
-                if(!cell.inRowSpan() && !cell.inColSpan() && cellBox->colSpan() == 1) {
-                    if(m_maxFixedWidths[columnIndex] >= 0)
-                        widths[columnIndex] = Length(Length::Type::Fixed, m_maxFixedWidths[columnIndex]);
-                    if(m_maxPercentWidths[columnIndex] >= 0)
-                        widths[columnIndex] = Length(Length::Type::Percent, m_maxPercentWidths[columnIndex]);
-
-                    minWidths[columnIndex] = std::max(minWidths[columnIndex], cellBox->minPreferredWidth());
-                    maxWidths[columnIndex] = std::max(maxWidths[columnIndex], std::max(m_maxFixedWidths[columnIndex], cellBox->maxPreferredWidth()));
-                }
-            }
-        }
+    auto position = m_table->horizontalBorderSpacing();
+    for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
+        auto& column = columns[columnIndex];
+        column.setX(position);
+        column.setWidth(widths[columnIndex]);
+        position += column.width() + m_table->horizontalBorderSpacing();
     }
 }
 
 AutoTableLayoutAlgorithm::AutoTableLayoutAlgorithm(TableBox* table)
     : TableLayoutAlgorithm(table)
+    , m_columnWidths(table->heap())
     , m_spanningCells(table->heap())
-    , m_maxFixedWidths(table->heap())
-    , m_maxPercentWidths(table->heap())
 {
 }
 
