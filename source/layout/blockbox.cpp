@@ -145,9 +145,9 @@ float BlockBox::computeWidthUsing(const Length& widthLength, const BlockBox* con
     auto marginLeft = style()->marginLeft().calcMin(containerWidth);
     auto marginRight = style()->marginRight().calcMin(containerWidth);
     auto computedWidth = containerWidth - marginLeft - marginRight;
-    auto containerFlow = to<BlockFlowBox>(container);
-    if(containerFlow && containerFlow->containsFloats() && shrinkToAvoidFloats())
-        computedWidth = std::min(computedWidth, shrinkWidthToAvoidFloats(marginLeft, marginRight, containerFlow));
+    auto containerBlock = to<BlockFlowBox>(container);
+    if(containerBlock && containerBlock->containsFloats() && shrinkToAvoidFloats())
+        computedWidth = std::min(computedWidth, shrinkWidthToAvoidFloats(marginLeft, marginRight, containerBlock));
     if(isFloating() || isInline() || isFlexItem()) {
         computedWidth = std::min(computedWidth, maxPreferredWidth());
         computedWidth = std::max(computedWidth, minPreferredWidth());
@@ -827,24 +827,34 @@ void BlockFlowBox::layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo)
     if(marginInfo.atTopOfBlock() && !child->isSelfCollapsingBlock())
         marginInfo.setAtTopOfBlock(false);
 
-    auto leftOffset = borderLeft() + paddingLeft();
-    auto offsetX = leftOffset + child->marginLeft();
-    if(containsFloats() && child->avoidsFloats()) {
-        auto childStyle = child->style();
-        auto startOffset = startOffsetForLine(child->y(), false);
-        if(style()->textAlign() == TextAlign::Center || childStyle->marginLeft().isAuto())
-            offsetX = std::max(offsetX, startOffset + child->marginLeft());
-        else if(startOffset > leftOffset) {
-            offsetX = std::max(offsetX, startOffset);
+    if(style()->isLeftToRightDirection()) {
+        auto offsetX = borderAndPaddingLeft() + child->marginLeft();
+        if(containsFloats() && child->avoidsFloats()) {
+            auto childStyle = child->style();
+            auto startOffset = startOffsetForLine(child->y(), false);
+            if(childStyle->marginLeft().isAuto())
+                offsetX = std::max(offsetX, startOffset + child->marginLeft());
+            else if(startOffset > borderAndPaddingLeft()) {
+                offsetX = std::max(offsetX, startOffset);
+            }
         }
+
+        child->setX(offsetX);
+    } else {
+        auto offsetX = borderAndPaddingRight() + child->marginRight();
+        if(containsFloats() && child->avoidsFloats()) {
+            auto childStyle = child->style();
+            auto startOffset = startOffsetForLine(child->y(), false);
+            if(childStyle->marginRight().isAuto())
+                offsetX = std::max(offsetX, startOffset + child->marginRight());
+            else if(startOffset > borderAndPaddingRight()) {
+                offsetX = std::max(offsetX, startOffset);
+            }
+        }
+
+        child->setX(width() - offsetX - child->width());
     }
 
-    if(style()->isRightToLeftDirection()) {
-        auto totalAvailableWidth = availableWidth() + borderAndPaddingWidth();
-        offsetX = totalAvailableWidth - offsetX - child->width();
-    }
-
-    child->setX(offsetX);
     setHeight(height() + child->height());
     if(auto childBlock = to<BlockFlowBox>(child)) {
         addOverhangingFloats(childBlock);

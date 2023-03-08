@@ -88,6 +88,36 @@ void TableBox::layout()
     updateWidth();
 
     m_tableLayout->layout();
+
+    setHeight(0.f);
+    auto layoutCaption = [this](TableCaptionBox* caption) {
+        caption->layout();
+        caption->setX(caption->marginLeft());
+        caption->setY(height() + caption->collapsedMarginTop());
+        setHeight(caption->y() + caption->height() + caption->collapsedMarginBottom());
+    };
+
+    for(auto caption : m_captions) {
+        if(caption->captionSide() == CaptionSide::Top) {
+            layoutCaption(caption);
+        }
+    }
+
+    setHeight(height() + borderAndPaddingTop());
+    for(auto section : m_sections) {
+        section->layout();
+        section->setY(height());
+        setHeight(section->y() + section->height());
+    }
+
+    setHeight(height() + verticalBorderSpacing() + borderAndPaddingBottom());
+    for(auto caption : m_captions) {
+        if(caption->captionSide() == CaptionSide::Bottom) {
+            layoutCaption(caption);
+        }
+    }
+
+    updateHeight();
 }
 
 void TableBox::addBox(Box* box)
@@ -146,18 +176,18 @@ void FixedTableLayoutAlgorithm::build()
         }
     }
 
-    const TableRowBox* firstRow = nullptr;
+    const TableRowBox* firstRowBox = nullptr;
     for(auto section : m_table->sections()) {
         const auto& rows = section->rows();
         if(!rows.empty()) {
-            firstRow = rows.front();
+            firstRowBox = rows.front().box();
             break;
         }
     }
 
-    if(firstRow == nullptr)
+    if(firstRowBox == nullptr)
         return;
-    for(auto& [columnIndex, cell] : firstRow->cells()) {
+    for(auto& [columnIndex, cell] : firstRowBox->cells()) {
         if(!cell.inRowSpan() && !cell.inColSpan() && m_widths[columnIndex].isAuto()) {
             auto cellBox = cell.box();
             auto cellStyle = cellBox->style();
@@ -470,8 +500,6 @@ static std::vector<float> distributeWidthToColumns(float availableWidth, std::sp
                     widths[columnIndex] = column.maxWidth + delta;
                     remainingDeficit -= delta;
                     lastFixedIndex = columnIndex;
-                } else {
-                    assert(false);
                 }
             }
 
@@ -566,8 +594,8 @@ void AutoTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& ma
     }
 
     for(auto section : m_table->sections()) {
-        for(auto row : section->rows()) {
-            for(auto& [columnIndex, cell] : row->cells()) {
+        for(auto& row : section->rows()) {
+            for(auto& [columnIndex, cell] : row.cells()) {
                 auto cellBox = cell.box();
                 if(!cell.inRowSpan() && !cell.inColSpan() && cellBox->colSpan() == 1) {
                     auto& columnWidth = m_columnWidths[columnIndex];
@@ -614,8 +642,8 @@ void AutoTableLayoutAlgorithm::build()
     }
 
     for(auto section : m_table->sections()) {
-        for(auto row : section->rows()) {
-            for(auto& [columnIndex, cell] : row->cells()) {
+        for(auto& row : section->rows()) {
+            for(auto& [columnIndex, cell] : row.cells()) {
                 if(cell.inRowSpan() || cell.inColSpan())
                     continue;
                 auto cellBox = cell.box();
@@ -669,6 +697,7 @@ AutoTableLayoutAlgorithm::AutoTableLayoutAlgorithm(TableBox* table)
 TableSectionBox::TableSectionBox(Node* node, const RefPtr<BoxStyle>& style)
     : Box(node, style)
     , m_rows(style->heap())
+    , m_spanningCells(style->heap())
 {
     setHasTransform(style->hasTransform());
 }
@@ -697,19 +726,19 @@ void TableSectionBox::build(BoxLayer* layer)
         assert(box->isTableRowBox());
         auto rowBox = to<TableRowBox>(box);
         rowBox->setRowIndex(m_rows.size());
-        m_rows.push_back(rowBox);
+        m_rows.emplace_back(rowBox, rowBox->style()->height());
     }
 
     const uint32_t rowCount = m_rows.size();
     for(uint32_t rowIndex = 0; rowIndex < rowCount; ++rowIndex) {
-        const auto rowBox = m_rows[rowIndex];
+        const auto rowBox = m_rows[rowIndex].box();
 
         uint32_t columnIndex = 0;
         for(auto box = rowBox->firstBox(); box; box = box->nextBox()) {
             assert(box->isTableCellBox());
             auto cellBox = to<TableCellBox>(box);
 
-            auto& cells = rowBox->cells();
+            const auto& cells = rowBox->cells();
             while(true) {
                 if(!cells.contains(columnIndex))
                     break;
@@ -723,8 +752,25 @@ void TableSectionBox::build(BoxLayer* layer)
                 cellBox->setRowSpan(std::min(rowCount - rowIndex, cellBox->rowSpan()));
             }
 
+            if(cellBox->rowSpan() > 1) {
+                m_spanningCells.push_back(cellBox);
+            } else {
+                auto& row = m_rows[rowIndex];
+                auto& rowHeight = row.height();
+
+                auto cellStyle = cellBox->style();
+                auto cellStyleHeight = cellStyle->height();
+                if(cellStyleHeight.isPercent() && !cellStyleHeight.isZero()
+                    && (!rowHeight.isPercent() || rowHeight.value() < cellStyleHeight.value())) {
+                    row.setHeight(cellStyleHeight);
+                } else if(cellStyleHeight.isFixed() && !cellStyleHeight.isZero()
+                    && !rowHeight.isPercent() && rowHeight.value() < cellStyleHeight.value()) {
+                    row.setHeight(cellStyleHeight);
+                }
+            }
+
             for(uint32_t row = 0; row < cellBox->rowSpan(); ++row) {
-                auto& cells = m_rows[row + rowIndex]->cells();
+                auto& cells = m_rows[row + rowIndex].cells();
                 for(uint32_t col = 0; col < cellBox->colSpan(); ++col) {
                     cells.emplace(col + columnIndex, TableCell(cellBox, row > 0, col > 0));
                 }
@@ -739,7 +785,81 @@ void TableSectionBox::build(BoxLayer* layer)
         }
     }
 
+    std::sort(m_spanningCells.begin(), m_spanningCells.end(), [](auto a, auto b) { return a->rowSpan() < b->rowSpan(); });
+
     Box::build(layer);
+}
+
+void TableSectionBox::layout()
+{
+    const auto& columns = table()->columns();
+
+    const auto horizontalSpacing = table()->horizontalBorderSpacing();
+    const auto verticalSpacing = table()->verticalBorderSpacing();
+
+    for(const auto& row : m_rows) {
+        auto rowBox = row.box();
+        auto rowHeight = row.height();
+        if(rowHeight.isFixed()) {
+            rowBox->setHeight(rowHeight.value());
+        } else {
+            rowBox->setHeight(0.f);
+        }
+
+        for(auto& [columnIndex, cell] : row.cells()) {
+            auto cellBox = cell.box();
+            if(cell.inRowSpan() || cell.inColSpan())
+                continue;
+
+            auto width = -horizontalSpacing;
+            for(size_t col = 0; col < cellBox->colSpan(); ++col) {
+                const auto& column = columns[col + columnIndex];
+                width += horizontalSpacing + column.width();
+            }
+
+            cellBox->clearOverrideSize();
+            cellBox->setOverrideWidth(width);
+            cellBox->layout();
+        }
+    }
+
+    for(size_t rowIndex = 0; rowIndex < m_rows.size(); ++rowIndex) {
+        auto rowBox = m_rows[rowIndex].box();
+        for(auto& [columnIndex, cell] : rowBox->cells()) {
+            auto cellBox = cell.box();
+            if(!cell.inRowSpan() && !cell.inColSpan() && cellBox->rowSpan() == 1) {
+                rowBox->setHeight(std::max(rowBox->height(), cellBox->height()));
+            }
+        }
+    }
+
+    for(size_t rowIndex = 0; rowIndex < m_rows.size(); ++rowIndex) {
+        for(auto& [columnIndex, cell] : m_rows[rowIndex].cells()) {
+            auto cellBox = cell.box();
+            if(cell.inRowSpan() || cell.inColSpan())
+                continue;
+
+            auto height = -verticalSpacing;
+            for(size_t row = 0; row < cellBox->rowSpan(); ++row) {
+                auto rowBox = m_rows[row + rowIndex].box();
+                height += verticalSpacing + rowBox->height();
+            }
+
+            cellBox->setOverrideHeight(height);
+            if(height != cellBox->height()) {
+                cellBox->layout();
+            }
+        }
+    }
+
+    auto position = verticalSpacing;
+    for(const auto& row : m_rows) {
+        auto rowBox = row.box();
+        rowBox->setY(position);
+        position += verticalSpacing + rowBox->height();
+    }
+
+    m_height = position - verticalSpacing;
 }
 
 TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)

@@ -130,55 +130,6 @@ private:
     std::pmr::vector<TableCellBox*> m_spanningCells;
 };
 
-class TableRowBox;
-
-using TableRowBoxList = std::pmr::vector<TableRowBox*>;
-
-class TableSectionBox final : public Box {
-public:
-    TableSectionBox(Node* node, const RefPtr<BoxStyle>& style);
-
-    bool isOfType(Type type) const final { return type == Type::TableSection || Box::isOfType(type); }
-
-    void addBox(Box* box) final;
-    void build(BoxLayer* layer) final;
-
-    TableBox* table() const;
-
-    const TableRowBoxList& rows() const { return m_rows; }
-    TableRowBoxList& rows() { return m_rows; }
-
-    float x() const { return m_x; }
-    float y() const { return m_y; }
-    float width() const { return m_width; }
-    float height() const { return m_height; }
-
-    void setX(float x) { m_x = x; }
-    void setY(float y) { m_y = y; }
-    void setWidth(float width) { m_width = width; }
-    void setHeight(float height) { m_height = height; }
-
-    const char* name() const final { return "TableSectionBox"; }
-
-private:
-    TableRowBoxList m_rows;
-
-    float m_x{0};
-    float m_y{0};
-    float m_width{0};
-    float m_height{0};
-};
-
-template<>
-struct is_a<TableSectionBox> {
-    static bool check(const Box& box) { return box.isOfType(Box::Type::TableSection); }
-};
-
-inline TableBox* TableSectionBox::table() const
-{
-    return static_cast<TableBox*>(parentBox());
-}
-
 class TableCellBox;
 
 class TableCell {
@@ -198,6 +149,69 @@ private:
 };
 
 using TableCellMap = std::pmr::multimap<uint32_t, TableCell>;
+
+class TableRowBox;
+
+class TableRow {
+public:
+    TableRow(TableRowBox* box, const Length& height)
+        : m_box(box), m_height(height)
+    {}
+
+    TableRowBox* box() const { return m_box; }
+    const Length& height() const { return m_height; }
+    void setHeight(const Length& height) { m_height = height; }
+
+    TableCellMap& cells() const;
+
+private:
+    TableRowBox* m_box;
+    Length m_height;
+};
+
+using TableRowList = std::pmr::vector<TableRow>;
+
+class TableSectionBox final : public Box {
+public:
+    TableSectionBox(Node* node, const RefPtr<BoxStyle>& style);
+
+    bool isOfType(Type type) const final { return type == Type::TableSection || Box::isOfType(type); }
+
+    void addBox(Box* box) final;
+    void build(BoxLayer* layer) final;
+    void layout() final;
+
+    TableBox* table() const;
+
+    const TableRowList& rows() const { return m_rows; }
+    TableRowList& rows() { return m_rows; }
+
+    float y() const { return m_y; }
+    float height() const { return m_height; }
+
+    void setY(float y) { m_y = y; }
+    void setHeight(float height) { m_height = height; }
+
+    const char* name() const final { return "TableSectionBox"; }
+
+private:
+    TableRowList m_rows;
+
+    float m_y{0};
+    float m_height{0};
+
+    std::pmr::vector<TableCellBox*> m_spanningCells;
+};
+
+template<>
+struct is_a<TableSectionBox> {
+    static bool check(const Box& box) { return box.isOfType(Box::Type::TableSection); }
+};
+
+inline TableBox* TableSectionBox::table() const
+{
+    return static_cast<TableBox*>(parentBox());
+}
 
 class TableRowBox final : public Box {
 public:
@@ -244,6 +258,11 @@ struct is_a<TableRowBox> {
 inline TableSectionBox* TableRowBox::section() const
 {
     return static_cast<TableSectionBox*>(parentBox());
+}
+
+inline TableCellMap& TableRow::cells() const
+{
+    return m_box->cells();
 }
 
 class TableColumnBox : public Box {

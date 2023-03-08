@@ -572,42 +572,33 @@ void BoxFrame::computeHorizontalMargins(float& marginLeft, float& marginRight, f
 {
     auto marginLeftLength = style()->marginLeft();
     auto marginRightLength = style()->marginRight();
-    if(isInline() || isFloating()) {
+    if(isInline() || isFloating() || container->isFlexibleBox()) {
         marginLeft = marginLeftLength.calcMin(containerWidth);
         marginRight = marginRightLength.calcMin(containerWidth);
         return;
     }
 
-    if(container->isFlexibleBox()) {
-        if(marginLeftLength.isAuto())
-            marginLeftLength = Length::ZeroFixed;
-        if(marginRightLength.isAuto()) {
-            marginRightLength = Length::ZeroFixed;
+    auto containerBlock = to<BlockFlowBox>(container);
+    if(containerBlock && containerBlock->containsFloats() && avoidsFloats())
+        containerWidth = containerBlock->availableWidthForLine(y(), false);
+    if(childWidth < containerWidth) {
+        if(marginLeftLength.isAuto() && marginRightLength.isAuto()) {
+            marginLeft = std::max(0.f, (containerWidth - childWidth) / 2.f);
+            marginRight = containerWidth - childWidth - marginLeft;
+            return;
         }
-    }
 
-    auto containerStyle = container->style();
-    auto containerTextAlign = containerStyle->textAlign();
-    auto containerDirection = containerStyle->direction();
-    if(marginLeftLength.isAuto() && marginRightLength.isAuto() && childWidth < containerWidth
-        || (!marginLeftLength.isAuto() && !marginRightLength.isAuto() && containerTextAlign == TextAlign::Center)) {
-        marginLeft = std::max(0.f, (containerWidth - childWidth) / 2.f);
-        marginRight = containerWidth - childWidth - marginLeft;
-        return;
-    }
+        if(marginRightLength.isAuto()) {
+            marginLeft = marginLeftLength.calc(containerWidth);
+            marginRight = containerWidth - childWidth - marginLeft;
+            return;
+        }
 
-    if(marginRightLength.isAuto() && childWidth < containerWidth
-        || (!marginLeftLength.isAuto() && containerDirection == TextDirection::Rtl && containerTextAlign == TextAlign::Left)) {
-        marginLeft = marginLeftLength.calc(containerWidth);
-        marginRight = containerWidth - childWidth - marginLeft;
-        return;
-    }
-
-    if(marginLeftLength.isAuto() && childWidth < containerWidth
-        || (!marginRightLength.isAuto() && containerDirection == TextDirection::Ltr && containerTextAlign == TextAlign::Right)) {
-        marginRight = marginRightLength.calc(containerWidth);
-        marginLeft = containerWidth - childWidth - marginRight;
-        return;
+        if(marginLeftLength.isAuto()) {
+            marginRight = marginRightLength.calc(containerWidth);
+            marginLeft = containerWidth - childWidth - marginRight;
+            return;
+        }
     }
 
     marginLeft = marginLeftLength.calcMin(containerWidth);
