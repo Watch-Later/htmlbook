@@ -113,6 +113,41 @@ void HTMLElement::buildBox(Counters& counters, Box* parent)
     counters.pop();
 }
 
+template<typename T>
+bool HTMLElement::parseHTMLInteger(const GlobalString& name, T& value) const
+{
+    std::string_view input = getAttribute(name);
+    while(!input.empty() && isspace(input.front())) {
+        input.remove_prefix(1);
+    }
+
+    constexpr auto isSigned = std::numeric_limits<T>::is_signed;
+
+    bool isNegative = false;
+    if(!input.empty() && input.front() == '+')
+        input.remove_prefix(1);
+    else if(!input.empty() && isSigned && input.front() == '-') {
+        input.remove_prefix(1);
+        isNegative = true;
+    }
+
+    if(input.empty() || !isdigit(input.front()))
+        return false;
+
+    T integer = 0;
+    do {
+        integer = integer * 10 + input.front() - '0';
+        input.remove_prefix(1);
+    } while(!input.empty() && isdigit(input.front()));
+
+    using SignedType = typename std::make_signed<T>::type;
+    if(isNegative)
+        value = -static_cast<SignedType>(integer);
+    else
+        value = integer;
+    return true;
+}
+
 HTMLBodyElement::HTMLBodyElement(Document* document)
     : HTMLElement(document, bodyTag)
 {
@@ -220,6 +255,11 @@ HTMLLIElement::HTMLLIElement(Document* document)
 
 std::optional<int> HTMLLIElement::value() const
 {
+    static const GlobalString valueAttr("value");
+
+    int value = 0;
+    if(parseHTMLInteger(valueAttr, value))
+        return value;
     return std::nullopt;
 }
 
@@ -230,6 +270,11 @@ HTMLOLElement::HTMLOLElement(Document* document)
 
 int HTMLOLElement::start() const
 {
+    static const GlobalString startAttr("start");
+
+    int value = 1;
+    if(parseHTMLInteger(startAttr, value))
+        return value;
     return 1;
 }
 
@@ -331,8 +376,13 @@ void HTMLTableColElement::collectAttributeStyle(std::stringstream& output, const
     }
 }
 
-int HTMLTableColElement::span() const
+unsigned HTMLTableColElement::span() const
 {
+    static const GlobalString spanAttr("span");
+
+    unsigned value = 1;
+    if(parseHTMLInteger(spanAttr, value))
+        return std::max(1u, value);
     return 1;
 }
 
@@ -364,13 +414,23 @@ void HTMLTableCellElement::collectAttributeStyle(std::stringstream& output, cons
     }
 }
 
-int HTMLTableCellElement::colSpan() const
+unsigned HTMLTableCellElement::colSpan() const
 {
+    static const GlobalString colspanAttr("colspan");
+
+    unsigned value = 1;
+    if(parseHTMLInteger(colspanAttr, value))
+        return std::max(1u, value);
     return 1;
 }
 
-int HTMLTableCellElement::rowSpan() const
+unsigned HTMLTableCellElement::rowSpan() const
 {
+    static const GlobalString rowSpanAttr("rowspan");
+
+    unsigned value = 1;
+    if(parseHTMLInteger(rowSpanAttr, value))
+        return value;
     return 1;
 }
 

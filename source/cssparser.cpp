@@ -271,18 +271,6 @@ bool CSSParser::consumePageSelectorList(CSSTokenStream& input, CSSPageSelectorLi
     return input.empty();
 }
 
-bool CSSParser::consumeSelector(CSSTokenStream& input, CSSSelector& selector)
-{
-    auto combinator = CSSComplexSelector::Combinator::None;
-    do {
-        CSSCompoundSelector sel(m_heap);
-        if(!consumeCompoundSelector(input, sel))
-            return combinator == CSSComplexSelector::Combinator::Descendant;
-        selector.emplace_back(combinator, std::move(sel));
-    } while(consumeCombinator(input, combinator));
-    return true;
-}
-
 bool CSSParser::consumeSelectorList(CSSTokenStream& input, CSSSelectorList& selectors)
 {
     CSSSelector selector(m_heap);
@@ -301,28 +289,18 @@ bool CSSParser::consumeSelectorList(CSSTokenStream& input, CSSSelectorList& sele
     return input.empty();
 }
 
-bool CSSParser::consumeCompoundSelector(CSSTokenStream& input, CSSCompoundSelector& selector)
-{
-    if(!consumeTagSelector(input, selector)
-        && !consumeSimpleSelector(input, selector)) {
-        return false;
-    }
-
-    while(consumeSimpleSelector(input, selector));
-    return true;
-}
-
 bool CSSParser::consumeCompoundSelectorList(CSSTokenStream& input, CSSCompoundSelectorList& selectors)
 {
+    bool failed = false;
     CSSCompoundSelector selector(m_heap);
-    if(!consumeCompoundSelector(input, selector))
+    if(!consumeCompoundSelector(input, selector, failed))
         return false;
 
     selectors.push_back(std::move(selector));
     input.consumeWhitespace();
     while(input->type() == CSSToken::Type::Comma) {
         input.consumeIncludingWhitespace();
-        if(!consumeCompoundSelector(input, selector))
+        if(!consumeCompoundSelector(input, selector, failed))
             return false;
         selectors.push_back(std::move(selector));
         input.consumeWhitespace();
@@ -331,17 +309,43 @@ bool CSSParser::consumeCompoundSelectorList(CSSTokenStream& input, CSSCompoundSe
     return true;
 }
 
-bool CSSParser::consumeSimpleSelector(CSSTokenStream& input, CSSCompoundSelector& selector)
+bool CSSParser::consumeSelector(CSSTokenStream& input, CSSSelector& selector)
+{
+    auto combinator = CSSComplexSelector::Combinator::None;
+    do {
+        bool failed = false;
+        CSSCompoundSelector sel(m_heap);
+        if(!consumeCompoundSelector(input, sel, failed))
+            return !failed ? combinator == CSSComplexSelector::Combinator::Descendant : false;
+        selector.emplace_back(combinator, std::move(sel));
+    } while(consumeCombinator(input, combinator));
+    return true;
+}
+
+bool CSSParser::consumeCompoundSelector(CSSTokenStream& input, CSSCompoundSelector& selector, bool& failed)
+{
+    if(!consumeTagSelector(input, selector)
+        && !consumeSimpleSelector(input, selector, failed)) {
+        return false;
+    }
+
+    while(consumeSimpleSelector(input, selector, failed));
+    return !failed;
+}
+
+bool CSSParser::consumeSimpleSelector(CSSTokenStream& input, CSSCompoundSelector& selector, bool& failed)
 {
     if(input->type() == CSSToken::Type::Hash)
-        return consumeIdSelector(input, selector);
-    if(input->type() == CSSToken::Type::Delim && input->delim() == '.')
-        return consumeClassSelector(input, selector);
-    if(input->type() == CSSToken::Type::LeftSquareBracket)
-        return consumeAttributeSelector(input, selector);
-    if(input->type() == CSSToken::Type::Colon)
-        return consumePseudoSelector(input, selector);
-    return false;
+        failed = !consumeIdSelector(input, selector);
+    else if(input->type() == CSSToken::Type::Delim && input->delim() == '.')
+        failed = !consumeClassSelector(input, selector);
+    else if(input->type() == CSSToken::Type::LeftSquareBracket)
+        failed = !consumeAttributeSelector(input, selector);
+    else if(input->type() == CSSToken::Type::Colon)
+        failed = !consumePseudoSelector(input, selector);
+    else
+        return false;
+    return !failed;
 }
 
 bool CSSParser::consumeTagSelector(CSSTokenStream& input, CSSCompoundSelector& selector)

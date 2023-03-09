@@ -14,6 +14,9 @@ public:
     Box* createBox(const RefPtr<BoxStyle>& style) override;
     void buildPseudoBox(Counters& counters, Box* parent, PseudoType pseudoType);
     void buildBox(Counters& counters, Box* parent) override;
+
+    template<typename T>
+    bool parseHTMLInteger(const GlobalString& name, T& integer) const;
 };
 
 class HTMLBodyElement final : public HTMLElement {
@@ -96,7 +99,7 @@ public:
     HTMLTableColElement(Document* document, const GlobalString& tagName);
 
     void collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const final;
-    int span() const;
+    unsigned span() const;
 
     Box* createBox(const RefPtr<BoxStyle>& style) final;
 };
@@ -106,8 +109,8 @@ public:
     HTMLTableCellElement(Document* document, const GlobalString& tagName);
 
     void collectAttributeStyle(std::stringstream& output, const GlobalString& name, const HeapString& value) const final;
-    int colSpan() const;
-    int rowSpan() const;
+    unsigned colSpan() const;
+    unsigned rowSpan() const;
 
     Box* createBox(const RefPtr<BoxStyle>& style) final;
 };

@@ -26,12 +26,14 @@ private:
 
     bool consumePageSelector(CSSTokenStream& input, CSSPageSelector& selector);
     bool consumePageSelectorList(CSSTokenStream& input, CSSPageSelectorList& selectors);
-    bool consumeSelector(CSSTokenStream& input, CSSSelector& selector);
+
     bool consumeSelectorList(CSSTokenStream& input, CSSSelectorList& selectors);
-    bool consumeCompoundSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
     bool consumeCompoundSelectorList(CSSTokenStream& input, CSSCompoundSelectorList& selectors);
 
-    bool consumeSimpleSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
+    bool consumeSelector(CSSTokenStream& input, CSSSelector& selector);
+    bool consumeCompoundSelector(CSSTokenStream& input, CSSCompoundSelector& selector, bool& failed);
+    bool consumeSimpleSelector(CSSTokenStream& input, CSSCompoundSelector& selector, bool& failed);
+
     bool consumeTagSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
     bool consumeIdSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
     bool consumeClassSelector(CSSTokenStream& input, CSSCompoundSelector& selector);
