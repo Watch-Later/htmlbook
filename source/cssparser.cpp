@@ -8,7 +8,7 @@ namespace htmlbook {
 
 void CSSParser::parseSheet(CSSRuleList& rules, const std::string_view& content)
 {
-    CSSTokenizer tokenizer(content, m_heap);
+    CSSTokenizer tokenizer(content);
     auto input = tokenizer.tokenize();
     while(!input.empty()) {
         input.consumeWhitespace();
@@ -27,7 +27,7 @@ void CSSParser::parseSheet(CSSRuleList& rules, const std::string_view& content)
 
 void CSSParser::parseStyle(CSSPropertyList& properties, const std::string_view& content)
 {
-    CSSTokenizer tokenizer(content, m_heap);
+    CSSTokenizer tokenizer(content);
     auto input = tokenizer.tokenize();
     if(input.empty())
         return;
@@ -92,26 +92,26 @@ RefPtr<CSSRule> CSSParser::consumeAtRule(CSSTokenStream& input)
     return nullptr;
 }
 
-RefPtr<CSSRule> CSSParser::consumeImportRule(CSSTokenStream& input)
+static const CSSToken* consumeUrlToken(CSSTokenStream& input)
 {
-    HeapString href;
-    input.consumeWhitespace();
+    const CSSToken* token = nullptr;
     switch(input->type()) {
     case CSSToken::Type::Url:
-    case CSSToken::Type::String:
-        href = input->data();
+        token = input.begin();
         input.consumeIncludingWhitespace();
         break;
     case CSSToken::Type::Function: {
         if(!equals(input->data(), "url", false))
             return nullptr;
+        CSSTokenStreamGuard guard(input);
         auto block = input.consumeBlock();
         block.consumeWhitespace();
-        href = block->data();
+        token = block.begin();
         block.consumeIncludingWhitespace();
-        if(!block.empty())
+        if(token->type() == CSSToken::Type::BadString || !block.empty())
             return nullptr;
         input.consumeWhitespace();
+        guard.release();
         break;
     }
 
@@ -119,7 +119,26 @@ RefPtr<CSSRule> CSSParser::consumeImportRule(CSSTokenStream& input)
         return nullptr;
     }
 
-    return CSSImportRule::create(m_heap, href);
+    return token;
+}
+
+static const CSSToken* consumeStringOrUrlToken(CSSTokenStream& input)
+{
+    if(input->type() == CSSToken::Type::String) {
+        const auto token = input.begin();
+        input.consumeIncludingWhitespace();
+        return token;
+    }
+
+    return consumeUrlToken(input);
+}
+
+RefPtr<CSSRule> CSSParser::consumeImportRule(CSSTokenStream& input)
+{
+    input.consumeWhitespace();
+    if(auto token = consumeStringOrUrlToken(input))
+        return CSSImportRule::create(m_heap, HeapString::create(m_heap, token->data()));
+    return nullptr;
 }
 
 RefPtr<CSSRule> CSSParser::consumeFontFaceRule(CSSTokenStream& prelude, CSSTokenStream& block)
@@ -222,7 +241,8 @@ bool CSSParser::consumePageSelector(CSSTokenStream& input, CSSPageSelector& sele
     }
 
     if(input->type() == CSSToken::Type::Ident) {
-        selector.emplace_back(CSSSimpleSelector::MatchType::Id, input->data());
+        auto value = HeapString::create(m_heap, input->data());
+        selector.emplace_back(CSSSimpleSelector::MatchType::Id, value);
         input.consume();
     }
 
@@ -370,7 +390,8 @@ bool CSSParser::consumeIdSelector(CSSTokenStream& input, CSSCompoundSelector& se
 {
     assert(input->type() == CSSToken::Type::Hash);
     if(input->hashType() == CSSToken::HashType::Identifier) {
-        selector.emplace_back(CSSSimpleSelector::MatchType::Id, input->data());
+        auto value = HeapString::create(m_heap, input->data());
+        selector.emplace_back(CSSSimpleSelector::MatchType::Id, value);
         input.consume();
         return true;
     }
@@ -383,7 +404,8 @@ bool CSSParser::consumeClassSelector(CSSTokenStream& input, CSSCompoundSelector&
     assert(input->type() == CSSToken::Type::Delim);
     input.consume();
     if(input->type() == CSSToken::Type::Ident) {
-        selector.emplace_back(CSSSimpleSelector::MatchType::Class, input->data());
+        auto value = HeapString::create(m_heap, input->data());
+        selector.emplace_back(CSSSimpleSelector::MatchType::Class, value);
         input.consume();
         return true;
     }
@@ -443,7 +465,7 @@ bool CSSParser::consumeAttributeSelector(CSSTokenStream& input, CSSCompoundSelec
     if(block->type() != CSSToken::Type::Ident && block->type() != CSSToken::Type::String)
         return false;
 
-    auto value = block->data();
+    auto value = HeapString::create(m_heap, block->data());
     block.consumeIncludingWhitespace();
 
     auto caseType = CSSSimpleSelector::AttributeCaseType::Sensitive;
@@ -549,7 +571,7 @@ bool CSSParser::consumePseudoSelector(CSSTokenStream& input, CSSCompoundSelector
         case CSSSimpleSelector::MatchType::PseudoClassLang: {
             if(block->type() != CSSToken::Type::Ident)
                 return false;
-            selector.emplace_back(it->value, block->data());
+            selector.emplace_back(it->value, HeapString::create(m_heap, block->data()));
             block.consume();
             break;
         }
@@ -646,7 +668,7 @@ bool CSSParser::consumeMatchPattern(CSSTokenStream& input, CSSSimpleSelector::Ma
         input.consume();
         if(ident.front() == '-') {
             pattern.first = -1;
-            ss << ident.substring(1);
+            ss << ident.substr(1);
         } else {
             pattern.first = 1;
             ss << ident;
@@ -1095,7 +1117,7 @@ RefPtr<CSSValue> CSSParser::consumeLengthOrPercentOrNormal(CSSTokenStream& input
 RefPtr<CSSValue> CSSParser::consumeString(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::String) {
-        auto value = input->data();
+        auto value = HeapString::create(m_heap, input->data());
         input.consumeIncludingWhitespace();
         return CSSStringValue::create(m_heap, value);
     }
@@ -1106,7 +1128,7 @@ RefPtr<CSSValue> CSSParser::consumeString(CSSTokenStream& input)
 RefPtr<CSSValue> CSSParser::consumeCustomIdent(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::Ident) {
-        auto value = input->data();
+        auto value = HeapString::create(m_heap, input->data());
         input.consumeIncludingWhitespace();
         return CSSCustomIdentValue::create(m_heap, value);
     }
@@ -1114,44 +1136,32 @@ RefPtr<CSSValue> CSSParser::consumeCustomIdent(CSSTokenStream& input)
     return nullptr;
 }
 
-RefPtr<CSSValue> CSSParser::consumeUrl(CSSTokenStream& input, bool image)
+RefPtr<CSSValue> CSSParser::consumeUrl(CSSTokenStream& input)
 {
-    HeapString value;
-    switch(input->type()) {
-    case CSSToken::Type::Url:
-    case CSSToken::Type::String:
-        value = input->data();
-        input.consumeIncludingWhitespace();
-        break;
-    case CSSToken::Type::Function: {
-        if(!equals(input->data(), "url", false))
-            return nullptr;
-        CSSTokenStreamGuard guard(input);
-        auto block = input.consumeBlock();
-        block.consumeWhitespace();
-        value = block->data();
-        block.consumeIncludingWhitespace();
-        if(!block.empty())
-            return nullptr;
-        input.consumeWhitespace();
-        guard.release();
-        break;
-    }
-
-    default:
-        return nullptr;
-    }
-
-    if(!image)
-        return CSSUrlValue::create(m_heap, value);
-    return CSSImageValue::create(m_heap, value);
+    if(auto token = consumeUrlToken(input))
+        return CSSUrlValue::create(m_heap, HeapString::create(m_heap, input->data()));
+    return nullptr;
 }
 
-RefPtr<CSSValue> CSSParser::consumeUrlOrNone(CSSTokenStream& input, bool image)
+RefPtr<CSSValue> CSSParser::consumeUrlOrNone(CSSTokenStream& input)
 {
     if(auto value = consumeNone(input))
         return value;
-    return consumeUrl(input, image);
+    return consumeUrl(input);
+}
+
+RefPtr<CSSValue> CSSParser::consumeImage(CSSTokenStream& input)
+{
+    if(auto token = consumeUrlToken(input))
+        return CSSImageValue::create(m_heap, HeapString::create(m_heap, input->data()));
+    return nullptr;
+}
+
+RefPtr<CSSValue> CSSParser::consumeImageOrNone(CSSTokenStream& input)
+{
+    if(auto value = consumeNone(input))
+        return value;
+    return consumeImage(input);
 }
 
 RefPtr<CSSValue> CSSParser::consumeColor(CSSTokenStream& input)
@@ -1431,7 +1441,7 @@ RefPtr<CSSValue> CSSParser::consumeFillOrStroke(CSSTokenStream& input)
     if(auto value = consumeNone(input))
         return value;
 
-    auto first = consumeUrl(input, false);
+    auto first = consumeUrl(input);
     if(first == nullptr)
         return consumeColor(input);
 
@@ -1470,7 +1480,7 @@ RefPtr<CSSValue> CSSParser::consumeContent(CSSTokenStream& input)
     while(!input.empty()) {
         auto value = consumeString(input);
         if(value == nullptr)
-            value = consumeUrl(input, true);
+            value = consumeImage(input);
         if(value == nullptr && input->type() == CSSToken::Type::Ident) {
             static const idententry_t table[] = {
                 {"open-quote", CSSValueID::OpenQuote},
@@ -1527,7 +1537,7 @@ RefPtr<CSSValue> CSSParser::consumeContentCounter(CSSTokenStream& input, bool co
         input.consumeIncludingWhitespace();
         if(input->type() != CSSToken::Type::String)
             return nullptr;
-        separator = input->data();
+        separator = HeapString::create(m_heap, input->data());
         input.consumeIncludingWhitespace();
     }
 
@@ -1611,30 +1621,28 @@ RefPtr<CSSValue> CSSParser::consumeSize(CSSTokenStream& input)
     RefPtr<CSSValue> size;
     RefPtr<CSSValue> orientation;
     for(int index = 0; index < 2; ++index) {
-        if(size == nullptr) {
-            static const idententry_t table[] = {
-                {"a3", CSSValueID::A3},
-                {"a4", CSSValueID::A4},
-                {"a5", CSSValueID::A5},
-                {"b4", CSSValueID::B4},
-                {"b5", CSSValueID::B5},
-                {"ledger", CSSValueID::Ledger},
-                {"legal", CSSValueID::Legal},
-                {"letter", CSSValueID::Letter}
-            };
+        static const idententry_t table[] = {
+            {"a3", CSSValueID::A3},
+            {"a4", CSSValueID::A4},
+            {"a5", CSSValueID::A5},
+            {"b4", CSSValueID::B4},
+            {"b5", CSSValueID::B5},
+            {"ledger", CSSValueID::Ledger},
+            {"legal", CSSValueID::Legal},
+            {"letter", CSSValueID::Letter}
+        };
 
-            if(size = consumeIdent(input, table)) {
-                continue;
-            }
+        if(size == nullptr && (size = consumeIdent(input, table))) {
+            continue;
         }
 
-        if(orientation == nullptr) {
+        {
             static const idententry_t table[] = {
                 {"portrait", CSSValueID::Portrait},
                 {"landscape", CSSValueID::Landscape}
             };
 
-            if(orientation = consumeIdent(input, table)) {
+            if(orientation == nullptr && (orientation = consumeIdent(input, table))) {
                 continue;
             }
         }
@@ -1695,7 +1703,7 @@ RefPtr<CSSValue> CSSParser::consumeFontSize(CSSTokenStream& input, bool unitless
 RefPtr<CSSValue> CSSParser::consumeFontFamilyValue(CSSTokenStream& input)
 {
     if(input->type() == CSSToken::Type::String) {
-        auto value = input->data();
+        auto value = HeapString::create(m_heap, input->data());
         input.consumeIncludingWhitespace();
         return CSSStringValue::create(m_heap, value);
     }
@@ -1738,7 +1746,7 @@ RefPtr<CSSValue> CSSParser::consumeFontFaceSourceValue(CSSTokenStream& input)
         input.consumeWhitespace();
         values.push_back(CSSFunctionValue::create(m_heap, CSSValueID::Local, std::move(value)));
     } else {
-        auto value = consumeUrl(input, false);
+        auto value = consumeUrl(input);
         if(value == nullptr)
             return nullptr;
         values.push_back(std::move(value));
@@ -1908,26 +1916,24 @@ RefPtr<CSSValue> CSSParser::consumeBackgroundPosition(CSSTokenStream& input)
             continue;
         if(second == nullptr && (second = consumeLengthOrPercent(input, true, false)))
             continue;
-        if(first == nullptr) {
-            static const idententry_t table[] = {
-                {"left", CSSValueID::Left},
-                {"right", CSSValueID::Right},
-                {"center", CSSValueID::Center}
-            };
+        static const idententry_t table[] = {
+            {"left", CSSValueID::Left},
+            {"right", CSSValueID::Right},
+            {"center", CSSValueID::Center}
+        };
 
-            if(first = consumeIdent(input, table)) {
-                continue;
-            }
+        if(first == nullptr && (first = consumeIdent(input, table))) {
+            continue;
         }
 
-        if(second == nullptr) {
+        {
             static const idententry_t table[] = {
                 {"top", CSSValueID::Left},
                 {"bottom", CSSValueID::Bottom},
                 {"center", CSSValueID::Center}
             };
 
-            if(second = consumeIdent(input, table)) {
+            if(second == nullptr && (second = consumeIdent(input, table))) {
                 continue;
             }
         }
@@ -2259,10 +2265,10 @@ RefPtr<CSSValue> CSSParser::consumeLonghand(CSSTokenStream& input, CSSPropertyID
     case CSSPropertyID::MarkerMid:
     case CSSPropertyID::MarkerStart:
     case CSSPropertyID::Mask:
-        return consumeUrlOrNone(input, false);
+        return consumeUrlOrNone(input);
     case CSSPropertyID::ListStyleImage:
     case CSSPropertyID::BackgroundImage:
-        return consumeUrlOrNone(input, true);
+        return consumeImageOrNone(input);
     case CSSPropertyID::Content:
         return consumeContent(input);
     case CSSPropertyID::CounterIncrement:
@@ -2914,7 +2920,7 @@ bool CSSParser::consumeBackground(CSSTokenStream& input, CSSPropertyList& proper
             continue;
         }
 
-        if(image == nullptr && (image = consumeUrl(input, true)))
+        if(image == nullptr && (image = consumeImage(input)))
             continue;
         if(repeat == nullptr && (repeat = consumeLonghand(input, CSSPropertyID::BackgroundRepeat)))
             continue;

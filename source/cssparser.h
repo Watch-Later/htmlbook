@@ -73,8 +73,10 @@ private:
 
     RefPtr<CSSValue> consumeString(CSSTokenStream& input);
     RefPtr<CSSValue> consumeCustomIdent(CSSTokenStream& input);
-    RefPtr<CSSValue> consumeUrl(CSSTokenStream& input, bool image);
-    RefPtr<CSSValue> consumeUrlOrNone(CSSTokenStream& input, bool image);
+    RefPtr<CSSValue> consumeUrl(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeUrlOrNone(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeImage(CSSTokenStream& input);
+    RefPtr<CSSValue> consumeImageOrNone(CSSTokenStream& input);
     RefPtr<CSSValue> consumeColor(CSSTokenStream& input);
     RefPtr<CSSValue> consumeRgb(CSSTokenStream& input);
 

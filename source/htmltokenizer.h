@@ -27,13 +27,15 @@ public:
 
     Type type() const { return m_type; }
     bool selfClosing() const { return m_selfClosing; }
+    bool forceQuirks() const { return m_forceQuirks; }
     bool hasPublicIdentifier() const { return m_hasPublicIdentifier; }
     bool hasSystemIdentifier() const { return m_hasSystemIdentifier; }
-    bool forceQuirks() const { return m_forceQuirks; }
     const std::string& publicIdentifier() const { return m_publicIdentifier; }
     const std::string& systemIdentifier() const { return m_systemIdentifier; }
     const std::string& data() const { return m_data; }
-    std::vector<Attribute>& attributes() const { return m_attributes; }
+
+    const std::vector<Attribute>& attributes() const { return m_attributes; }
+    std::vector<Attribute>& attributes() { return m_attributes; }
 
     void beginStartTag() {
         assert(m_type == Type::Unknown);
@@ -190,8 +192,8 @@ private:
     std::string m_systemIdentifier;
     std::string m_attributeName;
     std::string m_attributeValue;
+    std::vector<Attribute> m_attributes;
     std::string m_data;
-    mutable std::vector<Attribute> m_attributes;
 };
 
 class HTMLTokenView {
@@ -229,9 +231,14 @@ public:
 
     HTMLToken::Type type() const { return m_type; }
     bool selfClosing() const { return m_selfClosing; }
-    const std::string_view& data() const { return m_data; }
+    bool forceQuirks() const { return m_forceQuirks; }
+    bool hasPublicIdentifier() const { return m_hasPublicIdentifier; }
+    bool hasSystemIdentifier() const { return m_hasSystemIdentifier; }
+    const std::string_view& publicIdentifier() const { return m_publicIdentifier; }
+    const std::string_view& systemIdentifier() const { return m_systemIdentifier; }
     const GlobalString& tagName() const { return m_tagName; }
     const std::span<Attribute>& attributes() const { return m_attributes; }
+    const std::string_view& data() const { return m_data; }
 
     const Attribute* findAttribute(const GlobalString& name) const {
         assert(m_type == HTMLToken::Type::StartTag || m_type == HTMLToken::Type::EndTag);
@@ -281,14 +288,14 @@ public:
 private:
     HTMLToken::Type m_type;
     bool m_selfClosing{false};
+    bool m_forceQuirks{false};
     bool m_hasPublicIdentifier{false};
     bool m_hasSystemIdentifier{false};
-    bool m_forceQuirks{false};
     std::string_view m_publicIdentifier;
     std::string_view m_systemIdentifier;
-    std::string_view m_data;
     GlobalString m_tagName;
     std::span<Attribute> m_attributes;
+    std::string_view m_data;
 };
 
 class HTMLTokenizer {
