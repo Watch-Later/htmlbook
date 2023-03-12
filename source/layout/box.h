@@ -228,11 +228,11 @@ public:
     float marginStart(Direction direction) const { return direction == Direction::Ltr ? m_marginLeft : m_marginRight; }
     float marginEnd(Direction direction) const { return direction == Direction::Ltr ? m_marginRight : m_marginLeft; }
 
-    float borderStart(Direction direction) const { return direction == Direction::Ltr ? m_borderLeft : m_borderRight; }
-    float borderEnd(Direction direction) const { return direction == Direction::Ltr ? m_borderRight : m_borderLeft; }
+    float borderStart(Direction direction) const { return direction == Direction::Ltr ? borderLeft() : borderRight(); }
+    float borderEnd(Direction direction) const { return direction == Direction::Ltr ? borderRight() : borderLeft(); }
 
-    float paddingStart(Direction direction) const { return direction == Direction::Ltr ? m_paddingLeft : m_paddingRight; }
-    float paddingEnd(Direction direction) const { return direction == Direction::Ltr ? m_paddingRight : m_paddingLeft; }
+    float paddingStart(Direction direction) const { return direction == Direction::Ltr ? paddingLeft() : paddingRight(); }
+    float paddingEnd(Direction direction) const { return direction == Direction::Ltr ? paddingRight() : paddingLeft(); }
 
     float marginStart() const { return marginStart(direction()); }
     float marginEnd() const { return marginEnd(direction()); }

@@ -23,28 +23,26 @@ void BlockBox::updatePreferredWidths() const
     m_maxPreferredWidth = 0;
 
     auto widthLength = style()->width();
-    if(widthLength.isFixed() && !isTableBox() && !isTableCellBox()) {
-        m_minPreferredWidth = m_maxPreferredWidth = adjustContentBoxWidth(widthLength.value());
+    if(widthLength.isFixed()) {
+        m_minPreferredWidth = m_maxPreferredWidth = adjustBorderBoxWidth(widthLength.value());
     } else {
         computePreferredWidths(m_minPreferredWidth, m_maxPreferredWidth);
     }
 
     auto minWidthLength = style()->minWidth();
     if(minWidthLength.isFixed() && minWidthLength.value() > 0) {
-        m_minPreferredWidth = std::max(m_minPreferredWidth, adjustContentBoxWidth(minWidthLength.value()));
-        m_maxPreferredWidth = std::max(m_maxPreferredWidth, adjustContentBoxWidth(minWidthLength.value()));
+        m_minPreferredWidth = std::max(m_minPreferredWidth, adjustBorderBoxWidth(minWidthLength.value()));
+        m_maxPreferredWidth = std::max(m_maxPreferredWidth, adjustBorderBoxWidth(minWidthLength.value()));
     }
 
     auto maxWidthLength = style()->maxWidth();
     if(maxWidthLength.isFixed()) {
-        m_minPreferredWidth = std::min(m_minPreferredWidth, adjustContentBoxWidth(maxWidthLength.value()));
-        m_maxPreferredWidth = std::min(m_maxPreferredWidth, adjustContentBoxWidth(maxWidthLength.value()));
+        m_minPreferredWidth = std::min(m_minPreferredWidth, adjustBorderBoxWidth(maxWidthLength.value()));
+        m_maxPreferredWidth = std::min(m_maxPreferredWidth, adjustBorderBoxWidth(maxWidthLength.value()));
     }
 
-    if(!isTableBox()) {
-        m_minPreferredWidth += borderAndPaddingWidth();
-        m_maxPreferredWidth += borderAndPaddingWidth();
-    }
+    m_minPreferredWidth += borderAndPaddingWidth();
+    m_maxPreferredWidth += borderAndPaddingWidth();
 }
 
 void BlockBox::insertPositonedBox(BoxFrame* box)
@@ -148,7 +146,7 @@ float BlockBox::computeWidthUsing(const Length& widthLength, const BlockBox* con
     auto containerBlock = to<BlockFlowBox>(container);
     if(containerBlock && containerBlock->containsFloats() && shrinkToAvoidFloats())
         computedWidth = std::min(computedWidth, shrinkWidthToAvoidFloats(marginLeft, marginRight, containerBlock));
-    if(isFloating() || isInline() || isFlexItem()) {
+    if(isFloating() || isInline() || isFlexItem() || isTableBox()) {
         computedWidth = std::min(computedWidth, maxPreferredWidth());
         computedWidth = std::max(computedWidth, minPreferredWidth());
     }
@@ -534,6 +532,8 @@ void BlockBox::computeWidth(float& x, float& width, float& marginLeft, float& ma
 
     width = computeWidthUsing(style()->width(), container, containerWidth);
     width = constrainWidthByMinMax(width, container, containerWidth);
+    if(isTableBox())
+        width = std::max(width, minPreferredWidth());
     computeHorizontalMargins(marginLeft, marginRight, width, container, containerWidth);
 }
 

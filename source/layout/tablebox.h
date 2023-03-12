@@ -5,28 +5,7 @@
 
 namespace htmlbook {
 
-class TableColumnBox;
-
-class TableColumn {
-public:
-    explicit TableColumn(const TableColumnBox* box)
-        : m_box(box)
-    {}
-
-    const TableColumnBox* box() const { return m_box; }
-
-    float x() const { return m_x; }
-    float width() const { return m_width; }
-
-    void setX(float x) { m_x = x; }
-    void setWidth(float width) { m_width = width; }
-
-private:
-    const TableColumnBox* m_box;
-
-    float m_x{0};
-    float m_width{0};
-};
+class TableColumn;
 
 using TableColumnList = std::pmr::vector<TableColumn>;
 
@@ -46,29 +25,32 @@ public:
 
     void computePreferredWidths(float& minWidth, float& maxWidth) const final;
 
+    void updatePreferredWidths() const final;
+
     void addBox(Box* box) final;
     void build(BoxLayer* layer) final;
     void layout() final;
 
+    float availableHorizontalSpace() const;
+
+    TableColumnList& columns() { return m_columns; }
     const TableSectionBoxList& sections() const { return m_sections; }
     const TableColumnList& columns() const { return m_columns; }
-    TableColumnList& columns() { return m_columns; }
 
     BorderCollapse borderCollapse() const { return m_borderCollapse; }
-
-    float horizontalBorderSpacing() const { return m_horizontalBorderSpacing; }
-    float verticalBorderSpacing() const { return m_verticalBorderSpacing; }
+    float borderHorizontalSpacing() const { return m_borderHorizontalSpacing; }
+    float borderVerticalSpacing() const { return m_borderVerticalSpacing; }
 
     const char* name() const final { return "TableBox"; }
 
 private:
+    TableColumnList m_columns;
     TableCaptionBoxList m_captions;
     TableSectionBoxList m_sections;
-    TableColumnList m_columns;
-    BorderCollapse m_borderCollapse;
 
-    float m_horizontalBorderSpacing{0};
-    float m_verticalBorderSpacing{0};
+    BorderCollapse m_borderCollapse;
+    float m_borderHorizontalSpacing;
+    float m_borderVerticalSpacing;
 
     std::unique_ptr<TableLayoutAlgorithm> m_tableLayout;
 };
@@ -130,44 +112,7 @@ private:
     std::pmr::vector<TableCellBox*> m_spanningCells;
 };
 
-class TableCellBox;
-
-class TableCell {
-public:
-    TableCell(TableCellBox* box, bool inRowSpan, bool inColSpan)
-        : m_box(box), m_inRowSpan(inRowSpan), m_inColSpan(inColSpan)
-    {}
-
-    TableCellBox* box() const { return m_box; }
-    bool inRowSpan() const { return m_inRowSpan; }
-    bool inColSpan() const { return m_inColSpan; }
-
-private:
-    TableCellBox* m_box;
-    bool m_inRowSpan;
-    bool m_inColSpan;
-};
-
-using TableCellMap = std::pmr::multimap<uint32_t, TableCell>;
-
-class TableRowBox;
-
-class TableRow {
-public:
-    TableRow(TableRowBox* box, const Length& height)
-        : m_box(box), m_height(height)
-    {}
-
-    TableRowBox* box() const { return m_box; }
-    const Length& height() const { return m_height; }
-    void setHeight(const Length& height) { m_height = height; }
-
-    TableCellMap& cells() const;
-
-private:
-    TableRowBox* m_box;
-    Length m_height;
-};
+class TableRow;
 
 using TableRowList = std::pmr::vector<TableRow>;
 
@@ -212,6 +157,29 @@ inline TableBox* TableSectionBox::table() const
 {
     return static_cast<TableBox*>(parentBox());
 }
+
+class TableCell;
+
+using TableCellMap = std::pmr::multimap<uint32_t, TableCell>;
+
+class TableRowBox;
+
+class TableRow {
+public:
+    TableRow(TableRowBox* box, const Length& height)
+        : m_box(box), m_height(height)
+    {}
+
+    TableRowBox* box() const { return m_box; }
+    const Length& height() const { return m_height; }
+    void setHeight(const Length& height) { m_height = height; }
+
+    TableCellMap& cells() const;
+
+private:
+    TableRowBox* m_box;
+    Length m_height;
+};
 
 class TableRowBox final : public Box {
 public:
@@ -265,6 +233,29 @@ inline TableCellMap& TableRow::cells() const
     return m_box->cells();
 }
 
+class TableColumnBox;
+
+class TableColumn {
+public:
+    explicit TableColumn(const TableColumnBox* box)
+        : m_box(box)
+    {}
+
+    const TableColumnBox* box() const { return m_box; }
+
+    float x() const { return m_x; }
+    float width() const { return m_width; }
+
+    void setX(float x) { m_x = x; }
+    void setWidth(float width) { m_width = width; }
+
+private:
+    const TableColumnBox* m_box;
+
+    float m_x{0};
+    float m_width{0};
+};
+
 class TableColumnBox : public Box {
 public:
     TableColumnBox(Node* node, const RefPtr<BoxStyle>& style);
@@ -299,6 +290,22 @@ public:
 template<>
 struct is_a<TableColumnGroupBox> {
     static bool check(const Box& box) { return box.isOfType(Box::Type::TableColumnGroup); }
+};
+
+class TableCell {
+public:
+    TableCell(TableCellBox* box, bool inRowSpan, bool inColSpan)
+        : m_box(box), m_inRowSpan(inRowSpan), m_inColSpan(inColSpan)
+    {}
+
+    TableCellBox* box() const { return m_box; }
+    bool inRowSpan() const { return m_inRowSpan; }
+    bool inColSpan() const { return m_inColSpan; }
+
+private:
+    TableCellBox* m_box;
+    bool m_inRowSpan;
+    bool m_inColSpan;
 };
 
 class TableCellBox final : public BlockFlowBox {

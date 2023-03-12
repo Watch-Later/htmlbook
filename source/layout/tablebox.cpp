@@ -6,17 +6,78 @@ namespace htmlbook {
 
 TableBox::TableBox(Node* node, const RefPtr<BoxStyle>& style)
     : BlockBox(node, style)
+    , m_columns(style->heap())
     , m_captions(style->heap())
     , m_sections(style->heap())
-    , m_columns(style->heap())
     , m_borderCollapse(style->borderCollapse())
+    , m_borderHorizontalSpacing(0.f)
+    , m_borderVerticalSpacing(0.f)
 {
     setChildrenInline(false);
+    if(m_borderCollapse == BorderCollapse::Separate) {
+        m_borderHorizontalSpacing = style->borderHorizontalSpacing();
+        m_borderVerticalSpacing = style->borderVerticalSpacing();
+    }
 }
 
 void TableBox::computePreferredWidths(float& minWidth, float& maxWidth) const
 {
-    m_tableLayout->computePreferredWidths(minWidth, maxWidth);
+    if(!m_columns.empty()) {
+        m_tableLayout->computePreferredWidths(minWidth, maxWidth);
+
+        m_minPreferredWidth += borderHorizontalSpacing() * (m_columns.size() + 1);
+        m_maxPreferredWidth += borderHorizontalSpacing() * (m_columns.size() + 1);
+    }
+
+    m_minPreferredWidth += borderAndPaddingWidth();
+    m_maxPreferredWidth += borderAndPaddingWidth();
+    for(auto caption : m_captions) {
+        m_minPreferredWidth = std::max(m_minPreferredWidth, caption->minPreferredWidth());
+    }
+}
+
+void TableBox::updatePreferredWidths() const
+{
+    m_minPreferredWidth = 0;
+    m_maxPreferredWidth = 0;
+
+    computePreferredWidths(m_minPreferredWidth, m_maxPreferredWidth);
+
+    auto widthLength = style()->width();
+    if(widthLength.isFixed()) {
+        m_maxPreferredWidth = m_minPreferredWidth = std::max(m_minPreferredWidth, adjustBorderBoxWidth(widthLength.value()));
+    }
+
+    auto minWidthLength = style()->minWidth();
+    if(minWidthLength.isFixed() && minWidthLength.value() > 0) {
+        m_minPreferredWidth = std::max(m_minPreferredWidth, adjustBorderBoxWidth(minWidthLength.value()));
+        m_maxPreferredWidth = std::max(m_maxPreferredWidth, adjustBorderBoxWidth(minWidthLength.value()));
+    }
+
+    auto maxWidthLength = style()->maxWidth();
+    if(maxWidthLength.isFixed()) {
+        m_maxPreferredWidth = std::min(m_maxPreferredWidth, adjustBorderBoxWidth(maxWidthLength.value()));
+        m_maxPreferredWidth = std::max(m_minPreferredWidth, m_maxPreferredWidth);
+    }
+}
+
+void TableBox::addBox(Box* box)
+{
+    if(box->isTableCaptionBox() || box->isTableColumnBox()
+        || box->isTableSectionBox()) {
+        appendChild(box);
+        return;
+    }
+
+    auto lastChild = lastBox();
+    if(lastChild && lastChild->isAnonymous() && lastChild->isTableSectionBox()) {
+        lastChild->addBox(box);
+        return;
+    }
+
+    auto newSection = createAnonymous(style(), Display::TableRowGroup);
+    appendChild(newSection);
+    newSection->addBox(box);
 }
 
 void TableBox::build(BoxLayer* layer)
@@ -72,34 +133,17 @@ void TableBox::build(BoxLayer* layer)
         m_sections.push_back(footerSection);
     }
 
-    if(m_borderCollapse == BorderCollapse::Separate) {
-        m_horizontalBorderSpacing = style()->borderHorizontalSpacing();
-        m_verticalBorderSpacing = style()->borderVerticalSpacing();
-    }
-
     BlockBox::build(layer);
 
-    m_tableLayout = TableLayoutAlgorithm::create(this);
-    m_tableLayout->build();
+    if(!m_columns.empty()) {
+        m_tableLayout = TableLayoutAlgorithm::create(this);
+        m_tableLayout->build();
+    }
 }
 
 void TableBox::layout()
 {
     updateWidth();
-
-    m_tableLayout->layout();
-
-    auto position = m_horizontalBorderSpacing;
-    for(auto& column : m_columns) {
-        column.setX(position);
-        position += column.width() + m_horizontalBorderSpacing;
-    }
-
-    if(style()->isRightToLeftDirection()) {
-        for(auto& column : m_columns) {
-            column.setX(position - column.width() - column.x());
-        }
-    }
 
     setHeight(0.f);
     auto layoutCaption = [this](TableCaptionBox* caption) {
@@ -116,13 +160,31 @@ void TableBox::layout()
     }
 
     setHeight(height() + borderAndPaddingTop());
-    for(auto section : m_sections) {
-        section->layout();
-        section->setY(height());
-        setHeight(section->y() + section->height());
+    if(!m_columns.empty()) {
+        m_tableLayout->layout();
+
+        auto position = borderHorizontalSpacing();
+        for(auto& column : m_columns) {
+            column.setX(position);
+            position += column.width() + borderHorizontalSpacing();
+        }
+
+        if(style()->isRightToLeftDirection()) {
+            for(auto& column : m_columns) {
+                column.setX(position - column.width() - column.x());
+            }
+        }
+
+        for(auto section : m_sections) {
+            section->layout();
+            section->setY(height() + borderVerticalSpacing());
+            setHeight(section->y() + section->height());
+        }
+
+        setHeight(height() + borderVerticalSpacing());
     }
 
-    setHeight(height() + m_verticalBorderSpacing + borderAndPaddingBottom());
+    setHeight(height() + borderAndPaddingBottom());
     for(auto caption : m_captions) {
         if(caption->captionSide() == CaptionSide::Bottom) {
             layoutCaption(caption);
@@ -132,23 +194,11 @@ void TableBox::layout()
     updateHeight();
 }
 
-void TableBox::addBox(Box* box)
+float TableBox::availableHorizontalSpace() const
 {
-    if(box->isTableCaptionBox() || box->isTableColumnBox()
-        || box->isTableSectionBox()) {
-        appendChild(box);
-        return;
-    }
-
-    auto lastChild = lastBox();
-    if(lastChild && lastChild->isAnonymous() && lastChild->isTableSectionBox()) {
-        lastChild->addBox(box);
-        return;
-    }
-
-    auto newSection = createAnonymous(style(), Display::TableRowGroup);
-    appendChild(newSection);
-    newSection->addBox(box);
+    if(!m_columns.empty() && m_borderCollapse == BorderCollapse::Separate)
+        return availableWidth() - borderHorizontalSpacing() * (m_columns.size() + 1);
+    return availableWidth();
 }
 
 std::unique_ptr<TableLayoutAlgorithm> TableLayoutAlgorithm::create(TableBox* table)
@@ -166,10 +216,10 @@ std::unique_ptr<FixedTableLayoutAlgorithm> FixedTableLayoutAlgorithm::create(Tab
 
 void FixedTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& maxWidth)
 {
-    for(auto& width : m_widths) {
+    for(const auto& width : m_widths) {
         if(width.isFixed()) {
-            minWidth += width.value() + m_table->horizontalBorderSpacing();;
-            maxWidth += width.value() + m_table->horizontalBorderSpacing();;
+            minWidth += width.value();
+            maxWidth += width.value();
         }
     }
 }
@@ -215,7 +265,7 @@ void FixedTableLayoutAlgorithm::build()
 
 void FixedTableLayoutAlgorithm::layout()
 {
-    auto availableWidth = m_table->availableWidth();
+    const auto availableWidth = m_table->availableHorizontalSpace();
 
     float totalFixedWidth = 0;
     float totalPercentWidth = 0;
@@ -618,12 +668,12 @@ void AutoTableLayoutAlgorithm::computePreferredWidths(float& minWidth, float& ma
     }
 
     for(auto cellBox : m_spanningCells) {
-        distributeSpanCellToColumns(cellBox, m_columnWidths, m_table->horizontalBorderSpacing());
+        distributeSpanCellToColumns(cellBox, m_columnWidths, m_table->borderHorizontalSpacing());
     }
 
-    for(auto& columnWidth : m_columnWidths) {
-        minWidth += columnWidth.minWidth + m_table->horizontalBorderSpacing();
-        maxWidth += columnWidth.maxWidth + m_table->horizontalBorderSpacing();
+    for(const auto& columnWidth : m_columnWidths) {
+        minWidth += columnWidth.minWidth;
+        maxWidth += columnWidth.maxWidth;
     }
 }
 
@@ -678,9 +728,7 @@ void AutoTableLayoutAlgorithm::layout()
 {
     auto& columns = m_table->columns();
 
-    m_table->updatePreferredWidths();
-
-    const auto widths = distributeWidthToColumns(m_table->availableWidth(), m_columnWidths);
+    const auto widths = distributeWidthToColumns(m_table->availableHorizontalSpace(), m_columnWidths);
     for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
         columns[columnIndex].setWidth(widths[columnIndex]);
     }
@@ -793,8 +841,8 @@ void TableSectionBox::layout()
 {
     const auto& columns = table()->columns();
 
-    const auto horizontalSpacing = table()->horizontalBorderSpacing();
-    const auto verticalSpacing = table()->verticalBorderSpacing();
+    const auto horizontalSpacing = table()->borderHorizontalSpacing();
+    const auto verticalSpacing = table()->borderVerticalSpacing();
 
     for(const auto& row : m_rows) {
         auto rowBox = row.box();
@@ -833,7 +881,7 @@ void TableSectionBox::layout()
         }
     }
 
-    auto position = verticalSpacing;
+    float position = 0.f;
     for(size_t rowIndex = 0; rowIndex < m_rows.size(); ++rowIndex) {
         auto rowBox = m_rows[rowIndex].box();
         rowBox->setY(position);
@@ -858,7 +906,7 @@ void TableSectionBox::layout()
         position += verticalSpacing + rowBox->height();
     }
 
-    m_height = position - verticalSpacing;
+    m_height = std::max(0.f, position - verticalSpacing);
 }
 
 TableRowBox::TableRowBox(Node* node, const RefPtr<BoxStyle>& style)
