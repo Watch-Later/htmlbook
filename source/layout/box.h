@@ -122,6 +122,7 @@ public:
     Document* document() const { return m_style->document(); }
     Display display() const { return m_style->display(); }
     Position position() const { return m_style->position(); }
+    Direction direction() const { return m_style->direction(); }
 
     virtual const char* name() const { return "Box"; }
 
@@ -223,6 +224,24 @@ public:
 
     float borderAndPaddingWidth() const { return borderWidth() + paddingWidth(); }
     float borderAndPaddingHeight() const { return borderHeight() + paddingHeight(); }
+
+    float marginStart(Direction direction) const { return direction == Direction::Ltr ? m_marginLeft : m_marginRight; }
+    float marginEnd(Direction direction) const { return direction == Direction::Ltr ? m_marginRight : m_marginLeft; }
+
+    float borderStart(Direction direction) const { return direction == Direction::Ltr ? m_borderLeft : m_borderRight; }
+    float borderEnd(Direction direction) const { return direction == Direction::Ltr ? m_borderRight : m_borderLeft; }
+
+    float paddingStart(Direction direction) const { return direction == Direction::Ltr ? m_paddingLeft : m_paddingRight; }
+    float paddingEnd(Direction direction) const { return direction == Direction::Ltr ? m_paddingRight : m_paddingLeft; }
+
+    float marginStart() const { return marginStart(direction()); }
+    float marginEnd() const { return marginEnd(direction()); }
+
+    float borderStart() const { return borderStart(direction()); }
+    float borderEnd() const { return borderEnd(direction()); }
+
+    float paddingStart() const { return paddingStart(direction()); }
+    float paddingEnd() const { return paddingEnd(direction()); }
 
     const char* name() const override { return "BoxModel"; }
 

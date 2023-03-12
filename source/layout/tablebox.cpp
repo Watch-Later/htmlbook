@@ -89,12 +89,24 @@ void TableBox::layout()
 
     m_tableLayout->layout();
 
+    auto position = m_horizontalBorderSpacing;
+    for(auto& column : m_columns) {
+        column.setX(position);
+        position += column.width() + m_horizontalBorderSpacing;
+    }
+
+    if(style()->isRightToLeftDirection()) {
+        for(auto& column : m_columns) {
+            column.setX(position - column.width() - column.x());
+        }
+    }
+
     setHeight(0.f);
     auto layoutCaption = [this](TableCaptionBox* caption) {
         caption->layout();
         caption->setX(caption->marginLeft());
-        caption->setY(height() + caption->collapsedMarginTop());
-        setHeight(caption->y() + caption->height() + caption->collapsedMarginBottom());
+        caption->setY(height() + caption->marginTop());
+        setHeight(caption->y() + caption->height() + caption->marginBottom());
     };
 
     for(auto caption : m_captions) {
@@ -110,7 +122,7 @@ void TableBox::layout()
         setHeight(section->y() + section->height());
     }
 
-    setHeight(height() + verticalBorderSpacing() + borderAndPaddingBottom());
+    setHeight(height() + m_verticalBorderSpacing + borderAndPaddingBottom());
     for(auto caption : m_captions) {
         if(caption->captionSide() == CaptionSide::Bottom) {
             layoutCaption(caption);
@@ -289,12 +301,6 @@ void FixedTableLayoutAlgorithm::layout()
                 autoColumnCount--;
             }
         }
-    }
-
-    auto position = m_table->horizontalBorderSpacing();
-    for(auto& column : columns) {
-        column.setX(position);
-        position += column.width() + m_table->horizontalBorderSpacing();
     }
 }
 
@@ -670,20 +676,13 @@ void AutoTableLayoutAlgorithm::build()
 
 void AutoTableLayoutAlgorithm::layout()
 {
-    m_table->updatePreferredWidths();
-
-    const auto availableWidth = m_table->availableWidth();
-
     auto& columns = m_table->columns();
 
-    const auto widths = distributeWidthToColumns(availableWidth, m_columnWidths);
+    m_table->updatePreferredWidths();
 
-    auto position = m_table->horizontalBorderSpacing();
+    const auto widths = distributeWidthToColumns(m_table->availableWidth(), m_columnWidths);
     for(size_t columnIndex = 0; columnIndex < columns.size(); ++columnIndex) {
-        auto& column = columns[columnIndex];
-        column.setX(position);
-        column.setWidth(widths[columnIndex]);
-        position += column.width() + m_table->horizontalBorderSpacing();
+        columns[columnIndex].setWidth(widths[columnIndex]);
     }
 }
 
@@ -817,6 +816,7 @@ void TableSectionBox::layout()
                 width += horizontalSpacing + column.width();
             }
 
+            cellBox->setX(columns[columnIndex].x());
             cellBox->clearOverrideSize();
             cellBox->setOverrideWidth(width);
             cellBox->layout();
@@ -833,8 +833,11 @@ void TableSectionBox::layout()
         }
     }
 
+    auto position = verticalSpacing;
     for(size_t rowIndex = 0; rowIndex < m_rows.size(); ++rowIndex) {
-        for(auto& [columnIndex, cell] : m_rows[rowIndex].cells()) {
+        auto rowBox = m_rows[rowIndex].box();
+        rowBox->setY(position);
+        for(auto& [columnIndex, cell] : rowBox->cells()) {
             auto cellBox = cell.box();
             if(cell.inRowSpan() || cell.inColSpan())
                 continue;
@@ -845,17 +848,13 @@ void TableSectionBox::layout()
                 height += verticalSpacing + rowBox->height();
             }
 
+            cellBox->setY(position);
             cellBox->setOverrideHeight(height);
             if(height != cellBox->height()) {
                 cellBox->layout();
             }
         }
-    }
 
-    auto position = verticalSpacing;
-    for(const auto& row : m_rows) {
-        auto rowBox = row.box();
-        rowBox->setY(position);
         position += verticalSpacing + rowBox->height();
     }
 

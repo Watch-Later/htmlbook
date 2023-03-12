@@ -17,12 +17,6 @@ class FlexLine;
 
 class FlexItem {
 public:
-    enum class Violation : uint8_t {
-        None,
-        Min,
-        Max
-    };
-
     FlexItem(BlockBox* box, int order, float flexGrow, float flexShrink, AlignItem alignSelf);
 
     BlockBox* box() const { return m_box; }
@@ -32,11 +26,11 @@ public:
     float flexFactor(FlexSign sign) const { return sign == FlexSign::Positive ? m_flexGrow : m_flexShrink; }
     AlignItem alignSelf() const { return m_alignSelf; }
 
-    Violation violation() const { return m_violation; }
-    void setViolation(Violation violation) { m_violation = violation; }
+    void setMinViolation(bool violation) { m_minViolation = violation; }
+    void setMaxViolation(bool violation) { m_maxViolation = violation; }
 
-    bool minViolation() const { return m_violation == Violation::Min; }
-    bool maxViolation() const { return m_violation == Violation::Max; }
+    bool minViolation() const { return m_minViolation; }
+    bool maxViolation() const { return m_maxViolation; }
 
     float flexBaseSize() const { return m_flexBaseSize; }
     float targetMainSize() const { return m_targetMainSize; }
@@ -48,6 +42,7 @@ public:
 
     FlexibleBox* flexBox() const;
     FlexDirection flexDirection() const;
+    Direction direction() const;
 
     bool isHorizontalFlow() const;
     bool isVerticalFlow() const;
@@ -71,14 +66,13 @@ public:
 
 private:
     BlockBox* m_box;
-
     int m_order;
-
     float m_flexGrow;
     float m_flexShrink;
-
     AlignItem m_alignSelf;
-    Violation m_violation = Violation::None;
+
+    bool m_minViolation = false;
+    bool m_maxViolation = false;
 
     float m_flexBaseSize = 0;
     float m_targetMainSize = 0;
@@ -126,18 +120,13 @@ public:
     std::optional<float> computeMinMainSize(const BlockBox* child) const;
     std::optional<float> computeMaxMainSize(const BlockBox* child) const;
 
-    float computeMainSize(float contentHeight) const;
+    float computeMainSize(float hypotheticalMainSize) const;
     float availableCrossSize() const;
 
-    float borderStart() const;
-    float borderEnd() const;
-    float borderBefore() const;
-    float borderAfter() const;
-
-    float paddingStart() const;
-    float paddingEnd() const;
-    float paddingBefore() const;
-    float paddingAfter() const;
+    float borderAndPaddingStart() const;
+    float borderAndPaddingEnd() const;
+    float borderAndPaddingBefore() const;
+    float borderAndPaddingAfter() const;
 
     void layout() final;
 
@@ -177,6 +166,11 @@ inline FlexibleBox* FlexItem::flexBox() const
 inline FlexDirection FlexItem::flexDirection() const
 {
     return flexBox()->flexDirection();
+}
+
+inline Direction FlexItem::direction() const
+{
+    return flexBox()->direction();
 }
 
 inline bool FlexItem::isHorizontalFlow() const

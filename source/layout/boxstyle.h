@@ -60,6 +60,11 @@ enum class Overflow : uint8_t {
     Scroll
 };
 
+enum class Direction : uint8_t {
+    Ltr,
+    Rtl
+};
+
 enum class LineStyle : uint8_t {
     None,
     Auto,
@@ -107,11 +112,6 @@ enum class FontStyle : uint8_t {
 enum class FontVariant : uint8_t {
     Normal,
     SmallCaps
-};
-
-enum class TextDirection : uint8_t {
-    Ltr,
-    Rtl
 };
 
 enum class TextAlign : uint8_t {
@@ -455,6 +455,7 @@ public:
     Float floating() const { return m_floating; }
     Clear clear() const { return m_clear; }
     Overflow overflow() const { return m_overflow; }
+    Direction direction() const { return m_direction; }
     Visibility visibility() const { return m_visibility; }
     const Color& color() const { return m_color; }
 
@@ -519,7 +520,6 @@ public:
     float borderHorizontalSpacing() const;
     float borderVerticalSpacing() const;
 
-    TextDirection direction() const { return m_direction; }
     TextAlign textAlign() const { return m_textAlign; }
     TextTransform textTransform() const;
     TextOverflow textOverflow() const;
@@ -569,8 +569,8 @@ public:
     bool isDisplayFlex() const { return m_display == Display::Flex || m_display == Display::InlineFlex; }
     bool isFloating() const { return m_floating == Float::Left || m_floating == Float::Right; }
     bool isPositioned() const { return m_position == Position::Absolute || m_position == Position::Fixed; }
-    bool isLeftToRightDirection() const { return m_direction == TextDirection::Ltr; }
-    bool isRightToLeftDirection() const { return m_direction == TextDirection::Rtl; }
+    bool isLeftToRightDirection() const { return m_direction == Direction::Ltr; }
+    bool isRightToLeftDirection() const { return m_direction == Direction::Rtl; }
     bool isClearLeft() const { return m_clear == Clear::Left || m_clear == Clear::Both; }
     bool isClearRight() const { return m_clear == Clear::Right || m_clear == Clear::Both; }
     bool hasTransform() const;
@@ -612,10 +612,10 @@ public:
     static Float convertFloat(const CSSValue& value);
     static Clear convertClear(const CSSValue& value);
     static Overflow convertOverflow(const CSSValue& value);
+    static Direction convertDirection(const CSSValue& value);
     static Visibility convertVisibility(const CSSValue& value);
     static BoxSizing convertBoxSizing(const CSSValue& value);
     static WhiteSpace convertWhiteSpace(const CSSValue& value);
-    static TextDirection convertTextDirection(const CSSValue& value);
     static TextAlign convertTextAlign(const CSSValue& value);
     static BackgroundBox convertBackgroundBox(const CSSValue& value);
     static LineStyle convertLineStyle(const CSSValue& value);
@@ -642,9 +642,9 @@ private:
     Float m_floating{Float::None};
     Clear m_clear{Clear::None};
     Overflow m_overflow{Overflow::Visible};
+    Direction m_direction{Direction::Ltr};
     Visibility m_visibility{Visibility::Visible};
     BoxSizing m_boxSizing{BoxSizing::ContentBox};
-    TextDirection m_direction{TextDirection::Ltr};
     TextAlign m_textAlign{TextAlign::Left};
     WhiteSpace m_whiteSpace{WhiteSpace::Normal};
     FontStyle m_fontStyle{FontStyle::Normal};

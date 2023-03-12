@@ -42,7 +42,7 @@ void ReplacedBox::computePositionedReplacedWidth(float& x, float& width, float& 
 {
     auto container = containingBox();
     auto containerWidth = containingBlockWidthForPositioned(container);
-    auto containerDirection = container->style()->direction();
+    auto containerDirection = container->direction();
 
     auto marginLeftLength = style()->marginLeft();
     auto marginRightLength = style()->marginRight();
@@ -53,7 +53,7 @@ void ReplacedBox::computePositionedReplacedWidth(float& x, float& width, float& 
     width = computeReplacedWidth() + borderAndPaddingWidth();
     auto availableSpace = containerWidth - width;
     if(leftLength.isAuto() && rightLength.isAuto()) {
-        if(containerDirection == TextDirection::Ltr) {
+        if(containerDirection == Direction::Ltr) {
             auto staticPosition = layer()->staticLeft() - container->borderLeft();
             for(auto parent = parentBox(); parent && parent != container; parent = parent->parentBox()) {
                 if(auto box = to<BoxFrame>(parent)) {
@@ -93,7 +93,7 @@ void ReplacedBox::computePositionedReplacedWidth(float& x, float& width, float& 
             marginLeft = availableWidth / 2.f;
             marginRight = availableWidth - marginLeft;
         } else {
-            if(containerDirection == TextDirection::Ltr) {
+            if(containerDirection == Direction::Ltr) {
                 marginLeft = 0;
                 marginRight = availableWidth;
             } else {
@@ -128,13 +128,13 @@ void ReplacedBox::computePositionedReplacedWidth(float& x, float& width, float& 
         marginRight = marginRightLength.calc(containerWidth);
         leftLengthValue = leftLength.calc(containerWidth);
         rightLengthValue = rightLength.calc(containerWidth);
-        if(containerDirection == TextDirection::Rtl) {
+        if(containerDirection == Direction::Rtl) {
             auto totalWidth = width + leftLengthValue + rightLengthValue +  marginLeft + marginRight;
             leftLengthValue = containerWidth - (totalWidth - leftLengthValue);
         }
     }
 
-    if(containerDirection == TextDirection::Rtl && container->isInlineBox()) {
+    if(containerDirection == Direction::Rtl && container->isInlineBox()) {
         auto& lines = to<InlineBox>(*container).lines();
         if(lines.size() > 1) {
             auto& firstLine = *lines.front();

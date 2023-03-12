@@ -67,7 +67,7 @@ public:
     float constrainBorderBoxHeightByMinMax(float height) const;
     float constrainContentBoxHeightByMinMax(float height) const;
 
-    void computePositionedWidthUsing(const Length& widthLength, const BoxModel* container, TextDirection containerDirection, float containerWidth,
+    void computePositionedWidthUsing(const Length& widthLength, const BoxModel* container, Direction containerDirection, float containerWidth,
         const Length& leftLength, const Length& rightLength, const Length& marginLeftLength, const Length& marginRightLength,
         float& x, float& width, float& marginLeft, float& marginRight) const;
 

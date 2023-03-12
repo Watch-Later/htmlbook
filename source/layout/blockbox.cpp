@@ -236,7 +236,7 @@ float BlockBox::constrainContentBoxHeightByMinMax(float height) const
     return height;
 }
 
-void BlockBox::computePositionedWidthUsing(const Length& widthLength, const BoxModel* container, TextDirection containerDirection, float containerWidth,
+void BlockBox::computePositionedWidthUsing(const Length& widthLength, const BoxModel* container, Direction containerDirection, float containerWidth,
     const Length& leftLength, const Length& rightLength, const Length& marginLeftLength, const Length& marginRightLength,
     float& x, float& width, float& marginLeft, float& marginRight) const
 {
@@ -255,7 +255,7 @@ void BlockBox::computePositionedWidthUsing(const Length& widthLength, const BoxM
                 marginLeft = availableSpace / 2.f;
                 marginRight = availableSpace - marginLeft;
             } else {
-                if(containerDirection == TextDirection::Ltr) {
+                if(containerDirection == Direction::Ltr) {
                     marginLeft = 0;
                     marginRight = availableSpace;
                 } else {
@@ -272,7 +272,7 @@ void BlockBox::computePositionedWidthUsing(const Length& widthLength, const BoxM
         } else {
             marginLeft = marginLeftLength.calc(containerWidth);
             marginRight = marginRightLength.calc(containerWidth);
-            if(containerDirection == TextDirection::Rtl) {
+            if(containerDirection == Direction::Rtl) {
                 leftLengthValue = (availableSpace + leftLengthValue) - marginLeft - marginRight;
             }
         }
@@ -308,7 +308,7 @@ void BlockBox::computePositionedWidthUsing(const Length& widthLength, const BoxM
         }
     }
 
-    if(containerDirection == TextDirection::Rtl && container->isInlineBox()) {
+    if(containerDirection == Direction::Rtl && container->isInlineBox()) {
         auto& lines = to<InlineBox>(*container).lines();
         if(lines.size() > 1) {
             auto& firstLine = *lines.front();
@@ -325,7 +325,7 @@ void BlockBox::computePositionedWidth(float& x, float& width, float& marginLeft,
 {
     auto container = containingBox();
     auto containerWidth = containingBlockWidthForPositioned(container);
-    auto containerDirection = container->style()->direction();
+    auto containerDirection = container->direction();
 
     auto marginLeftLength = style()->marginLeft();
     auto marginRightLength = style()->marginRight();
@@ -333,7 +333,7 @@ void BlockBox::computePositionedWidth(float& x, float& width, float& marginLeft,
     auto leftLength = style()->left();
     auto rightLength = style()->right();
     if(leftLength.isAuto() && rightLength.isAuto()) {
-        if(containerDirection == TextDirection::Ltr) {
+        if(containerDirection == Direction::Ltr) {
             auto staticPosition = layer()->staticLeft() - borderLeft();
             for(auto parent = parentBox(); parent && parent != container; parent = parent->parentBox()) {
                 if(auto box = to<BoxFrame>(parent)) {
@@ -967,10 +967,10 @@ void BlockFlowBox::addIntrudingFloats(BlockFlowBox* prevBlock, float offsetX, fl
     for(auto& item : *prevBlock->floatingBoxes()) {
         if(item.bottom() > offsetY && !containsFloat(item.box())) {
             FloatingBox floatingBox(item.box());
-            if(prevBlock == parentBox())
-                floatingBox.setX(item.x() - offsetX);
-            else
-                floatingBox.setX(item.x() - offsetX - prevBlock->marginLeft());
+            floatingBox.setX(item.x() - offsetX);
+            if(prevBlock != parentBox())
+                floatingBox.setX(item.x() + prevBlock->marginLeft());
+            floatingBox.setX(item.x() - marginLeft());
             floatingBox.setY(item.y() - offsetY);
             floatingBox.setWidth(item.width());
             floatingBox.setHeight(item.height());

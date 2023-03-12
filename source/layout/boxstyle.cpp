@@ -1124,14 +1124,14 @@ void BoxStyle::set(CSSPropertyID id, RefPtr<CSSValue> value)
     case CSSPropertyID::Overflow:
         m_overflow = convertOverflow(*value);
         break;
+    case CSSPropertyID::Direction:
+        m_direction = convertDirection(*value);
+        break;
     case CSSPropertyID::Visibility:
         m_visibility = convertVisibility(*value);
         break;
     case CSSPropertyID::BoxSizing:
         m_boxSizing = convertBoxSizing(*value);
-        break;
-    case CSSPropertyID::Direction:
-        m_direction = convertTextDirection(*value);
         break;
     case CSSPropertyID::TextAlign:
         m_textAlign = convertTextAlign(*value);
@@ -1607,6 +1607,21 @@ Overflow BoxStyle::convertOverflow(const CSSValue& value)
     return Overflow::Visible;
 }
 
+Direction BoxStyle::convertDirection(const CSSValue& value)
+{
+    auto& ident = to<CSSIdentValue>(value);
+    switch(ident.value()) {
+    case CSSValueID::Ltr:
+        return Direction::Ltr;
+    case CSSValueID::Rtl:
+        return Direction::Rtl;
+    default:
+        assert(false);
+    }
+
+    return Direction::Ltr;
+}
+
 Visibility BoxStyle::convertVisibility(const CSSValue& value)
 {
     auto& ident = to<CSSIdentValue>(value);
@@ -1660,21 +1675,6 @@ WhiteSpace BoxStyle::convertWhiteSpace(const CSSValue& value)
     }
 
     return WhiteSpace::Normal;
-}
-
-TextDirection BoxStyle::convertTextDirection(const CSSValue& value)
-{
-    auto& ident = to<CSSIdentValue>(value);
-    switch(ident.value()) {
-    case CSSValueID::Ltr:
-        return TextDirection::Ltr;
-    case CSSValueID::Rtl:
-        return TextDirection::Rtl;
-    default:
-        assert(false);
-    }
-
-    return TextDirection::Ltr;
 }
 
 TextAlign BoxStyle::convertTextAlign(const CSSValue& value)
@@ -1850,6 +1850,7 @@ float BoxStyle::convertNumber(const CSSValue& value)
 void BoxStyle::inheritFrom(const BoxStyle& parentStyle)
 {
     m_fontFace = parentStyle.fontFace();
+    m_direction = parentStyle.direction();
     m_visibility = parentStyle.visibility();
     m_textAlign = parentStyle.textAlign();
     m_whiteSpace = parentStyle.whiteSpace();
@@ -1860,6 +1861,7 @@ void BoxStyle::inheritFrom(const BoxStyle& parentStyle)
     m_fontWeight = parentStyle.fontWeight();
     for(auto& [id, value] : parentStyle.properties()) {
         switch(id) {
+        case CSSPropertyID::Direction:
         case CSSPropertyID::Visibility:
         case CSSPropertyID::TextAlign:
         case CSSPropertyID::WhiteSpace:

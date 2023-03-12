@@ -80,9 +80,9 @@ float FlexItem::marginStart() const
 {
     switch(flexDirection()) {
     case FlexDirection::Row:
-        return m_box->marginLeft();
+        return m_box->marginStart(direction());
     case FlexDirection::RowReverse:
-        return m_box->marginRight();
+        return m_box->marginEnd(direction());
     case FlexDirection::Column:
         return m_box->marginTop();
     case FlexDirection::ColumnReverse:
@@ -98,9 +98,9 @@ float FlexItem::marginEnd() const
 {
     switch(flexDirection()) {
     case FlexDirection::Row:
-        return m_box->marginRight();
+        return m_box->marginEnd(direction());
     case FlexDirection::RowReverse:
-        return m_box->marginLeft();
+        return m_box->marginStart(direction());
     case FlexDirection::Column:
         return m_box->marginBottom();
     case FlexDirection::ColumnReverse:
@@ -116,14 +116,14 @@ float FlexItem::marginBefore() const
 {
     if(isHorizontalFlow())
         return m_box->marginTop();
-    return m_box->marginLeft();
+    return m_box->marginStart(direction());
 }
 
 float FlexItem::marginAfter() const
 {
     if(isHorizontalFlow())
         return m_box->marginBottom();
-    return m_box->marginRight();
+    return m_box->marginEnd(direction());
 }
 
 FlexibleBox::FlexibleBox(Node* node, const RefPtr<BoxStyle>& style)
@@ -267,13 +267,13 @@ std::optional<float> FlexibleBox::computeMaxMainSize(const BlockBox* child) cons
     return std::nullopt;
 }
 
-float FlexibleBox::computeMainSize(float contentHeight) const
+float FlexibleBox::computeMainSize(float hypotheticalMainSize) const
 {
     if(isHorizontalFlow())
         return width();
 
     float y = 0;
-    float height = contentHeight + borderAndPaddingHeight();
+    float height = hypotheticalMainSize + borderAndPaddingHeight();
     float marginTop = 0;
     float marginBottom = 0;
     computeHeight(y, height, marginTop, marginBottom);
@@ -287,104 +287,54 @@ float FlexibleBox::availableCrossSize() const
     return contentWidth();
 }
 
-float FlexibleBox::borderStart() const
+float FlexibleBox::borderAndPaddingStart() const
 {
     switch(m_flexDirection) {
     case FlexDirection::Row:
-        return borderLeft();
+        return borderStart() + paddingStart();
     case FlexDirection::RowReverse:
-        return borderRight();
+        return borderEnd() + paddingEnd();
     case FlexDirection::Column:
-        return borderTop();
+        return borderTop() + paddingTop();
     case FlexDirection::ColumnReverse:
-        return borderBottom();
+        return borderBottom() + paddingBottom();
     default:
         assert(false);
     }
 
-    return borderLeft();
+    return borderStart() + paddingStart();
 }
 
-float FlexibleBox::borderEnd() const
+float FlexibleBox::borderAndPaddingEnd() const
 {
     switch(m_flexDirection) {
     case FlexDirection::Row:
-        return borderRight();
+        return borderEnd() + paddingEnd();
     case FlexDirection::RowReverse:
-        return borderLeft();
+        return borderStart() + paddingStart();
     case FlexDirection::Column:
-        return borderBottom();
+        return borderBottom() + paddingBottom();
     case FlexDirection::ColumnReverse:
-        return borderTop();
+        return borderTop() + paddingTop();
     default:
         assert(false);
     }
 
-    return borderRight();
+    return borderEnd() + paddingEnd();
 }
 
-float FlexibleBox::borderBefore() const
+float FlexibleBox::borderAndPaddingBefore() const
 {
     if(isHorizontalFlow())
-        return borderTop();
-    return borderLeft();
+        return borderTop() + paddingTop();
+    return borderStart() + paddingStart();
 }
 
-float FlexibleBox::borderAfter() const
+float FlexibleBox::borderAndPaddingAfter() const
 {
     if(isHorizontalFlow())
-        return borderBottom();
-    return borderRight();
-}
-
-float FlexibleBox::paddingStart() const
-{
-    switch(m_flexDirection) {
-    case FlexDirection::Row:
-        return paddingLeft();
-    case FlexDirection::RowReverse:
-        return paddingRight();
-    case FlexDirection::Column:
-        return paddingTop();
-    case FlexDirection::ColumnReverse:
-        return paddingBottom();
-    default:
-        assert(false);
-    }
-
-    return paddingLeft();
-}
-
-float FlexibleBox::paddingEnd() const
-{
-    switch(m_flexDirection) {
-    case FlexDirection::Row:
-        return paddingRight();
-    case FlexDirection::RowReverse:
-        return paddingLeft();
-    case FlexDirection::Column:
-        return paddingBottom();
-    case FlexDirection::ColumnReverse:
-        return paddingTop();
-    default:
-        assert(false);
-    }
-
-    return paddingRight();
-}
-
-float FlexibleBox::paddingBefore() const
-{
-    if(isHorizontalFlow())
-        return paddingTop();
-    return paddingLeft();
-}
-
-float FlexibleBox::paddingAfter() const
-{
-    if(isHorizontalFlow())
-        return paddingBottom();
-    return paddingRight();
+        return borderBottom() + paddingBottom();
+    return borderEnd() + paddingEnd();
 }
 
 void FlexibleBox::layout()
@@ -408,7 +358,7 @@ void FlexibleBox::layout()
     }
 
     const auto mainSize = computeMainSize(hypotheticalMainSize);
-    const auto availableMainSize = mainSize - borderStart() - paddingStart() - borderEnd() - paddingEnd();
+    const auto availableMainSize = mainSize - borderAndPaddingStart() - borderAndPaddingEnd();
     for(auto it = m_items.begin(); it != m_items.end();) {
         float lineMainSize = 0;
 
@@ -478,11 +428,12 @@ void FlexibleBox::layout()
 
                 auto violation = clampedSize - unclampedSize;
                 if(violation > 0.f) {
-                    item->setViolation(FlexItem::Violation::Min);
+                    item->setMinViolation(true);
                 } else if(violation < 0.f){
-                    item->setViolation(FlexItem::Violation::Max);
+                    item->setMaxViolation(true);
                 } else {
-                    item->setViolation(FlexItem::Violation::None);
+                    item->setMinViolation(false);
+                    item->setMaxViolation(false);
                 }
 
                 item->setTargetMainSize(clampedSize);
@@ -532,7 +483,7 @@ void FlexibleBox::layout()
             availableSpace = 0.f;
         }
 
-        auto mainOffset = borderStart() + paddingStart();
+        auto mainOffset = borderAndPaddingStart();
         switch(m_justifyContent) {
         case AlignContent::FlexEnd:
             mainOffset += availableSpace;
@@ -608,13 +559,13 @@ void FlexibleBox::layout()
             }
         }
 
-        mainOffset += borderEnd() + paddingEnd();
+        mainOffset += borderAndPaddingEnd();
         if(isVerticalFlow())
             setHeight(std::max(mainOffset, height()));
         m_lines.emplace_back(items);
     }
 
-    auto crossOffset = borderBefore() + paddingBefore();
+    auto crossOffset = borderAndPaddingBefore();
     for(auto& line : m_lines) {
         float crossSize = 0;
         for(auto& item : line.items()) {
@@ -631,7 +582,7 @@ void FlexibleBox::layout()
         crossOffset += crossSize;
     }
 
-    crossOffset += borderAfter() + paddingAfter();
+    crossOffset += borderAndPaddingAfter();
     if(isHorizontalFlow())
         setHeight(std::max(crossOffset, height()));
     updateHeight();
@@ -734,7 +685,8 @@ void FlexibleBox::layout()
                     if(marginRightLength.isAuto())
                         child->setMarginRight(autoMarginOffset);
 
-                    if(marginLeftLength.isAuto())
+                    auto marginStartLength = childStyle->isLeftToRightDirection() ? marginLeftLength : marginRightLength;
+                    if(marginStartLength.isAuto())
                         child->setX(autoMarginOffset + child->x());
                     continue;
                 }
@@ -785,7 +737,7 @@ void FlexibleBox::layout()
     if(m_flexWrap == FlexWrap::WrapReverse) {
         const auto availableSpace = availableCrossSize();
         for(auto& line : m_lines) {
-            auto startOffset = line.crossOffset() - borderBefore() - paddingBefore();
+            auto startOffset = line.crossOffset() - borderAndPaddingBefore();
             auto newOffset = availableSpace - startOffset - line.crossSize();
 
             auto delta = newOffset - startOffset;
@@ -803,9 +755,11 @@ void FlexibleBox::layout()
     for(auto child = firstBoxFrame(); child; child = child->nextBoxFrame()) {
         if(child->isPositioned()) {
             auto childLayer = child->layer();
-            childLayer->setStaticLeft(borderStart() + paddingStart());
-            childLayer->setStaticTop(borderBefore() + paddingBefore());
+            childLayer->setStaticLeft(borderAndPaddingStart());
+            childLayer->setStaticTop(borderAndPaddingBefore());
             child->containingBlock()->insertPositonedBox(child);
+        } else if(style()->isRightToLeftDirection()) {
+            child->setX(width() - child->width() - child->x());
         }
     }
 
