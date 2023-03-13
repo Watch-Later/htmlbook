@@ -33,6 +33,7 @@ void TableBox::computePreferredWidths(float& minWidth, float& maxWidth) const
     m_maxPreferredWidth += borderAndPaddingWidth();
     for(auto caption : m_captions) {
         m_minPreferredWidth = std::max(m_minPreferredWidth, caption->minPreferredWidth());
+        m_maxPreferredWidth = std::max(m_maxPreferredWidth, caption->minPreferredWidth());
     }
 }
 
@@ -44,17 +45,23 @@ void TableBox::updatePreferredWidths() const
     computePreferredWidths(m_minPreferredWidth, m_maxPreferredWidth);
 
     auto widthLength = style()->width();
-    if(widthLength.isFixed()) {
-        m_maxPreferredWidth = m_minPreferredWidth = std::max(m_minPreferredWidth, adjustBorderBoxWidth(widthLength.value()));
+    auto minWidthLength = style()->minWidth();
+    auto maxWidthLength = style()->maxWidth();
+    if(widthLength.isFixed() && widthLength.value() > 0) {
+        m_maxPreferredWidth = std::max(m_minPreferredWidth, adjustBorderBoxWidth(widthLength.value()));
+        if(maxWidthLength.isFixed()) {
+            m_maxPreferredWidth = std::min(m_maxPreferredWidth, adjustBorderBoxWidth(maxWidthLength.value()));
+            m_maxPreferredWidth = std::max(m_minPreferredWidth, m_maxPreferredWidth);
+        }
+
+        m_minPreferredWidth = m_maxPreferredWidth;
     }
 
-    auto minWidthLength = style()->minWidth();
     if(minWidthLength.isFixed() && minWidthLength.value() > 0) {
         m_minPreferredWidth = std::max(m_minPreferredWidth, adjustBorderBoxWidth(minWidthLength.value()));
         m_maxPreferredWidth = std::max(m_maxPreferredWidth, adjustBorderBoxWidth(minWidthLength.value()));
     }
 
-    auto maxWidthLength = style()->maxWidth();
     if(maxWidthLength.isFixed()) {
         m_maxPreferredWidth = std::min(m_maxPreferredWidth, adjustBorderBoxWidth(maxWidthLength.value()));
         m_maxPreferredWidth = std::max(m_minPreferredWidth, m_maxPreferredWidth);
