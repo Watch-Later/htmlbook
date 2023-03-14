@@ -180,8 +180,11 @@ public:
 
     void addBox(Box* box) override;
 
+    float availableWidthForPositioned() const;
+    float availableHeightForPositioned() const;
+
     float containingBlockWidthForContent() const;
-    float containingBlockHeightForContent() const;
+    std::optional<float> containingBlockHeightForContent() const;
 
     void updateMarginWidths();
 
@@ -302,9 +305,6 @@ public:
 
     float minPreferredWidth() const;
     float maxPreferredWidth() const;
-
-    float containingBlockWidthForPositioned(const BoxModel* containingBox) const;
-    float containingBlockHeightForPositioned(const BoxModel* containingBox) const;
 
     float adjustBorderBoxWidth(float width) const;
     float adjustBorderBoxHeight(float height) const;

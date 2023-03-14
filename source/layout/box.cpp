@@ -317,12 +317,52 @@ void BoxModel::addBox(Box* box)
     newTable->addBox(box);
 }
 
+float BoxModel::availableWidthForPositioned() const
+{
+    if(auto box = to<BoxFrame>(this))
+        return box->width() - box->borderLeft() - box->borderRight();
+
+    auto& lines = to<InlineBox>(*this).lines();
+    if(lines.empty())
+        return 0;
+
+    auto& firstLine = *lines.front();
+    auto& lastLine = *lines.back();
+
+    float fromLeft = 0;
+    float fromRight = 0;
+    if(style()->isLeftToRightDirection()) {
+        fromLeft = firstLine.x() + firstLine.borderLeft();
+        fromRight = lastLine.x() + lastLine.width() - lastLine.borderRight();
+    } else {
+        fromRight = firstLine.x() + firstLine.width() - firstLine.borderRight();
+        fromLeft = lastLine.x() + lastLine.borderLeft();
+    }
+
+    return std::max(0.f, fromRight - fromLeft);
+}
+
+float BoxModel::availableHeightForPositioned() const
+{
+    if(auto box = to<BoxFrame>(this))
+        return box->height() - box->borderTop() - box->borderBottom();
+
+    auto& lines = to<InlineBox>(*this).lines();
+    if(lines.empty())
+        return 0;
+
+    auto& firstLine = *lines.front();
+    auto& lastLine = *lines.back();
+    auto lineHeight = lastLine.y() + lastLine.height() - firstLine.y();
+    return lineHeight - borderTop() - borderBottom();
+}
+
 float BoxModel::containingBlockWidthForContent() const
 {
     return containingBlock()->availableWidth();
 }
 
-float BoxModel::containingBlockHeightForContent() const
+std::optional<float> BoxModel::containingBlockHeightForContent() const
 {
     return containingBlock()->availableHeight();
 }
@@ -498,46 +538,6 @@ float BoxFrame::maxPreferredWidth() const
     if(m_maxPreferredWidth < 0)
         updatePreferredWidths();
     return m_maxPreferredWidth;
-}
-
-float BoxFrame::containingBlockWidthForPositioned(const BoxModel* containingBox) const
-{
-    if(auto box = to<BoxFrame>(containingBox))
-        return box->width() - box->borderLeft() - box->borderRight();
-
-    auto& lines = to<InlineBox>(*containingBox).lines();
-    if(lines.empty())
-        return 0;
-
-    auto& firstLine = *lines.front();
-    auto& lastLine = *lines.back();
-
-    float fromLeft = 0;
-    float fromRight = 0;
-    if(containingBox->style()->isLeftToRightDirection()) {
-        fromLeft = firstLine.x() + firstLine.borderLeft();
-        fromRight = lastLine.x() + lastLine.width() - lastLine.borderRight();
-    } else {
-        fromRight = firstLine.x() + firstLine.width() - firstLine.borderRight();
-        fromLeft = lastLine.x() + lastLine.borderLeft();
-    }
-
-    return std::max(0.f, fromRight - fromLeft);
-}
-
-float BoxFrame::containingBlockHeightForPositioned(const BoxModel* containingBox) const
-{
-    if(auto box = to<BoxFrame>(containingBox))
-        return box->height() - box->borderTop() - box->borderBottom();
-
-    auto& lines = to<InlineBox>(*containingBox).lines();
-    if(lines.empty())
-        return 0;
-
-    auto& firstLine = *lines.front();
-    auto& lastLine = *lines.back();
-    auto lineHeight = lastLine.y() + lastLine.height() - firstLine.y();
-    return lineHeight - containingBox->borderTop() - containingBox->borderBottom();
 }
 
 float BoxFrame::adjustBorderBoxWidth(float width) const

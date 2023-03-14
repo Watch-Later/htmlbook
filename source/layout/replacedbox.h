@@ -21,10 +21,10 @@ public:
     void computePositionedReplacedHeight(float& y, float& height, float& marginTop, float& marginBottom) const;
 
     float computePercentageReplacedWidth(const Length& widthLength) const;
-    float computePercentageReplacedHeight(const Length& heightLength) const;
+    std::optional<float> computePercentageReplacedHeight(const Length& heightLength) const;
 
-    float computeReplacedWidthUsing(const Length& widthLength) const;
-    float computeReplacedHeightUsing(const Length& heightLength) const;
+    std::optional<float> computeReplacedWidthUsing(const Length& widthLength) const;
+    std::optional<float> computeReplacedHeightUsing(const Length& heightLength) const;
 
     float constrainReplacedWidthByMinMax(float width) const;
     float constrainReplacedHeightByMinMax(float height) const;

@@ -51,9 +51,8 @@ public:
     float endOffsetForContent() const { return style()->isRightToLeftDirection() ? leftOffsetForContent() : width() - rightOffsetForContent(); }
     float availableWidthForContent() const { return std::max(0.f, rightOffsetForContent() - leftOffsetForContent()); }
 
-    float availableWidth() const { return contentWidth(); }
-    float availableHeight() const;
-    float availableHeightUsing(const Length& heightLength) const;
+    float availableWidth() const;
+    std::optional<float> availableHeight() const;
 
     bool shrinkToAvoidFloats() const;
     float shrinkWidthToAvoidFloats(float marginLeft, float marginRight, const BlockFlowBox* container) const;

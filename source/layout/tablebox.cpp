@@ -259,8 +259,7 @@ void FixedTableLayoutAlgorithm::build()
     for(auto& [columnIndex, cell] : firstRowBox->cells()) {
         if(!cell.inRowSpan() && !cell.inColSpan() && m_widths[columnIndex].isAuto()) {
             auto cellBox = cell.box();
-            auto cellStyle = cellBox->style();
-            auto cellStyleWidth = cellStyle->width();
+            auto cellStyleWidth = cellBox->style()->width();
             if(cellStyleWidth.isAuto())
                 continue;
             for(size_t col = 0; col < cellBox->colSpan(); ++col) {
@@ -598,8 +597,7 @@ static void distributeSpanCellToColumns(const TableCellBox* cellBox, std::span<T
 {
     auto columns = allColumns.subspan(cellBox->columnIndex(), cellBox->colSpan());
 
-    auto cellStyle = cellBox->style();
-    auto cellStyleWidth = cellStyle->width();
+    auto cellStyleWidth = cellBox->style()->width();
     if(cellStyleWidth.isPercent()) {
         float totalPercent = 0.f;
         float totalNonPercentMaxWidth = 0.f;
@@ -693,10 +691,10 @@ void AutoTableLayoutAlgorithm::build()
         auto columnBox = columns[columnIndex].box();
         if(columnBox == nullptr)
             continue;
-        auto columnStyle = columnBox->style();
-        auto columnStyleWidth = columnStyle->width();
 
         auto& columnWidth = m_columnWidths[columnIndex];
+
+        auto columnStyleWidth = columnBox->style()->width();
         if(columnStyleWidth.isFixed()) {
             columnWidth.maxFixedWidth = columnStyleWidth.value();
         } else if(columnStyleWidth.isPercent()) {
@@ -715,10 +713,9 @@ void AutoTableLayoutAlgorithm::build()
                     continue;
                 }
 
-                auto cellStyle = cellBox->style();
-                auto cellStyleWidth = cellStyle->width();
-
                 auto& columnWidth = m_columnWidths[columnIndex];
+
+                auto cellStyleWidth = cellBox->style()->width();
                 if(cellStyleWidth.isFixed()) {
                     columnWidth.maxFixedWidth = std::max(columnWidth.maxFixedWidth, cellStyleWidth.value());
                 } else if(cellStyleWidth.isPercent()) {
@@ -812,8 +809,7 @@ void TableSectionBox::build(BoxLayer* layer)
                 auto& row = m_rows[rowIndex];
                 auto& rowHeight = row.height();
 
-                auto cellStyle = cellBox->style();
-                auto cellStyleHeight = cellStyle->height();
+                auto cellStyleHeight = cellBox->style()->height();
                 if(cellStyleHeight.isPercent() && !cellStyleHeight.isZero()
                     && (!rowHeight.isPercent() || rowHeight.value() < cellStyleHeight.value())) {
                     row.setHeight(cellStyleHeight);
@@ -865,15 +861,16 @@ void TableSectionBox::layout()
             if(cell.inRowSpan() || cell.inColSpan())
                 continue;
 
+            auto position = columns[columnIndex].x();
             auto width = -horizontalSpacing;
             for(size_t col = 0; col < cellBox->colSpan(); ++col) {
                 const auto& column = columns[col + columnIndex];
                 width += horizontalSpacing + column.width();
             }
 
-            cellBox->setX(columns[columnIndex].x());
-            cellBox->clearOverrideSize();
+            cellBox->setX(position);
             cellBox->setOverrideWidth(width);
+            cellBox->clearOverrideSize();
             cellBox->layout();
         }
     }
@@ -905,9 +902,7 @@ void TableSectionBox::layout()
 
             cellBox->setY(position);
             cellBox->setOverrideHeight(height);
-            if(height != cellBox->height()) {
-                cellBox->layout();
-            }
+            cellBox->layout();
         }
 
         position += verticalSpacing + rowBox->height();

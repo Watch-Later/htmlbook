@@ -68,13 +68,12 @@ void BlockBox::layoutPositionedBoxes()
     }
 }
 
-float BlockBox::availableHeight() const
+float BlockBox::availableWidth() const
 {
-    auto availableHeight = availableHeightUsing(style()->height());
-    return constrainContentBoxHeightByMinMax(availableHeight);
+    return contentWidth();
 }
 
-float BlockBox::availableHeightUsing(const Length& heightLength) const
+std::optional<float> BlockBox::availableHeight() const
 {
     if(isBoxView())
         return style()->viewportHeight();
@@ -82,23 +81,26 @@ float BlockBox::availableHeightUsing(const Length& heightLength) const
     if(hasOverrideHeight())
         return overrideHeight() - borderAndPaddingHeight();
 
-    if(heightLength.isPercent() && isPositioned()) {
-        auto availableHeight = containingBlockHeightForPositioned(containingBlock());
-        return adjustContentBoxHeight(heightLength.calc(availableHeight));
-    }
+    if(isTableCellBox())
+        return std::nullopt;
 
-    if(heightLength.isAuto() && isPositioned() && !(style()->top().isAuto() || style()->bottom().isAuto())) {
+    if(isAnonymous())
+        return containingBlock()->availableHeight();
+
+    if(isPositioned() && (!style()->height().isAuto() || (!style()->top().isAuto() && !style()->bottom().isAuto()))) {
         float y = 0;
         float computedHeight = height();
         float marginTop = 0;
         float marginBottom = 0;
         computePositionedHeight(y, computedHeight, marginTop, marginBottom);
-        return adjustContentBoxHeight(computedHeight - borderAndPaddingHeight());
+        return computedHeight - borderAndPaddingHeight();
     }
 
-    if(auto computedHeight = computeHeightUsing(heightLength))
-        return adjustContentBoxHeight(*computedHeight);
-    return containingBlockHeightForContent();
+    auto computedHeight = computeHeightUsing(style()->height());
+    if(!computedHeight)
+        return std::nullopt;
+    auto availableHeight = adjustContentBoxHeight(*computedHeight);
+    return constrainContentBoxHeightByMinMax(availableHeight);
 }
 
 bool BlockBox::shrinkToAvoidFloats() const
@@ -168,40 +170,9 @@ float BlockBox::constrainWidthByMinMax(float width, const BlockBox* container, f
 
 std::optional<float> BlockBox::computePercentageHeight(const Length& heightLength) const
 {
-    auto container = containingBlock();
-    auto containerStyle = container->style();
-    auto containerStyleHeight = containerStyle->height();
-    auto containerStyleTop = containerStyle->top();
-    auto containerStyleBottom = containerStyle->bottom();
-
-    float availableHeight = 0;
-    if(container->hasOverrideHeight()) {
-        availableHeight = container->overrideHeight() - container->borderAndPaddingHeight();
-    } else if(containerStyleHeight.isFixed()) {
-        availableHeight = container->adjustContentBoxHeight(containerStyleHeight.value());
-        availableHeight = container->constrainContentBoxHeightByMinMax(availableHeight);
-    } else if(container->isPositioned() && (!containerStyleHeight.isAuto() || (!containerStyleTop.isAuto() && !containerStyleBottom.isAuto()))) {
-        float y = 0;
-        float computedHeight = container->height();
-        float marginTop = 0;
-        float marginBottom = 0;
-        container->computePositionedHeight(y, computedHeight, marginTop, marginBottom);
-        availableHeight = computedHeight - container->borderAndPaddingHeight();
-    } else if(containerStyleHeight.isPercent()) {
-        auto computedHeight = container->computePercentageHeight(containerStyleHeight);
-        if(!computedHeight)
-            return std::nullopt;
-        availableHeight = container->adjustContentBoxHeight(*computedHeight);
-        availableHeight = container->constrainContentBoxHeightByMinMax(availableHeight);
-    } else if(container->isBoxView()) {
-        availableHeight = containerStyle->viewportHeight();
-    } else if(container->isAnonymous()) {
-        return container->computePercentageHeight(heightLength);
-    } else {
-        return std::nullopt;
-    }
-
-    return heightLength.calc(availableHeight);
+    if(auto availableHeight = containingBlockHeightForContent())
+        return heightLength.calc(*availableHeight);
+    return std::nullopt;
 }
 
 std::optional<float> BlockBox::computeHeightUsing(const Length& heightLength) const
@@ -322,7 +293,7 @@ void BlockBox::computePositionedWidthUsing(const Length& widthLength, const BoxM
 void BlockBox::computePositionedWidth(float& x, float& width, float& marginLeft, float& marginRight) const
 {
     auto container = containingBox();
-    auto containerWidth = containingBlockWidthForPositioned(container);
+    auto containerWidth = container->availableWidthForPositioned();
     auto containerDirection = container->direction();
 
     auto marginLeftLength = style()->marginLeft();
@@ -458,7 +429,7 @@ void BlockBox::computePositionedHeightUsing(const Length& heightLength, const Bo
 void BlockBox::computePositionedHeight(float& y, float& height, float& marginTop, float& marginBottom) const
 {
     auto container = containingBox();
-    auto containerHeight = containingBlockHeightForPositioned(container);
+    auto containerHeight = container->availableHeightForPositioned();
     auto contentHeight = height - borderAndPaddingHeight();
 
     auto marginTopLength = style()->marginTop();
@@ -522,9 +493,14 @@ void BlockBox::computeWidth(float& x, float& width, float& marginLeft, float& ma
         return;
     }
 
+    if(isTableCellBox())
+        return;
+
     if(isPositioned()) {
         computePositionedWidth(x, width, marginLeft, marginRight);
-        return;
+        if(!isTableBox()) {
+            return;
+        }
     }
 
     auto container = containingBlock();
@@ -544,8 +520,16 @@ void BlockBox::computeHeight(float& y, float& height, float& marginTop, float& m
         return;
     }
 
+    if(isTableCellBox())
+        return;
+
     if(isPositioned()) {
         computePositionedHeight(y, height, marginTop, marginBottom);
+        return;
+    }
+
+    if(isTableBox()) {
+        computeVerticalMargins(marginTop, marginBottom);
         return;
     }
 
@@ -830,9 +814,8 @@ void BlockFlowBox::layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo)
     if(style()->isLeftToRightDirection()) {
         auto offsetX = borderAndPaddingLeft() + child->marginLeft();
         if(containsFloats() && child->avoidsFloats()) {
-            auto childStyle = child->style();
             auto startOffset = startOffsetForLine(child->y(), false);
-            if(childStyle->marginLeft().isAuto())
+            if(child->style()->marginLeft().isAuto())
                 offsetX = std::max(offsetX, startOffset + child->marginLeft());
             else if(startOffset > borderAndPaddingLeft()) {
                 offsetX = std::max(offsetX, startOffset);
@@ -843,9 +826,8 @@ void BlockFlowBox::layoutBlockChild(BoxFrame* child, MarginInfo& marginInfo)
     } else {
         auto offsetX = borderAndPaddingRight() + child->marginRight();
         if(containsFloats() && child->avoidsFloats()) {
-            auto childStyle = child->style();
             auto startOffset = startOffsetForLine(child->y(), false);
-            if(childStyle->marginRight().isAuto())
+            if(child->style()->marginRight().isAuto())
                 offsetX = std::max(offsetX, startOffset + child->marginRight());
             else if(startOffset > borderAndPaddingRight()) {
                 offsetX = std::max(offsetX, startOffset);
